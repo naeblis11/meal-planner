@@ -1,0 +1,62 @@
+# Home Assistant configuration for the shopping-list mirror.
+#
+# Apply this on the HOME Home Assistant (the one on the same network as
+# the PC running the Meal Planner), alongside alexa/home-assistant.yaml
+# if you use the "chef" skill -- both share the same secret:
+#
+#   meal_planner_auth: "Bearer <token printed by python set_api_token.py>"
+#
+# Either drop this file in as a package (homeassistant: packages: ...)
+# or paste the two top-level keys into configuration.yaml. See
+# ha/SETUP-SHOPPING.md for the surrounding steps (creating the Local
+# To-do list, the app-side token, the dashboard).
+#
+# How it works: the Meal Planner keeps the to-do list
+# todo.shopping_list in step with its own shopping list (app ->
+# HA) by calling HA's REST API itself. This file is the other direction
+# (HA -> app): whenever the to-do entity changes -- a tick, an untick, a
+# new item, a deletion -- the automation fetches the whole list with
+# todo.get_items and posts it to the app, which applies HA's version.
+# The app treats that post as a reconciliation, not an event, so the
+# echo of its own changes coming back is harmless.
+#
+# The entity's state is its count of unticked items, so deleting an
+# already-ticked item changes nothing here and fires no automation; the
+# app's own periodic pass (every 5 minutes) picks those up.
+#
+# The automation uses the 2024.10+ syntax (`triggers:` / `trigger: state`
+# / `actions:` / `action:`). On an older install use `trigger:` with
+# `platform: state`, `action:` for the list, and `service:` for each
+# step.
+
+rest_command:
+  meal_planner_shopping_sync:
+    # Change meal-planner to the name of the machine running the app.
+    url: "http://meal-planner.local:5000/api/ha/shopping-list/sync"
+    method: POST
+    headers:
+      Authorization: !secret meal_planner_auth
+    content_type: application/json
+    timeout: 10
+    payload: >-
+      {"items": {{ items | tojson }}}
+
+automation:
+  - alias: "Meal Planner shopping list -> app"
+    id: meal_planner_shopping_list_to_app
+    description: >-
+      Whenever the mirrored to-do list changes, send the whole list to the
+      Meal Planner so ticks and edits made on a phone land in the app.
+    mode: queued
+    max: 10
+    triggers:
+      - trigger: state
+        entity_id: todo.shopping_list
+    actions:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        response_variable: result
+      - action: rest_command.meal_planner_shopping_sync
+        data:
+          items: "{{ result['todo.shopping_list']['items'] }}"

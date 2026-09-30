@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% from "_macros.html" import breadcrumb %}
+{% from "_ingredient_editor.html" import ingredient_editor %}
+{% block title %}Edit {{ recipe_name }} - Meal Planner{% endblock %}
+{% block breadcrumb %}{{ breadcrumb([("Recipes", url_for('recipes_list')), (recipe_name, url_for('recipe_detail', recipe_id=recipe_id)), ("Edit", none)]) }}{% endblock %}
+{% block content %}
+  <div class="calendar-heading page-heading">
+    <h1>Edit Recipe</h1>
+    <p class="calendar-subtitle">{{ recipe_name }}</p>
+  </div>
+
+  {% if image_filename %}
+    <p><img class="recipe-edit-preview" src="{{ url_for('recipe_image', filename=image_filename) }}" alt="{{ recipe_name }}"></p>
+  {% endif %}
+  <form method="post" action="{{ url_for('recipe_set_image', recipe_id=recipe_id) }}" enctype="multipart/form-data" class="recipe-image-form">
+    <label class="file-field">
+      <span class="file-field-button">Choose photo&hellip;</span>
+      <span class="file-field-name" data-empty="No file chosen">No file chosen</span>
+      <input type="file" name="image" accept="image/*">
+    </label>
+    <button type="submit" class="btn-primary">{{ 'Change Photo' if image_filename else 'Upload Photo' }}</button>
+    {% if image_filename %}
+      <button type="submit" class="btn-secondary" formaction="{{ url_for('recipe_remove_image', recipe_id=recipe_id) }}" formnovalidate>Remove Photo</button>
+    {% endif %}
+  </form>
+
+  <form method="post" action="{{ url_for('recipe_edit_confirm', recipe_id=recipe_id) }}" id="recipe-edit-form">
+    <div class="subcategory"><h3>Details</h3></div>
+    <div class="recipe-details-grid">
+      <label class="recipe-details-field recipe-details-field--wide">Title
+        <input type="text" name="recipe_name" value="{{ details['name'] }}" required autocomplete="off">
+      </label>
+      <label class="recipe-details-field">Category
+        <input type="text" name="category" value="{{ details['category'] }}" list="category-suggestions">
+      </label>
+      <label class="recipe-details-field">Subcategory
+        <input type="text" name="subcategory" value="{{ details['subcategory'] }}" list="subcategory-suggestions">
+      </label>
+      <label class="recipe-details-field recipe-details-field--short">Servings
+        <input type="text" name="servings_amount" value="{{ base_yield['amount'] if base_yield else '' }}" inputmode="decimal">
+      </label>
+      <label class="recipe-details-field recipe-details-field--short">Unit
+        <input type="text" name="servings_unit" value="{{ base_yield['unit'] if base_yield else 'servings' }}">
+      </label>
+      <label class="recipe-details-field recipe-details-field--short">Oven temp
+        <input type="text" name="oven_temp_amount" value="{{ details['oven_temp']['amount'] }}" inputmode="numeric" placeholder="e.g. 350">
+      </label>
+      <label class="recipe-details-field recipe-details-field--short">&deg;
+        <select name="oven_temp_unit">
+          <option value="F"{% if details['oven_temp']['unit'] == 'F' %} selected{% endif %}>F</option>
+          <option value="C"{% if details['oven_temp']['unit'] == 'C' %} selected{% endif %}>C</option>
+        </select>
+      </label>
+      <label class="recipe-details-field">Oven time
+        <input type="text" name="oven_time" value="{{ details['oven_time'] }}" placeholder="e.g. 45 minutes">
+      </label>
+      <label class="recipe-details-field">Author
+        <input type="text" name="author" value="{{ details['author'] }}">
+      </label>
+      <label class="recipe-details-field recipe-details-field--wide">Source URL
+        <input type="url" name="source_url" value="{{ details['source_url'] }}" placeholder="https://">
+      </label>
+      <label class="recipe-details-field recipe-details-field--full"><span>Notes <span class="recipe-details-hint">one per line</span></span>
+        <textarea name="notes" rows="2">{{ details['notes'] }}</textarea>
+      </label>
+    </div>
+
+    <datalist id="category-suggestions">
+      {% for c in default_categories %}<option value="{{ c }}">{% endfor %}
+    </datalist>
+    <datalist id="subcategory-suggestions">
+      {% for s in default_subcategories %}<option value="{{ s }}">{% endfor %}
+    </datalist>
+
+    <div class="subcategory"><h3>Ingredients</h3></div>
+    <p class="ingredient-editor-hint">Drag a row by its handle to reorder. An ingredient belongs to the sub-recipe heading above it; switch a row's type to turn it into a heading.</p>
+    {{ ingredient_editor(rows) }}
+
+    <datalist id="unit-suggestions">
+      {% for u in default_units %}<option value="{{ u }}">{% endfor %}
+    </datalist>
+
+    <div class="subcategory"><h3>Instructions</h3></div>
+    <p class="ingredient-editor-hint">Drag a step by its handle to reorder. To break a long step in two, put the cursor where the break should go and click <strong>Split here</strong> (or press Ctrl+Enter).</p>
+    <div class="step-editor-block">
+      <ol class="step-editor js-step-editor">
+        {% for step in steps %}
+          <li class="step-edit-row" data-key="{{ step['key'] }}">
+            <button type="button" class="ing-handle" draggable="true" aria-label="Reorder step {{ loop.index }}" title="Drag to reorder, or focus and use the arrow keys">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="7.5" cy="5" r="1.35"/><circle cx="12.5" cy="5" r="1.35"/><circle cx="7.5" cy="10" r="1.35"/><circle cx="12.5" cy="10" r="1.35"/><circle cx="7.5" cy="15" r="1.35"/><circle cx="12.5" cy="15" r="1.35"/></svg>
+            </button>
+            <span class="step-edit-num" aria-hidden="true">{{ loop.index }}</span>
+            <textarea class="step-edit-text" name="step_text_{{ step['key'] }}" rows="2" aria-label="Step {{ loop.index }}">{{ step['text'] }}</textarea>
+            <div class="ing-row-actions">
+              <button type="button" class="pantry-row-btn js-split-step" title="Split this step in two at the cursor">Split here</button>
+              <button type="button" class="pantry-row-btn js-remove-step" title="Remove this step">Remove</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+      <input type="hidden" name="step_order" class="js-step-order" value="{{ steps | map(attribute='key') | join(',') }}">
+      <div class="ingredient-editor-actions">
+        <button type="button" class="btn-secondary js-add-step">Add step</button>
+      </div>
+    </div>
+
+    <div class="ingredient-editor-save">
+      <button type="submit" class="btn-primary">Save</button>
+      <a class="btn-secondary" href="{{ url_for('recipe_detail', recipe_id=recipe_id) }}">Cancel</a>
+    </div>
+  </form>
+
+  <script src="{{ url_for('static', filename='ingredient-editor.js') }}"></script>
+  <script src="{{ url_for('static', filename='step-editor.js') }}"></script>
+  <script>
+    (function () {
+      var fileInput = document.querySelector('.file-field input[type="file"]');
+      if (fileInput) {
+        fileInput.addEventListener('change', function () {
+          var label = document.querySelector('.file-field-name');
+          label.textContent = fileInput.files.length
+            ? fileInput.files[0].name
+            : label.dataset.empty;
+        });
+      }
+    })();
+  </script>
+{% endblock %}

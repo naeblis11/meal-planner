@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Meal Planning Recipe Extractor",
+  "version": "1.0.0",
+  "description": "Extracts a recipe from the current page into the Meal Planning app.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["http://127.0.0.1:5000/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}

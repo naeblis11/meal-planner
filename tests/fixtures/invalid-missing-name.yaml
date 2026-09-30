@@ -1,0 +1,8 @@
+steps:
+  - step: Do a thing
+ingredients:
+  - Salt:
+      usda_num: '02047'
+      amounts:
+        - amount: 1
+          unit: tsp

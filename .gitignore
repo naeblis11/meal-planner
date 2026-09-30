@@ -1,0 +1,32 @@
+# Local app database - rebuilt from recipes/*.yaml via sync
+*.zip
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.import_staging.json
+.correction_staging.json
+
+# Secrets: session key + password hash (see .env.example)
+.env
+
+__pycache__/
+*.pyc
+*.log
+
+# Subagent-driven-development scratch workspaces
+/.superpowers/
+
+# Impeccable design-hook session cache - ephemeral, not project source
+.impeccable/hook.cache.json
+
+# Google service account keys. A downloaded key is named after the Cloud
+# project, so it looks like an ordinary data file -- and it is a live
+# credential. One was committed here once; never again.
+google-calendar-key.json
+*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].json
+*service-account*.json
+*.iam.gserviceaccount.com.json
+
+# Python virtual environment (install.ps1 and pi/install.sh create it here)
+.venv/

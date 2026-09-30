@@ -1,0 +1,66 @@
+{#
+  Shared ingredient editor, used by the Edit Recipe page and by every recipe
+  card on the import review screen. `prefix` namespaces the field names so
+  several editors can live in one form (import review posts them all at
+  once); the Edit Recipe page uses an empty prefix. static/ingredient-editor.js
+  wires up every `.ingredient-editor-block` on the page.
+
+  A row is either an ingredient or a sub-recipe heading (stored as the ORF
+  `section` of every ingredient beneath it). Rows flagged `needs_input`
+  carry an amount the importer could not understand. An ingredient's note
+  ("sifted", "to taste", "recipe follows") sits on a second line of its row,
+  shown when it has one and revealed by the Note button otherwise; several
+  notes are separated with ";".
+#}
+{% macro ingredient_editor(rows, prefix='', default_units=[]) %}
+  <div class="ingredient-editor-block" data-prefix="{{ prefix }}">
+    <div class="ingredient-editor js-ingredient-editor">
+      {% for row in rows %}
+        <div class="ing-row ing-row--{{ row['kind'] }}{% if row.get('needs_input') %} ing-row--needs-input{% endif %}" data-key="{{ row['key'] }}">
+          <button type="button" class="ing-handle" draggable="true" aria-label="Reorder {{ row['name'] or 'row' }}" title="Drag to reorder, or focus and use the arrow keys">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="7.5" cy="5" r="1.35"/><circle cx="12.5" cy="5" r="1.35"/><circle cx="7.5" cy="10" r="1.35"/><circle cx="12.5" cy="10" r="1.35"/><circle cx="7.5" cy="15" r="1.35"/><circle cx="12.5" cy="15" r="1.35"/></svg>
+          </button>
+          {% if row['kind'] == 'section' %}
+            <select class="ing-kind" name="{{ prefix }}row_kind_{{ row['key'] }}" aria-label="Row type">
+              <option value="ingredient">Ingredient</option>
+              <option value="section" selected>Sub-recipe</option>
+            </select>
+            <input class="ing-field ing-field--section" type="text" name="{{ prefix }}row_name_{{ row['key'] }}" value="{{ row['name'] }}" placeholder="Sub-recipe name">
+          {% elif row['locked'] %}
+            <input type="hidden" name="{{ prefix }}row_kind_{{ row['key'] }}" value="ingredient">
+            <span class="ing-field ing-locked">{{ row['name'] }}</span>
+            <span class="ing-locked-note">Multiple amounts &mdash; edit this one in the recipe file</span>
+            <input type="hidden" name="{{ prefix }}row_name_{{ row['key'] }}" value="{{ row['name'] }}">
+          {% else %}
+            <select class="ing-kind" name="{{ prefix }}row_kind_{{ row['key'] }}" aria-label="Row type">
+              <option value="ingredient" selected>Ingredient</option>
+              <option value="section">Sub-recipe</option>
+            </select>
+            <input class="ing-field ing-field--name" type="text" name="{{ prefix }}row_name_{{ row['key'] }}" value="{{ row['name'] }}" placeholder="Ingredient">
+            <input class="ing-field ing-field--amount" type="text" name="{{ prefix }}row_amount_{{ row['key'] }}" value="{{ row['amount'] }}" placeholder="Amount"{% if row.get('needs_input') %} aria-invalid="true" title="This amount couldn't be understood"{% endif %}>
+            <input class="ing-field ing-field--unit" type="text" name="{{ prefix }}row_unit_{{ row['key'] }}" value="{{ row['unit'] }}" list="unit-suggestions" placeholder="Unit">
+          {% endif %}
+          <div class="ing-row-actions">
+            {% if row['kind'] == 'ingredient' and not row['locked'] %}
+              <button type="button" class="pantry-row-btn js-add-note" title="Add a note to this ingredient (e.g. sifted, to taste)"{% if row.get('notes') %} hidden{% endif %}>Note</button>
+            {% endif %}
+            <button type="button" class="pantry-row-btn js-remove-row" title="Remove this row">Remove</button>
+          </div>
+          {% if row['kind'] == 'ingredient' and not row['locked'] %}
+            <div class="ing-note-line"{% if not row.get('notes') %} hidden{% endif %}>
+              <label class="visually-hidden" for="{{ prefix }}row-notes-{{ row['key'] }}">Note for {{ row['name'] or 'ingredient' }}</label>
+              <input class="ing-field ing-field--notes" type="text" id="{{ prefix }}row-notes-{{ row['key'] }}" name="{{ prefix }}row_notes_{{ row['key'] }}" value="{{ row.get('notes', '') }}" placeholder="Note, e.g. sifted, to taste (separate several with ;)">
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <input type="hidden" name="{{ prefix }}row_order" class="js-row-order" value="{{ rows | map(attribute='key') | join(',') }}">
+
+    <div class="ingredient-editor-actions">
+      <button type="button" class="btn-secondary js-add-ingredient">Add ingredient</button>
+      <button type="button" class="btn-secondary js-add-section">Add sub-recipe</button>
+    </div>
+  </div>
+{% endmacro %}

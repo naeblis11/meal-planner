@@ -1,0 +1,293 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "my chef",
+      "intents": [
+        {
+          "name": "AddShoppingItemIntent",
+          "slots": [
+            { "name": "item", "type": "AMAZON.Food" },
+            { "name": "quantity", "type": "GroceryQuantity" },
+            { "name": "unit", "type": "GroceryUnit" },
+            { "name": "aisle", "type": "GroceryAisle" }
+          ],
+          "samples": [
+            "add {item} to the cart",
+            "add {item} to the shopping cart",
+            "add {item} to the shopping list",
+            "add {item} to my list",
+            "add {item} to the list",
+            "put {item} on the list",
+            "put {item} on the shopping list",
+            "add {quantity} {unit} of {item} to the cart",
+            "add {quantity} {unit} of {item} to the shopping cart",
+            "add {quantity} {unit} of {item} to the shopping list",
+            "add {quantity} {unit} of {item} to my list",
+            "add {quantity} {item} to the cart",
+            "add {quantity} {item} to the shopping cart",
+            "add {quantity} {item} to the shopping list",
+            "add {quantity} {item} to my list",
+            "we need {item}",
+            "we need {quantity} {unit} of {item}",
+            "we need {quantity} {item}",
+            "add {item} to the cart in {aisle}",
+            "add {item} to the cart in the {aisle} aisle",
+            "add {item} to the shopping list in {aisle}",
+            "add {item} to the shopping list in the {aisle} aisle",
+            "add {quantity} {unit} of {item} to the cart in {aisle}",
+            "add {quantity} {item} to the cart in {aisle}",
+            "add {item} to cart",
+            "add {item} to my cart",
+            "add {item} to shopping list",
+            "add {item} to my shopping list",
+            "put {item} in the cart",
+            "add {quantity} {unit} of {item} to cart",
+            "add {quantity} {unit} of {item} to my cart",
+            "add {quantity} {item} to cart",
+            "add {quantity} {item} to my cart",
+            "add {item} to cart in {aisle}",
+            "add {item} to the grocery list",
+            "add {item} to the groceries",
+            "add {item} to groceries",
+            "put {item} on the grocery list",
+            "put {item} on the groceries",
+            "we need {item} in {aisle}",
+            "we are out of {item}",
+            "we're out of {item}",
+            "out of {item}",
+            "buy {item}",
+            "pick up {item}",
+            "get {item}",
+            "add {quantity} {unit} of {item} to the grocery list",
+            "add {quantity} {item} to the grocery list",
+            "buy {quantity} {unit} of {item}",
+            "buy {quantity} {item}",
+            "get {quantity} {unit} of {item}",
+            "get {quantity} {item}",
+            "we need {quantity} {unit} of {item} in {aisle}"
+          ]
+        },
+        {
+          "name": "AddPantryItemIntent",
+          "slots": [
+            { "name": "item", "type": "AMAZON.Food" },
+            { "name": "aisle", "type": "GroceryAisle" }
+          ],
+          "samples": [
+            "add {item} to the pantry",
+            "put {item} in the pantry",
+            "I have {item}",
+            "we have {item}",
+            "we have {item} now",
+            "{item} is in the pantry",
+            "add {item} to the pantry in {aisle}",
+            "add {item} to the pantry in the {aisle} aisle",
+            "put {item} in the pantry in {aisle}",
+            "add {item} to pantry",
+            "add {item} to my pantry",
+            "put {item} in my pantry"
+          ]
+        },
+        {
+          "name": "AddMealIntent",
+          "slots": [
+            { "name": "recipe", "type": "AMAZON.Food" },
+            { "name": "meal", "type": "MealSlot" },
+            { "name": "date", "type": "AMAZON.DATE" }
+          ],
+          "samples": [
+            "add {recipe} for {meal} on {date}",
+            "add {recipe} for {meal} {date}",
+            "plan {recipe} for {meal} on {date}",
+            "plan {recipe} for {meal} {date}",
+            "add {recipe} on {date}",
+            "add {recipe} {date}",
+            "plan {recipe} on {date}",
+            "plan {recipe} {date}",
+            "make {recipe} {date}",
+            "make {recipe} on {date}",
+            "add {recipe} for {meal}",
+            "plan {recipe} for {meal}",
+            "add {recipe}",
+            "plan {recipe}"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] }
+      ],
+      "types": [
+        {
+          "name": "GroceryQuantity",
+          "values": [
+            { "name": { "value": "1", "synonyms": ["one", "a", "an", "a single"] } },
+            { "name": { "value": "2", "synonyms": ["two", "a couple", "a couple of", "a pair of"] } },
+            { "name": { "value": "3", "synonyms": ["three", "a few"] } },
+            { "name": { "value": "4", "synonyms": ["four"] } },
+            { "name": { "value": "5", "synonyms": ["five"] } },
+            { "name": { "value": "6", "synonyms": ["six", "half a dozen"] } },
+            { "name": { "value": "7", "synonyms": ["seven"] } },
+            { "name": { "value": "8", "synonyms": ["eight"] } },
+            { "name": { "value": "9", "synonyms": ["nine"] } },
+            { "name": { "value": "10", "synonyms": ["ten"] } },
+            { "name": { "value": "11", "synonyms": ["eleven"] } },
+            { "name": { "value": "12", "synonyms": ["twelve", "a dozen", "dozen"] } },
+            { "name": { "value": "13", "synonyms": ["thirteen"] } },
+            { "name": { "value": "14", "synonyms": ["fourteen"] } },
+            { "name": { "value": "15", "synonyms": ["fifteen"] } },
+            { "name": { "value": "16", "synonyms": ["sixteen"] } },
+            { "name": { "value": "17", "synonyms": ["seventeen"] } },
+            { "name": { "value": "18", "synonyms": ["eighteen"] } },
+            { "name": { "value": "19", "synonyms": ["nineteen"] } },
+            { "name": { "value": "20", "synonyms": ["twenty"] } },
+            { "name": { "value": "half", "synonyms": ["a half", "one half", "half a"] } },
+            { "name": { "value": "skip", "synonyms": ["none", "not sure", "no", "nothing", "don't know", "no amount", "no idea", "I don't know"] } }
+          ]
+        },
+        {
+          "name": "GroceryUnit",
+          "values": [
+            { "name": { "value": "pound", "synonyms": ["pounds", "lb", "lbs"] } },
+            { "name": { "value": "ounce", "synonyms": ["ounces", "oz"] } },
+            { "name": { "value": "gallon", "synonyms": ["gallons"] } },
+            { "name": { "value": "quart", "synonyms": ["quarts"] } },
+            { "name": { "value": "pint", "synonyms": ["pints"] } },
+            { "name": { "value": "cup", "synonyms": ["cups"] } },
+            { "name": { "value": "tablespoon", "synonyms": ["tablespoons"] } },
+            { "name": { "value": "teaspoon", "synonyms": ["teaspoons"] } },
+            { "name": { "value": "liter", "synonyms": ["liters", "litre", "litres"] } },
+            { "name": { "value": "bag", "synonyms": ["bags"] } },
+            { "name": { "value": "box", "synonyms": ["boxes"] } },
+            { "name": { "value": "can", "synonyms": ["cans"] } },
+            { "name": { "value": "jar", "synonyms": ["jars"] } },
+            { "name": { "value": "bunch", "synonyms": ["bunches"] } },
+            { "name": { "value": "bottle", "synonyms": ["bottles"] } },
+            { "name": { "value": "package", "synonyms": ["packages", "pack", "packs"] } },
+            { "name": { "value": "loaf", "synonyms": ["loaves"] } },
+            { "name": { "value": "head", "synonyms": ["heads"] } },
+            { "name": { "value": "stick", "synonyms": ["sticks"] } },
+            { "name": { "value": "carton", "synonyms": ["cartons"] } },
+            { "name": { "value": "container", "synonyms": ["containers", "tub", "tubs"] } }
+          ]
+        },
+        {
+          "name": "GroceryAisle",
+          "values": [
+            { "name": { "value": "Produce", "synonyms": ["fruit", "vegetables", "veggies", "fruit and vegetables"] } },
+            { "name": { "value": "Dairy and Eggs", "synonyms": ["dairy", "eggs", "milk"] } },
+            { "name": { "value": "Meat and Seafood", "synonyms": ["meat", "seafood", "butcher", "fish"] } },
+            { "name": { "value": "Frozen", "synonyms": ["freezer", "frozen foods"] } },
+            { "name": { "value": "Bakery", "synonyms": ["bread"] } },
+            { "name": { "value": "Dry Goods and Pasta", "synonyms": ["dry goods", "pasta", "rice", "grains"] } },
+            { "name": { "value": "Canned and Jarred", "synonyms": ["canned", "cans", "canned goods", "jarred"] } },
+            { "name": { "value": "Condiments and Sauces", "synonyms": ["condiments", "sauces", "oils"] } },
+            { "name": { "value": "Spices and Baking", "synonyms": ["spices", "baking", "baking aisle"] } },
+            { "name": { "value": "Beverages", "synonyms": ["drinks", "soda", "juice"] } },
+            { "name": { "value": "Snacks", "synonyms": ["chips", "candy"] } },
+            { "name": { "value": "Household", "synonyms": ["cleaning", "paper goods", "toiletries"] } },
+            { "name": { "value": "skip", "synonyms": ["none", "not sure", "no", "nothing", "don't know", "no idea", "I don't know", "any"] } }
+          ]
+        },
+        {
+          "name": "MealSlot",
+          "values": [
+            { "name": { "value": "Breakfast", "synonyms": ["brunch", "morning"] } },
+            { "name": { "value": "Lunch", "synonyms": ["midday", "noon"] } },
+            { "name": { "value": "Dinner", "synonyms": ["supper", "tonight", "evening", "tea"] } }
+          ]
+        }
+      ]
+    },
+    "dialog": {
+      "delegationStrategy": "ALWAYS",
+      "intents": [
+        {
+          "name": "AddShoppingItemIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.Food",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": { "elicitation": "Elicit.Slot.item" },
+              "samples": ["{item}", "{quantity} {unit} of {item}", "{quantity} {item}"]
+            },
+            {
+              "name": "quantity",
+              "type": "GroceryQuantity",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": { "elicitation": "Elicit.Slot.quantity" },
+              "samples": ["{quantity}", "{quantity} {unit}", "{quantity} {unit} of {item}", "{quantity} of them"]
+            },
+            {
+              "name": "unit",
+              "type": "GroceryUnit",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
+            },
+            {
+              "name": "aisle",
+              "type": "GroceryAisle",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": { "elicitation": "Elicit.Slot.aisle" },
+              "samples": ["{aisle}", "the {aisle} aisle", "in {aisle}", "it's in {aisle}"]
+            }
+          ]
+        },
+        {
+          "name": "AddPantryItemIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.Food",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": { "elicitation": "Elicit.Slot.item" },
+              "samples": ["{item}"]
+            },
+            {
+              "name": "aisle",
+              "type": "GroceryAisle",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": { "elicitation": "Elicit.Slot.aisle" },
+              "samples": ["{aisle}", "the {aisle} aisle", "in {aisle}", "it's in {aisle}"]
+            }
+          ]
+        }
+      ]
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.item",
+        "variations": [
+          { "type": "PlainText", "value": "What should I add?" },
+          { "type": "PlainText", "value": "Which item?" }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.quantity",
+        "variations": [
+          { "type": "PlainText", "value": "How much {item}? You can say skip." },
+          { "type": "PlainText", "value": "How many {item}? Say skip if you're not sure." }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.aisle",
+        "variations": [
+          { "type": "PlainText", "value": "Which aisle is {item} in? You can say skip." },
+          { "type": "PlainText", "value": "What aisle for {item}? Say skip if you're not sure." }
+        ]
+      }
+    ]
+  }
+}

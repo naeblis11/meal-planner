@@ -1,0 +1,20 @@
+# Test-only image for the SD-card first-boot provisioning: a bare Debian
+# Bookworm with a uid-1000 user, as Raspberry Pi OS has after Imager sets
+# one up. The repo is mounted at /repo-origin and cloned from there, so the
+# provisioner exercises the real git path without reaching GitHub.
+FROM debian:bookworm-slim
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+        ca-certificates curl git procps sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1000 -s /bin/bash pi && echo 'pi ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/pi
+COPY . /repo
+RUN git config --global --add safe.directory '*' \
+    && sed -i 's/\r$//' /repo/pi/*.sh /repo/pi/boot/*.sh /repo/pi/boot/*.conf \
+    && chmod +x /repo/pi/*.sh /repo/pi/boot/*.sh \
+    && git init -q /repo-origin && cp -a /repo/. /repo-origin/ \
+    && rm -rf /repo-origin/.venv \
+    && git -C /repo-origin symbolic-ref HEAD refs/heads/master \
+    && git -C /repo-origin add -A \
+    && git -C /repo-origin -c user.email=t@t -c user.name=t commit -qm test \
+    && chown -R pi:pi /repo-origin
+CMD ["bash", "/repo/pi/smoke-provision.sh"]

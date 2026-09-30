@@ -1,0 +1,154 @@
+# Home Assistant configuration for the "chef" Alexa skill.
+#
+# Apply this on the HOME Home Assistant (the one on the same network as
+# the PC running the Meal Planner). Either drop it in as a package
+# (homeassistant: packages: ...) or paste the top-level keys below into
+# configuration.yaml. Then add to secrets.yaml:
+#
+#   meal_planner_auth: "Bearer <token printed by python set_api_token.py>"
+#
+# The three URLs below point at the machine running the app by its mDNS
+# name -- meal-planner.local here; change all three if yours is called something
+# else. Use the .local name, not the bare hostname: Home Assistant OS does
+# not resolve a bare hostname. If the name ever stops resolving, use the
+# machine's LAN address instead and give it a DHCP reservation so the
+# address doesn't change.
+#
+# How it works: the Alexa-hosted skill code (lambda_function.py) posts
+# each finished intent to /api/alexa on this HA, adding the long-lived
+# access token that HA's auth requires on that endpoint. The `alexa:`
+# key below only turns that endpoint on -- it does not hold
+# the intent handlers. Custom-skill intents are dispatched to top-level
+# `intent_script:` entries keyed by intent name; that's where the actual
+# per-intent logic lives. Each custom intent calls one rest_command,
+# which POSTs the slot values to the Meal Planner and gets back
+# {"ok": ..., "speech": "..."}. The speech is handed to Alexa.
+#
+# rest_command does NOT raise on a 4xx/5xx response -- it logs a warning
+# and still returns the body as `content`, so the app's own `speech`
+# sentence (for a wrong or unset token, say) is what Alexa actually
+# speaks. The "I couldn't reach the meal planner." fallback below only
+# covers a real transport failure: the PC is off, the app isn't running,
+# the connection times out, or the call otherwise raises.
+#
+# The `action:` step key used below needs Home Assistant 2024.8 or
+# later; on an older install rename every step's `action:` to `service:`.
+
+alexa: {}
+# Enables the /api/alexa endpoint only; see intent_script: below for the
+# actual per-intent handlers.
+
+intent_script:
+  AddShoppingItemIntent:
+    action:
+      - action: rest_command.chef_shopping_add
+        data:
+          item: "{{ item | default('') }}"
+          quantity: "{{ quantity | default('') }}"
+          unit: "{{ unit | default('') }}"
+          aisle: "{{ aisle | default('') }}"
+        response_variable: http
+        continue_on_error: true
+      - variables:
+          result:
+            speech: >-
+              {{ http.content.speech
+              if http is defined and http.content is defined and http.content.speech is defined
+              else "I couldn't reach the meal planner." }}
+      - stop: "done"
+        response_variable: result
+    speech:
+      type: plain
+      text: "{{ action_response.speech }}"
+
+  AddPantryItemIntent:
+    action:
+      - action: rest_command.chef_pantry_add
+        data:
+          item: "{{ item | default('') }}"
+          aisle: "{{ aisle | default('') }}"
+        response_variable: http
+        continue_on_error: true
+      - variables:
+          result:
+            speech: >-
+              {{ http.content.speech
+              if http is defined and http.content is defined and http.content.speech is defined
+              else "I couldn't reach the meal planner." }}
+      - stop: "done"
+        response_variable: result
+    speech:
+      type: plain
+      text: "{{ action_response.speech }}"
+
+  AddMealIntent:
+    action:
+      - action: rest_command.chef_meal_add
+        data:
+          recipe: "{{ recipe | default('') }}"
+          meal: "{{ meal | default('') }}"
+          date: "{{ date | default('') }}"
+        response_variable: http
+        continue_on_error: true
+      - variables:
+          result:
+            speech: >-
+              {{ http.content.speech
+              if http is defined and http.content is defined and http.content.speech is defined
+              else "I couldn't reach the meal planner." }}
+      - stop: "done"
+        response_variable: result
+    speech:
+      type: plain
+      text: "{{ action_response.speech }}"
+
+  AMAZON.HelpIntent:
+    speech:
+      type: plain
+      text: "I can add an item to the cart, add an item to the pantry, or plan a recipe for a day. Try: add milk to the cart."
+  AMAZON.CancelIntent:
+    speech:
+      type: plain
+      text: "Okay."
+  AMAZON.StopIntent:
+    speech:
+      type: plain
+      text: "Okay."
+  AMAZON.NavigateHomeIntent:
+    speech:
+      type: plain
+      text: "Okay."
+  AMAZON.FallbackIntent:
+    speech:
+      type: plain
+      text: "Sorry, I didn't get that. I can add an item to the cart or the pantry, or plan a recipe for a day."
+
+rest_command:
+  chef_shopping_add:
+    url: "http://meal-planner.local:5000/api/voice/shopping-list"
+    method: POST
+    headers:
+      Authorization: !secret meal_planner_auth
+    content_type: application/json
+    timeout: 5
+    payload: >-
+      {"item": {{ item | string | tojson }}, "quantity": {{ quantity | string | tojson }},
+       "unit": {{ unit | string | tojson }}, "aisle": {{ aisle | string | tojson }}}
+  chef_pantry_add:
+    url: "http://meal-planner.local:5000/api/voice/pantry"
+    method: POST
+    headers:
+      Authorization: !secret meal_planner_auth
+    content_type: application/json
+    timeout: 5
+    payload: >-
+      {"item": {{ item | string | tojson }}, "aisle": {{ aisle | string | tojson }}}
+  chef_meal_add:
+    url: "http://meal-planner.local:5000/api/voice/meal"
+    method: POST
+    headers:
+      Authorization: !secret meal_planner_auth
+    content_type: application/json
+    timeout: 5
+    payload: >-
+      {"recipe": {{ recipe | string | tojson }}, "meal": {{ meal | string | tojson }}, "date": {{ date | string | tojson }}}

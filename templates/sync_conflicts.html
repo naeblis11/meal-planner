@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import breadcrumb %}
+{% block title %}Sync Conflicts - Meal Planner{% endblock %}
+{% block breadcrumb %}{{ breadcrumb([("Recipes", url_for('recipes_list')), ("Sync Conflicts", none)]) }}{% endblock %}
+{% block content %}
+  <div class="recipe-library">
+    <div class="divider-band">
+      <h2>Sync Conflicts</h2>
+    </div>
+    {% if conflicts %}
+      {% for recipe_uuid, files in conflicts.items() %}
+        <div class="conflict-group">
+          <p>These files share the same recipe_uuid ({{ recipe_uuid }}):</p>
+          <ul class="conflict-files">
+            {% for file_name in files %}
+              <li>
+                <strong>{{ file_name }}</strong>
+                <details class="destructive-confirm">
+                  <summary>Delete this file</summary>
+                  <div class="destructive-confirm-body">
+                    <p>Permanently delete <strong>{{ file_name }}</strong>? This can't be undone from the app &mdash; if this folder is tracked in git, the file is still recoverable from history, but the app itself has no undo.</p>
+                    <form method="post" action="{{ url_for('sync_conflicts_delete') }}">
+                      <input type="hidden" name="file_name" value="{{ file_name }}">
+                      <button type="submit">Yes, delete this file</button>
+                    </form>
+                  </div>
+                </details>
+                <form method="post" action="{{ url_for('sync_conflicts_reassign') }}">
+                  <input type="hidden" name="file_name" value="{{ file_name }}">
+                  <button type="submit">Assign new UUID</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="library-empty">No conflicts found.</p>
+    {% endif %}
+  </div>
+{% endblock %}

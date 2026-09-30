@@ -1,0 +1,9 @@
+*.mmf -text
+
+# Files the Pi runs directly must stay LF whatever the Windows checkout does.
+pi/*.sh text eol=lf
+pi/*.service text eol=lf
+pi/Dockerfile.test text eol=lf
+pi/boot/*.sh text eol=lf
+pi/boot/*.conf text eol=lf
+pi/Dockerfile.* text eol=lf

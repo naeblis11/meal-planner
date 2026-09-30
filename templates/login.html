@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Meal Planner{% endblock %}
+{% block content %}
+<section class="login-panel">
+  <h1 class="login-title">Sign in</h1>
+  <p class="login-lede">Enter the household password to open the recipe box.</p>
+  {% if error %}
+    <p class="login-error" role="alert">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('login') }}" class="login-form">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label for="login-password">Password</label>
+    <input id="login-password" type="password" name="password" autocomplete="current-password" autofocus required>
+    <button type="submit" class="btn-primary">Sign in</button>
+  </form>
+</section>
+{% endblock %}

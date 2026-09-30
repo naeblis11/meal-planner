@@ -1,0 +1,25 @@
+# systemd unit for Meal Planner on a Raspberry Pi (or any Linux box).
+# Installed by pi/install.sh into /etc/systemd/system/, with __USER__ and
+# __APP_DIR__ filled in. Starts at boot, restarts if it ever crashes, runs
+# whether or not anyone is logged in.
+[Unit]
+Description=Meal Planner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__APP_DIR__
+ExecStart=__APP_DIR__/.venv/bin/python app.py
+# A household appliance: come back from anything, including a power cut
+# (the Pi powers on by itself when the mains returns).
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+# Waitress logs to stdout; journalctl -u meal-planner shows it.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

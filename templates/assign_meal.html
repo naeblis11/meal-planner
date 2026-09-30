@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import recipe_thumb, breadcrumb %}
+{% block title %}Assign a Recipe - Meal Planner{% endblock %}
+{% block breadcrumb %}{{ breadcrumb([("Meal Plan", url_for('calendar_view')), ("Assign " + slot, none)]) }}{% endblock %}
+{% block content %}
+  <div class="assign-meal">
+    <div class="divider-band">
+      <h2>Assign to {{ slot }}</h2>
+      <span class="divider-meta">{{ date }}</span>
+    </div>
+
+    <form method="get" action="{{ url_for('assign_meal_form') }}" class="library-search">
+      <input type="hidden" name="date" value="{{ date }}">
+      <input type="hidden" name="slot" value="{{ slot }}">
+      <label for="assign-search" class="visually-hidden">Search recipes</label>
+      <input id="assign-search" type="text" name="q" value="{{ query }}" placeholder="Search recipes&hellip;">
+      <button type="submit">Search</button>
+    </form>
+
+    {% if recipes %}
+      <ul class="recipe-rows">
+        {% for recipe in recipes %}
+          <li>
+            <form method="post" action="{{ url_for('assign_meal_submit') }}">
+              <input type="hidden" name="date" value="{{ date }}">
+              <input type="hidden" name="slot" value="{{ slot }}">
+              <input type="hidden" name="recipe_id" value="{{ recipe['id'] }}">
+              <button type="submit">{{ recipe_thumb(recipe['image_filename']) }}{{ recipe['name'] }}</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="library-empty">No recipes match your search.</p>
+    {% endif %}
+  </div>
+{% endblock %}
