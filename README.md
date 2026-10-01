@@ -13,6 +13,7 @@ A self-hosted recipe library, weekly meal calendar, pantry, and pantry-aware sho
 - **Shopping list on your phone, anywhere (optional)** — the list is mirrored into a Home Assistant to-do list, so in the store you tick things off in the HA companion app (over your Home Assistant remote connection) and the ticks show up at home; add or delete items there too. See [ha/SETUP-SHOPPING.md](ha/SETUP-SHOPPING.md).
 - **Voice control (optional)** — an Alexa skill ("Alexa, ask my chef to add milk to the cart / add olive oil to the pantry / plan tacos for dinner on Thursday") bridged through your home's Home Assistant. See [alexa/SETUP.md](alexa/SETUP.md).
 - **Recipe photos** — attach a photo to a recipe (uploaded manually or pulled in automatically by the Chrome extension).
+- **Android app (optional)** — a standalone version for one phone (recipes, calendar, pantry, shopping list) with no server and no internet permission; it can put the week's meals on your Google calendar, and moves libraries to and from this app as a backup zip. See [docs/ANDROID.md](docs/ANDROID.md).
 
 ## Install
 
@@ -75,6 +76,9 @@ The installer fetches what it can. This is the full list of tools the installer,
 | **Git** (optional) | Cloning/updating the project and keeping your recipes under version control | [git-scm.com](https://git-scm.com/) or `winget install Git.Git` |
 | **Node.js 20+ (LTS)** (developers) | Running the extension's JavaScript unit tests only — *not* needed to run the app or use the extension | [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS`; open a new terminal afterwards |
 | **Docker** (developers) | Only the Raspberry Pi provisioning test (`pi/Dockerfile.provision-test`, `pi/test-in-docker.ps1`) | [docker.com](https://www.docker.com/products/docker-desktop/) |
+| **Android Studio** (developers, Android app only) | Building, testing and signing the Android app in `android/` (its `keytool` makes the release keystore). It bundles the JDK the build needs (JDK 17 or newer; the current bundle is JDK 25). On first sync, Android Studio (or the Gradle build) downloads **Android SDK Platform 37**, which the build targets; install it from SDK Manager if prompted. The app itself needs nothing on a PC | [developer.android.com/studio](https://developer.android.com/studio) or `winget install Google.AndroidStudio` |
+| **Android phone, 8.0 or newer** (optional) | Running the Android app | Download the APK from this repository's Releases page; see [docs/ANDROID.md](docs/ANDROID.md) |
+| **GitHub CLI** (maintainers, optional) | Publishing an Android release (`gh release create`) | [cli.github.com](https://cli.github.com/) or `winget install GitHub.cli` |
 
 Check what you have with:
 
@@ -105,6 +109,12 @@ The Chrome extension's JSON-LD extraction logic (requires Node.js — see [Requi
 node --test "chrome-extension/**/*.test.js"
 ```
 
+The Android app's logic tests (requires Android Studio — see [Requirements](#requirements)); the one-liner points `JAVA_HOME` at Android Studio's bundled JDK:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\android\gradlew.bat -p android testDebugUnitTest
+```
+
 ## Project structure
 
 | File/dir | Responsibility |
@@ -132,6 +142,8 @@ node --test "chrome-extension/**/*.test.js"
 | `templates/`, `static/` | Jinja2 templates and CSS/assets |
 | `chrome-extension/` | The companion recipe-import Chrome extension |
 | `tests/` | Unit and route tests |
+| `tests/parity_support.py`, `tests/fixtures/parity/` | Golden cases that both the Python and Android tests check; regenerate with `python -m tests.parity_support` |
+| `android/` | The standalone Android app (Kotlin + Compose); its `domain` package ports the amount, unit, aisle and shopping-list logic, and `calendar/` sends the week to a phone calendar. Building, releasing and using it: [docs/ANDROID.md](docs/ANDROID.md) |
 
 ## License
 

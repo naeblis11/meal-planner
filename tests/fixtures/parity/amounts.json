@@ -1,0 +1,379 @@
+{
+  "parse_amount": [
+    {
+      "text": "2",
+      "expected": "2/1"
+    },
+    {
+      "text": "1/2",
+      "expected": "1/2"
+    },
+    {
+      "text": "1 1/2",
+      "expected": "3/2"
+    },
+    {
+      "text": "1.5",
+      "expected": "3/2"
+    },
+    {
+      "text": ".5",
+      "expected": "1/2"
+    },
+    {
+      "text": "5.",
+      "expected": "5/1"
+    },
+    {
+      "text": "1e2",
+      "expected": "100/1"
+    },
+    {
+      "text": "2E-1",
+      "expected": "1/5"
+    },
+    {
+      "text": "-1/2",
+      "expected": "-1/2"
+    },
+    {
+      "text": "+3",
+      "expected": "3/1"
+    },
+    {
+      "text": "1_000",
+      "expected": "1000/1"
+    },
+    {
+      "text": " 3 ",
+      "expected": "3/1"
+    },
+    {
+      "text": "",
+      "expected": null
+    },
+    {
+      "text": "abc",
+      "expected": null
+    },
+    {
+      "text": "1 2",
+      "expected": null
+    },
+    {
+      "text": "1/0",
+      "expected": null
+    },
+    {
+      "text": "1 1/0",
+      "expected": null
+    },
+    {
+      "text": "3/4 cup",
+      "expected": null
+    },
+    {
+      "text": "1 -1/2",
+      "expected": "1/2"
+    },
+    {
+      "text": null,
+      "expected": null
+    },
+    {
+      "text": "½",
+      "expected": null
+    },
+    {
+      "text": "0.125",
+      "expected": "1/8"
+    },
+    {
+      "text": "10/4",
+      "expected": "5/2"
+    },
+    {
+      "text": "1 1/2",
+      "expected": "3/2"
+    }
+  ],
+  "format_amount": [
+    {
+      "value": "0/1",
+      "expected": "0"
+    },
+    {
+      "value": "1/1",
+      "expected": "1"
+    },
+    {
+      "value": "3/2",
+      "expected": "1 1/2"
+    },
+    {
+      "value": "7/4",
+      "expected": "1 3/4"
+    },
+    {
+      "value": "-1/2",
+      "expected": "-1 1/2"
+    },
+    {
+      "value": "-3/2",
+      "expected": "-2 1/2"
+    },
+    {
+      "value": "1/3",
+      "expected": "1/3"
+    },
+    {
+      "value": "100/7",
+      "expected": "14 2/7"
+    },
+    {
+      "value": "6/4",
+      "expected": "1 1/2"
+    }
+  ],
+  "normalize_unit": [
+    {
+      "text": "Cups",
+      "expected": "cup"
+    },
+    {
+      "text": " TBSP ",
+      "expected": "tbsp"
+    },
+    {
+      "text": "fl oz",
+      "expected": "fl oz"
+    },
+    {
+      "text": "Fluid Ounces",
+      "expected": "fl oz"
+    },
+    {
+      "text": "c",
+      "expected": "cup"
+    },
+    {
+      "text": "l",
+      "expected": "l"
+    },
+    {
+      "text": "",
+      "expected": ""
+    },
+    {
+      "text": null,
+      "expected": ""
+    },
+    {
+      "text": "handful",
+      "expected": "handful"
+    },
+    {
+      "text": "Pkg",
+      "expected": "package"
+    }
+  ],
+  "is_known_unit_word": [
+    {
+      "text": "Cups",
+      "expected": true
+    },
+    {
+      "text": "fl oz",
+      "expected": true
+    },
+    {
+      "text": "flour",
+      "expected": false
+    },
+    {
+      "text": "",
+      "expected": false
+    },
+    {
+      "text": " lb ",
+      "expected": true
+    }
+  ],
+  "to_imperial": [
+    {
+      "amount": "250",
+      "unit": "ml",
+      "expected": [
+        "1 1/24",
+        "cup"
+      ]
+    },
+    {
+      "amount": "500",
+      "unit": "ml",
+      "expected": [
+        "1 1/24",
+        "pt"
+      ]
+    },
+    {
+      "amount": "1",
+      "unit": "l",
+      "expected": [
+        "1 1/24",
+        "qt"
+      ]
+    },
+    {
+      "amount": "100",
+      "unit": "g",
+      "expected": [
+        "3 4/7",
+        "oz"
+      ]
+    },
+    {
+      "amount": "1",
+      "unit": "kg",
+      "expected": [
+        "2 13/56",
+        "lb"
+      ]
+    },
+    {
+      "amount": "2",
+      "unit": "cups",
+      "expected": [
+        "2",
+        "cups"
+      ]
+    },
+    {
+      "amount": "3",
+      "unit": "cloves",
+      "expected": [
+        "3",
+        "cloves"
+      ]
+    },
+    {
+      "amount": "some",
+      "unit": "ml",
+      "expected": [
+        "some",
+        "ml"
+      ]
+    },
+    {
+      "amount": null,
+      "unit": "g",
+      "expected": [
+        null,
+        "g"
+      ]
+    },
+    {
+      "amount": "1 1/2",
+      "unit": "Litres",
+      "expected": [
+        "1 9/16",
+        "qt"
+      ]
+    },
+    {
+      "amount": "5",
+      "unit": "ML",
+      "expected": [
+        "1",
+        "tsp"
+      ]
+    },
+    {
+      "amount": "2",
+      "unit": null,
+      "expected": [
+        "2",
+        null
+      ]
+    }
+  ],
+  "servings_ratio": [
+    {
+      "planned": "6",
+      "base": "4",
+      "expected": "3/2"
+    },
+    {
+      "planned": "2",
+      "base": "4",
+      "expected": "1/2"
+    },
+    {
+      "planned": null,
+      "base": "4",
+      "expected": "1/1"
+    },
+    {
+      "planned": "6",
+      "base": null,
+      "expected": "1/1"
+    },
+    {
+      "planned": "0",
+      "base": "4",
+      "expected": "1/1"
+    },
+    {
+      "planned": "6",
+      "base": "0",
+      "expected": "1/1"
+    },
+    {
+      "planned": "abc",
+      "base": "4",
+      "expected": "1/1"
+    },
+    {
+      "planned": "1 1/2",
+      "base": "3",
+      "expected": "1/2"
+    },
+    {
+      "planned": "-2",
+      "base": "4",
+      "expected": "1/1"
+    }
+  ],
+  "scale_amount_text": [
+    {
+      "amount": "1 1/2",
+      "ratio": "2/1",
+      "expected": "3"
+    },
+    {
+      "amount": "2",
+      "ratio": "1/3",
+      "expected": "2/3"
+    },
+    {
+      "amount": "to taste",
+      "ratio": "2/1",
+      "expected": "to taste"
+    },
+    {
+      "amount": null,
+      "ratio": "2/1",
+      "expected": null
+    },
+    {
+      "amount": "3",
+      "ratio": "3/2",
+      "expected": "4 1/2"
+    },
+    {
+      "amount": "1/4",
+      "ratio": "1/1",
+      "expected": "1/4"
+    }
+  ]
+}

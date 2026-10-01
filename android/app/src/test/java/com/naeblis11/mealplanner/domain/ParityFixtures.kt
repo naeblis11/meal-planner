@@ -1,0 +1,34 @@
+package com.naeblis11.mealplanner.domain
+
+import java.io.File
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+/**
+ * The golden cases in tests/fixtures/parity, written by the Python app
+ * (`python -m tests.parity_support`). Gradle passes their folder in as the
+ * `parityDir` system property.
+ */
+object ParityFixtures {
+    private val dir: File by lazy {
+        File(
+            System.getProperty("parityDir")
+                ?: error("parityDir is not set; run the tests through Gradle"),
+        )
+    }
+
+    fun load(name: String): JsonElement =
+        Json.parseToJsonElement(File(dir, name).readText(Charsets.UTF_8))
+
+    /** Another fixture file, relative to the parity folder (e.g. "../mealmaster/collection.mmf"). */
+    fun sibling(relative: String): File = File(dir, relative)
+}
+
+/** A JSON string/number/bool as text, or null for JSON null. */
+fun JsonElement.str(): String? = if (this is JsonNull) null else jsonPrimitive.content
+
+val JsonElement.obj: JsonObject get() = jsonObject

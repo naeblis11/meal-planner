@@ -1,0 +1,433 @@
+[
+  {
+    "name": "fresh list, pantry bucket",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Flour",
+            "2",
+            "cups"
+          ],
+          [
+            "Salt",
+            "to taste",
+            null
+          ],
+          [
+            "Eggs",
+            "2",
+            null
+          ]
+        ]
+      }
+    ],
+    "pantry": [
+      [
+        "salt",
+        false,
+        true
+      ]
+    ],
+    "known_aisles": {},
+    "existing": [],
+    "expected": [
+      {
+        "name": "Flour",
+        "amount": "2",
+        "unit": "cups",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      },
+      {
+        "name": "Salt",
+        "amount": "to taste",
+        "unit": null,
+        "aisle": "Spices & Baking",
+        "in_pantry": 1,
+        "checked": 0
+      },
+      {
+        "name": "Eggs",
+        "amount": "2",
+        "unit": null,
+        "aisle": "Dairy & Eggs",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "servings scale each night separately",
+    "meals": [
+      {
+        "servings": "8",
+        "yield": "4",
+        "ingredients": [
+          [
+            "Butter",
+            "1/2",
+            "cup"
+          ]
+        ]
+      },
+      {
+        "servings": null,
+        "yield": "4",
+        "ingredients": [
+          [
+            "Butter",
+            "1/2",
+            "cup"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [],
+    "expected": [
+      {
+        "name": "Butter",
+        "amount": "1 1/2",
+        "unit": "cups",
+        "aisle": "Dairy & Eggs",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "merging into a checked row unchecks it and keeps its aisle",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Milk",
+            "1",
+            "cup"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [
+      {
+        "name": "Milk",
+        "amount": "1",
+        "unit": "cup",
+        "aisle": "Dairy & Eggs",
+        "checked": 1
+      }
+    ],
+    "expected": [
+      {
+        "name": "Milk",
+        "amount": "2",
+        "unit": "cups",
+        "aisle": "Dairy & Eggs",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "incompatible units get their own row",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Sugar",
+            "1",
+            "cup"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [
+      {
+        "name": "Sugar",
+        "amount": "1",
+        "unit": "lb",
+        "aisle": null,
+        "checked": 0
+      }
+    ],
+    "expected": [
+      {
+        "name": "Sugar",
+        "amount": "1",
+        "unit": "lb",
+        "aisle": null,
+        "in_pantry": 0,
+        "checked": 0
+      },
+      {
+        "name": "Sugar",
+        "amount": "1",
+        "unit": "cup",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "amountless hand-added row takes the amount",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "olive oil",
+            "2",
+            "tbsp"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [
+      {
+        "name": "Olive oil",
+        "amount": null,
+        "unit": null,
+        "aisle": null,
+        "checked": 0
+      }
+    ],
+    "expected": [
+      {
+        "name": "Olive oil",
+        "amount": "2",
+        "unit": "tbsp",
+        "aisle": "Condiments & Sauces",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "amountless row never loses an amount to a second incompatible line",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "flour",
+            "2",
+            "cups"
+          ],
+          [
+            "flour",
+            "1",
+            "lb"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [
+      {
+        "name": "Flour",
+        "amount": null,
+        "unit": null,
+        "aisle": null,
+        "checked": 0
+      }
+    ],
+    "expected": [
+      {
+        "name": "Flour",
+        "amount": "2",
+        "unit": "cups",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      },
+      {
+        "name": "flour",
+        "amount": "1",
+        "unit": "lb",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "remembered aisle wins over the guess",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Flour",
+            "1",
+            "cup"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {
+      "flour": "Baking Aisle"
+    },
+    "existing": [],
+    "expected": [
+      {
+        "name": "Flour",
+        "amount": "1",
+        "unit": "cup",
+        "aisle": "Baking Aisle",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "exact pantry match",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Kosher salt",
+            "1",
+            "tsp"
+          ],
+          [
+            "salt",
+            "1",
+            "tsp"
+          ]
+        ]
+      }
+    ],
+    "pantry": [
+      [
+        "Salt",
+        true,
+        true
+      ]
+    ],
+    "known_aisles": {},
+    "existing": [],
+    "expected": [
+      {
+        "name": "Kosher salt",
+        "amount": "1",
+        "unit": "tsp",
+        "aisle": "Spices & Baking",
+        "in_pantry": 0,
+        "checked": 0
+      },
+      {
+        "name": "salt",
+        "amount": "1",
+        "unit": "tsp",
+        "aisle": "Spices & Baking",
+        "in_pantry": 1,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "a crossed-out pantry item still needs buying",
+    "meals": [
+      {
+        "servings": null,
+        "yield": null,
+        "ingredients": [
+          [
+            "Flour",
+            "2",
+            "cups"
+          ],
+          [
+            "Salt",
+            "1",
+            "tsp"
+          ]
+        ]
+      }
+    ],
+    "pantry": [
+      [
+        "flour",
+        false,
+        false
+      ],
+      [
+        "salt",
+        false,
+        true
+      ]
+    ],
+    "known_aisles": {},
+    "existing": [],
+    "expected": [
+      {
+        "name": "Flour",
+        "amount": "2",
+        "unit": "cups",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      },
+      {
+        "name": "Salt",
+        "amount": "1",
+        "unit": "tsp",
+        "aisle": "Spices & Baking",
+        "in_pantry": 1,
+        "checked": 0
+      }
+    ]
+  },
+  {
+    "name": "servings with no recorded yield never scale",
+    "meals": [
+      {
+        "servings": "10",
+        "yield": null,
+        "ingredients": [
+          [
+            "Rice",
+            "1",
+            "cup"
+          ]
+        ]
+      }
+    ],
+    "pantry": [],
+    "known_aisles": {},
+    "existing": [],
+    "expected": [
+      {
+        "name": "Rice",
+        "amount": "1",
+        "unit": "cup",
+        "aisle": "Dry Goods & Pasta",
+        "in_pantry": 0,
+        "checked": 0
+      }
+    ]
+  }
+]

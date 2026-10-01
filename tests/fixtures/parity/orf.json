@@ -1,0 +1,1105 @@
+[
+  {
+    "name": "banana-bread.yaml",
+    "yaml": "recipe_uuid: None\nrecipe_name: Banana Bread\nsource_authors: Joseph Hall <perlhoser@gmail.com>\nsource_url: None\nsource_book: None\noven_temp:\n  - amount: 350\n    unit: F\noven_fan: Off\noven_time: 50 - 60 minutes\nyields:\n  - amount: 3\n    unit: loaves\ningredients:\n  - All Purpose Flour:\n      usda_num: 20581\n      amounts:\n        - amount: 3 1/2\n          unit: cups\n      substitutions:\n        - Oat Flour:\n            usda_num: '08122'\n            amounts:\n              - amount: 3 1/2\n                unit: cups\n            notes:\n              - Make oat flour by processing instant oats in food processor.\n  - Baking Soda:\n      usda_num: 18372\n      amounts:\n        - amount: 2\n          unit: tsp\n  - Baking Powder:\n      usda_num: 18369\n      amounts:\n        - amount: 2\n          unit: tsp\n  - Salt:\n      usda_num: '02047'\n      amounts:\n        - amount: 1\n          unit: tsp\n  - Cinnamon, Ground:\n      usda_num: '02010'\n      amounts:\n        - amount: 2\n          unit: tsp\n  - Cloves, Ground:\n      usda_num: '02011'\n      amounts:\n        - amount: 1\n          unit: tsp\n  - Nutmeg, Ground:\n      usda_num: '02025'\n      amounts:\n        - amount: 1\n          unit: tsp\n  - Bananas:\n      usda_num: '09040'\n      amounts:\n        - amount: 6\n          unit: each\n  - Butter, Unsalted:\n      usda_num: '01145'\n      amounts:\n        - amount: 1\n          unit: cup\n      notes:\n        - Melted\n  - Granulated Sugar:\n      usda_num: 19335\n      amounts:\n        - amount: 1 1/2\n          unit: cups\n  - Eggs, Large:\n      usda_num: '01123'\n      amounts:\n        - amount: 4\n          unit: cups\n  - Vanilla Extract:\n      usda_num: '02050'\n      amounts:\n        - amount: 2\n          unit: tsp\n  - Chocolate Chips, Bittersweet:\n      usda_num: 19080\n      amounts:\n        - amount: 2\n          unit: cups\n      notes:\n        - Optional\nsteps:\n  - step:\n      Preheat oven to 350F.\n  - step:\n      Whisk together the flour, baking soda, baking powder, salt, cinnamon, cloves and nutmeg.\n  - step:\n      Roughly mash the bananas with a potato masher.\n  - step:\n      Mix the bananas, melted butter, sugar, eggs and vanilla extract.\n  - step:\n      Combine the wet ingredients with the dry ingredients.\n  - step:\n      Mix with a rubber spatula, until just combined. Be careful not to overmix.\n  - step:\n      Gently fold in the chocolate chips.\n  - step:\n      Pour into prepared bread pans.\n  - step:\n      Bake at 350F until a toothpick inserted in the center comes out clean.\nnotes:\n  - This recipe is designed for high altitude (~4500 ft) baking.\n  - Other than the chocolate chips, this recipe may serve as a reference recipe for banana bread. Other ingredients may be used in addition to or instead of the chocolate chips, or they may be ommitted entirely.\n  - Yields three 3 x 4 x 9 loaves.\n",
+    "expected": {
+      "name": "Banana Bread",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": [
+        "Joseph Hall <perlhoser@gmail.com>"
+      ],
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": [
+        {
+          "amount": 350,
+          "unit": "F"
+        }
+      ],
+      "oven_fan": "Off",
+      "oven_time": "50 - 60 minutes",
+      "yields": [
+        {
+          "amount": 3,
+          "unit": "loaves"
+        }
+      ],
+      "notes": [
+        "This recipe is designed for high altitude (~4500 ft) baking.",
+        "Other than the chocolate chips, this recipe may serve as a reference recipe for banana bread. Other ingredients may be used in addition to or instead of the chocolate chips, or they may be ommitted entirely.",
+        "Yields three 3 x 4 x 9 loaves."
+      ],
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "All Purpose Flour",
+          "usda_num": "20581",
+          "amounts": [
+            {
+              "amount": "3 1/2",
+              "unit": "cups"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": [
+            {
+              "name": "Oat Flour",
+              "usda_num": "08122",
+              "amounts": [
+                {
+                  "amount": "3 1/2",
+                  "unit": "cups"
+                }
+              ],
+              "processing": null,
+              "notes": [
+                "Make oat flour by processing instant oats in food processor."
+              ],
+              "section": null,
+              "substitutions": null
+            }
+          ]
+        },
+        {
+          "name": "Baking Soda",
+          "usda_num": "18372",
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Baking Powder",
+          "usda_num": "18369",
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Salt",
+          "usda_num": "02047",
+          "amounts": [
+            {
+              "amount": 1,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Cinnamon, Ground",
+          "usda_num": "02010",
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Cloves, Ground",
+          "usda_num": "02011",
+          "amounts": [
+            {
+              "amount": 1,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Nutmeg, Ground",
+          "usda_num": "02025",
+          "amounts": [
+            {
+              "amount": 1,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Bananas",
+          "usda_num": "09040",
+          "amounts": [
+            {
+              "amount": 6,
+              "unit": "each"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Butter, Unsalted",
+          "usda_num": "01145",
+          "amounts": [
+            {
+              "amount": 1,
+              "unit": "cup"
+            }
+          ],
+          "processing": null,
+          "notes": [
+            "Melted"
+          ],
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Granulated Sugar",
+          "usda_num": "19335",
+          "amounts": [
+            {
+              "amount": "1 1/2",
+              "unit": "cups"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Eggs, Large",
+          "usda_num": "01123",
+          "amounts": [
+            {
+              "amount": 4,
+              "unit": "cups"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Vanilla Extract",
+          "usda_num": "02050",
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "tsp"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Chocolate Chips, Bittersweet",
+          "usda_num": "19080",
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "cups"
+            }
+          ],
+          "processing": null,
+          "notes": [
+            "Optional"
+          ],
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Preheat oven to 350F.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Whisk together the flour, baking soda, baking powder, salt, cinnamon, cloves and nutmeg.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Roughly mash the bananas with a potato masher.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Mix the bananas, melted butter, sugar, eggs and vanilla extract.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Combine the wet ingredients with the dry ingredients.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Mix with a rubber spatula, until just combined. Be careful not to overmix.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Gently fold in the chocolate chips.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Pour into prepared bread pans.",
+          "notes": null,
+          "haccp": null
+        },
+        {
+          "step_text": "Bake at 350F until a toothpick inserted in the center comes out clean.",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "invalid-missing-name.yaml",
+    "yaml": "steps:\n  - step: Do a thing\ningredients:\n  - Salt:\n      usda_num: '02047'\n      amounts:\n        - amount: 1\n          unit: tsp\n",
+    "error": "Missing required field(s): recipe_name"
+  },
+  {
+    "name": "metric-ingredients.yaml",
+    "yaml": "recipe_uuid: None\nrecipe_name: Metric Test Recipe\ningredients:\n  - Milk:\n      amounts:\n        - amount: 480\n          unit: ml\n  - Butter:\n      amounts:\n        - amount: 56\n          unit: g\n      substitutions:\n        - Margarine:\n            amounts:\n              - amount: 112\n                unit: g\n  - Flour:\n      amounts:\n        - amount: 2\n          unit: cups\nsteps:\n  - step: Mix everything together.\n",
+    "expected": {
+      "name": "Metric Test Recipe",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Milk",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": "1",
+              "unit": "pt"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Butter",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": "2",
+              "unit": "oz"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": [
+            {
+              "name": "Margarine",
+              "usda_num": null,
+              "amounts": [
+                {
+                  "amount": "4",
+                  "unit": "oz"
+                }
+              ],
+              "processing": null,
+              "notes": null,
+              "section": null,
+              "substitutions": null
+            }
+          ]
+        },
+        {
+          "name": "Flour",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "cups"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Mix everything together.",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "orf-sample-1.yaml",
+    "yaml": "recipe_uuid: blah-001\nrecipe_name: My Recipe\nauthor: Me\nsource_url: http://localhost/\nsource_book: none\noven_temp: none\noven_fan: none\noven_time: none\nyields:\n  - servings:\n      4\n  - servings:\n      10\ningredients:\n  - apple:\n      usda_num: '09003'\n      amounts:\n        - amount: 4\n          unit: each\n        - amount: 10\n          unit: each\n      processing:\n        - whole\n        - raw\n      substitutions:\n        - pears:\n            usda_num: '09252'\n            amounts:\n              - amount: 4\n                unit: each\n              - amount: 10\n                unit: each\n      notes:\n        - Use whole apples\n        - Pears may be substituted, but produce a different flavor and mouthfeel\n  - banana:\n      usda_num: '09040'\n      amounts:\n        - amount: 4\n          unit: each\n        - amount: 10\n          unit: each\nsteps:\n  - step: Hand out the apples\n    haccp:\n      control_point: The apples must be clean\n    notes:\n      - Some people like green\n      - Some people like red\n  - step: Hand out the bananas\n    haccp:\n      control_point: The bananas must be clean\n    notes:\n      - Some people like green\n      - Most people don't like black\n  - step: Enjoy\nnotes:\n  - This is a note\n  - This is another note\nnutrition:\n  apple:\n    - unit: g\n      amount: 100\n      proximates:\n        water: 85.56\n        energy: 52\n        protein: 0.26\n        lipid_total: 0.17\n        carbohydrate: 13.81\n        fiber_total: 2.4\n        sugars_total: 10.39\n      minerals:\n        calcium: 6\n        iron: 0.12\n        magnesium: 5\n        phosphorus: 11\n        potassium: 107\n        sodium: 1\n        zinc: 0.04\n      vitamins:\n        vitamin_c: 4.6\n        thiamin: 0.017\n        riboflavin: 0.026\n        niacin: 0.091\n        vitamin_b6: 0.041\n        folate_total: 3\n        vitamin_b12: 0\n        vitamin_a_rae: 3\n        vitamin_a_iu: 54\n        vitamin_e_alpha_tocopherol: 0.18\n        vitamin_d2_d3: 0\n        vitamin_d: 0\n        vitamin_k: 2.2\n      lipids:\n        total_saturated: 0.028\n        total_monounsaturated: 0.007\n        total_polyunsaturated: 0.051\n        cholesterol: 0\n      other:\n        caffeine: 0\n",
+    "expected": {
+      "name": "My Recipe",
+      "recipe_uuid": "blah-001",
+      "author": "Me",
+      "source_authors": null,
+      "source_url": "http://localhost/",
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": [
+        {
+          "amount": 4,
+          "unit": "servings"
+        },
+        {
+          "amount": 10,
+          "unit": "servings"
+        }
+      ],
+      "notes": [
+        "This is a note",
+        "This is another note"
+      ],
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "apple",
+          "usda_num": "09003",
+          "amounts": [
+            {
+              "amount": 4,
+              "unit": "each"
+            },
+            {
+              "amount": 10,
+              "unit": "each"
+            }
+          ],
+          "processing": [
+            "whole",
+            "raw"
+          ],
+          "notes": [
+            "Use whole apples",
+            "Pears may be substituted, but produce a different flavor and mouthfeel"
+          ],
+          "section": null,
+          "substitutions": [
+            {
+              "name": "pears",
+              "usda_num": "09252",
+              "amounts": [
+                {
+                  "amount": 4,
+                  "unit": "each"
+                },
+                {
+                  "amount": 10,
+                  "unit": "each"
+                }
+              ],
+              "processing": null,
+              "notes": null,
+              "section": null,
+              "substitutions": null
+            }
+          ]
+        },
+        {
+          "name": "banana",
+          "usda_num": "09040",
+          "amounts": [
+            {
+              "amount": 4,
+              "unit": "each"
+            },
+            {
+              "amount": 10,
+              "unit": "each"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Hand out the apples",
+          "notes": [
+            "Some people like green",
+            "Some people like red"
+          ],
+          "haccp": {
+            "control_point": "The apples must be clean"
+          }
+        },
+        {
+          "step_text": "Hand out the bananas",
+          "notes": [
+            "Some people like green",
+            "Most people don't like black"
+          ],
+          "haccp": {
+            "control_point": "The bananas must be clean"
+          }
+        },
+        {
+          "step_text": "Enjoy",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "minimal",
+    "yaml": "recipe_name: Toast\ningredients:\n- Bread:\n    amounts:\n    - amount: 2\n      unit: slice\nsteps:\n- step: Toast it.\n",
+    "expected": {
+      "name": "Toast",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Bread",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": 2,
+              "unit": "slice"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Toast it.",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "loose fields",
+    "yaml": "recipe_uuid: None\nrecipe_name: Soup\noven_fan: true\nrating: '4'\nsource_authors: Jane\nyields:\n- servings: 4\nnotes: just a string\ncategory: None\nsubcategory: ''\ningredients:\n- Stock:\n    usda_num: 1234\n    amounts:\n    - amount: 250\n      unit: ml\n    substitutions:\n    - Water:\n        amounts:\n        - amount: 1\n          unit: l\n- Salt:\n    amounts:\n    - amount: to taste\n      unit: ''\nsteps:\n- step: Simmer.\n  notes:\n  - gently\n",
+    "expected": {
+      "name": "Soup",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": [
+        "Jane"
+      ],
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": "On",
+      "oven_time": null,
+      "yields": [
+        {
+          "amount": 4,
+          "unit": "servings"
+        }
+      ],
+      "notes": "just a string",
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": 4,
+      "ingredients": [
+        {
+          "name": "Stock",
+          "usda_num": "1234",
+          "amounts": [
+            {
+              "amount": "1 1/24",
+              "unit": "cup"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": [
+            {
+              "name": "Water",
+              "usda_num": null,
+              "amounts": [
+                {
+                  "amount": "1 1/24",
+                  "unit": "qt"
+                }
+              ],
+              "processing": null,
+              "notes": null,
+              "section": null,
+              "substitutions": null
+            }
+          ]
+        },
+        {
+          "name": "Salt",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": "to taste",
+              "unit": ""
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Simmer.",
+          "notes": [
+            "gently"
+          ],
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "sexagesimal time and fan off",
+    "yaml": "recipe_name: Roast\noven_time: 1:30\noven_fan: off\noven_temp:\n- amount: 350\n  unit: F\ningredients:\n- Beef:\n    amounts:\n    - amount: 3\n      unit: lb\nsteps:\n- step: Roast.\n",
+    "expected": {
+      "name": "Roast",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": [
+        {
+          "amount": 350,
+          "unit": "F"
+        }
+      ],
+      "oven_fan": "Off",
+      "oven_time": 90,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Beef",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": 3,
+              "unit": "lb"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Roast.",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "rating true",
+    "yaml": "recipe_name: A\nrating: true\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "rating out of range",
+    "yaml": "recipe_name: A\nrating: 9\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "rating float text",
+    "yaml": "recipe_name: A\nrating: '3.0'\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "yield amount/unit shape",
+    "yaml": "recipe_name: Bread\nyields:\n- amount: 2 1/2\n  unit: loaves\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "Bread",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": [
+        {
+          "amount": "2 1/2",
+          "unit": "loaves"
+        }
+      ],
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "missing steps",
+    "yaml": "recipe_name: A\ningredients: []\n",
+    "error": "Missing required field(s): steps"
+  },
+  {
+    "name": "empty document",
+    "yaml": "",
+    "error": "Missing required field(s): recipe_name, steps, ingredients"
+  },
+  {
+    "name": "list document",
+    "yaml": "- a\n- b\n",
+    "error": "*"
+  },
+  {
+    "name": "step without step key",
+    "yaml": "recipe_name: A\ningredients: []\nsteps:\n- text: nope\n",
+    "error": "*"
+  },
+  {
+    "name": "ingredient with two keys",
+    "yaml": "recipe_name: A\ningredients:\n- Salt: {}\n  Pepper: {}\nsteps: []\n",
+    "error": "*"
+  },
+  {
+    "name": "null and empty bodies",
+    "yaml": "recipe_name: A\ningredients:\n- Salt:\n- Pepper: ''\nsteps:\n- step: Season.\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Salt",
+          "usda_num": null,
+          "amounts": [],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Pepper",
+          "usda_num": null,
+          "amounts": [],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "Season.",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "amounts key present but null",
+    "yaml": "recipe_name: A\ningredients:\n- Salt:\n    amounts:\nsteps: []\n",
+    "error": "*"
+  },
+  {
+    "name": "ingredients as empty map",
+    "yaml": "recipe_name: A\ningredients: {}\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "yaml syntax error",
+    "yaml": "recipe_name: [\n",
+    "error": "*"
+  },
+  {
+    "name": "yields empty map",
+    "yaml": "recipe_name: A\nyields: {}\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": [],
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "yields as text",
+    "yaml": "recipe_name: A\nyields: 4 servings\ningredients: []\nsteps: []\n",
+    "error": "*"
+  },
+  {
+    "name": "source authors map",
+    "yaml": "recipe_name: A\nsource_authors: {Ann: 1, Bob: 2}\ningredients: []\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": [
+        "Ann",
+        "Bob"
+      ],
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [],
+      "steps": []
+    }
+  },
+  {
+    "name": "metric converted",
+    "yaml": "recipe_name: A\ningredients:\n- Flour:\n    amounts:\n    - amount: 500\n      unit: g\n      extra: kept\n- Milk:\n    amounts:\n    - unit: ml\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Flour",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": "1 13/112",
+              "unit": "lb",
+              "extra": "kept"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        },
+        {
+          "name": "Milk",
+          "usda_num": null,
+          "amounts": [
+            {
+              "unit": "ml",
+              "amount": ""
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": []
+    }
+  },
+  {
+    "name": "tricky strings",
+    "yaml": "recipe_name: '='\nnotes: ['yes', '1e3', '0o17', '017', '1:30', '~', 'null', 'None', '=', '@x', '#x', '- x', 'a: b', \"'q'\", '\"d\"', '']\ningredients:\n- '=':\n    amounts:\n    - amount: '='\n      unit: 'on'\nsteps:\n- step: '='\n",
+    "expected": {
+      "name": "=",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": [
+        "yes",
+        "1e3",
+        "0o17",
+        "017",
+        "1:30",
+        "~",
+        "null",
+        "None",
+        "=",
+        "@x",
+        "#x",
+        "- x",
+        "a: b",
+        "'q'",
+        "\"d\"",
+        ""
+      ],
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "=",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": "=",
+              "unit": "on"
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": [
+        {
+          "step_text": "=",
+          "notes": null,
+          "haccp": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "int amount and null unit",
+    "yaml": "recipe_name: A\ningredients:\n- Eggs:\n    amounts:\n    - amount: 5\n      unit:\nsteps: []\n",
+    "expected": {
+      "name": "A",
+      "recipe_uuid": null,
+      "author": null,
+      "source_authors": null,
+      "source_url": null,
+      "source_book": null,
+      "oven_temp": null,
+      "oven_fan": null,
+      "oven_time": null,
+      "yields": null,
+      "notes": null,
+      "category": null,
+      "subcategory": null,
+      "image": null,
+      "rating": null,
+      "ingredients": [
+        {
+          "name": "Eggs",
+          "usda_num": null,
+          "amounts": [
+            {
+              "amount": 5,
+              "unit": null
+            }
+          ],
+          "processing": null,
+          "notes": null,
+          "section": null,
+          "substitutions": null
+        }
+      ],
+      "steps": []
+    }
+  },
+  {
+    "name": "list ingredient body",
+    "yaml": "recipe_name: A\ningredients:\n- Salt: [1, 2]\nsteps: []\n",
+    "error": "*"
+  },
+  {
+    "name": "int source authors",
+    "yaml": "recipe_name: A\nsource_authors: 7\ningredients: []\nsteps: []\n",
+    "error": "*"
+  },
+  {
+    "name": "string steps",
+    "yaml": "recipe_name: A\ningredients: []\nsteps: \"Stir.\"\n",
+    "error": "*"
+  }
+]

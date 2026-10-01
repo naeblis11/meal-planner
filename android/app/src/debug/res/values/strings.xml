@@ -1,0 +1,4 @@
+<resources>
+    <!-- Debug builds install beside the released app (applicationIdSuffix ".debug"); this tells them apart. -->
+    <string name="app_name">Meal Planner debug</string>
+</resources>

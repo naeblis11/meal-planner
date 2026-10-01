@@ -1,0 +1,38 @@
+[
+  {
+    "pantry": "salt",
+    "exact": false,
+    "ingredient": "Kosher salt",
+    "expected": true
+  },
+  {
+    "pantry": "salt",
+    "exact": true,
+    "ingredient": "Kosher salt",
+    "expected": false
+  },
+  {
+    "pantry": "Salt",
+    "exact": true,
+    "ingredient": "salt",
+    "expected": true
+  },
+  {
+    "pantry": "oil",
+    "exact": false,
+    "ingredient": "Olive Oil",
+    "expected": true
+  },
+  {
+    "pantry": "butter",
+    "exact": false,
+    "ingredient": "peanut butter",
+    "expected": true
+  },
+  {
+    "pantry": "eggs",
+    "exact": false,
+    "ingredient": "egg",
+    "expected": false
+  }
+]

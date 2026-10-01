@@ -1,0 +1,194 @@
+[
+  {
+    "text": "a: 1:30",
+    "value": {
+      "a": 90
+    }
+  },
+  {
+    "text": "a: 1:30.5",
+    "value": {
+      "a": 90.5
+    }
+  },
+  {
+    "text": "a: yes",
+    "value": {
+      "a": true
+    }
+  },
+  {
+    "text": "a: On",
+    "value": {
+      "a": true
+    }
+  },
+  {
+    "text": "a: 'yes'",
+    "value": {
+      "a": "yes"
+    }
+  },
+  {
+    "text": "a: y",
+    "value": {
+      "a": "y"
+    }
+  },
+  {
+    "text": "a: 017",
+    "value": {
+      "a": 15
+    }
+  },
+  {
+    "text": "a: 0o17",
+    "value": {
+      "a": "0o17"
+    }
+  },
+  {
+    "text": "a: 0x1F",
+    "value": {
+      "a": 31
+    }
+  },
+  {
+    "text": "a: 0b101",
+    "value": {
+      "a": 5
+    }
+  },
+  {
+    "text": "a: 1_000",
+    "value": {
+      "a": 1000
+    }
+  },
+  {
+    "text": "a: 1.5",
+    "value": {
+      "a": 1.5
+    }
+  },
+  {
+    "text": "a: .5",
+    "value": {
+      "a": 0.5
+    }
+  },
+  {
+    "text": "a: 1.",
+    "value": {
+      "a": 1.0
+    }
+  },
+  {
+    "text": "a: 1e3",
+    "value": {
+      "a": "1e3"
+    }
+  },
+  {
+    "text": "a: 1.0e+3",
+    "value": {
+      "a": 1000.0
+    }
+  },
+  {
+    "text": "a: ~",
+    "value": {
+      "a": null
+    }
+  },
+  {
+    "text": "a:",
+    "value": {
+      "a": null
+    }
+  },
+  {
+    "text": "a: None",
+    "value": {
+      "a": "None"
+    }
+  },
+  {
+    "text": "a: null",
+    "value": {
+      "a": null
+    }
+  },
+  {
+    "text": "a: +12",
+    "value": {
+      "a": 12
+    }
+  },
+  {
+    "text": "a: 3/4",
+    "value": {
+      "a": "3/4"
+    }
+  },
+  {
+    "text": "a: 1 1/2",
+    "value": {
+      "a": "1 1/2"
+    }
+  },
+  {
+    "text": "a: [1, two, 3.0]",
+    "value": {
+      "a": [
+        1,
+        "two",
+        3.0
+      ]
+    }
+  },
+  {
+    "text": "a: {b: c}",
+    "value": {
+      "a": {
+        "b": "c"
+      }
+    }
+  },
+  {
+    "text": "- x\n- y",
+    "value": [
+      "x",
+      "y"
+    ]
+  },
+  {
+    "text": "a: !!str 12",
+    "value": {
+      "a": "12"
+    }
+  },
+  {
+    "text": "a: &x 1\nb: *x",
+    "value": {
+      "a": 1,
+      "b": 1
+    }
+  },
+  {
+    "text": "a: 1\na: 2",
+    "value": {
+      "a": 2
+    }
+  },
+  {
+    "text": "a: \"\\u00e9\"",
+    "value": {
+      "a": "é"
+    }
+  },
+  {
+    "text": "a: =",
+    "error": true
+  }
+]

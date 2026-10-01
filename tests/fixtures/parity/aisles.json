@@ -1,0 +1,78 @@
+[
+  {
+    "name": "Yellow onions",
+    "expected": "Produce"
+  },
+  {
+    "name": "eggs",
+    "expected": "Dairy & Eggs"
+  },
+  {
+    "name": "Cornstarch",
+    "expected": "Dry Goods & Pasta"
+  },
+  {
+    "name": "corn",
+    "expected": "Produce"
+  },
+  {
+    "name": "sour cream",
+    "expected": "Dairy & Eggs"
+  },
+  {
+    "name": "Heavy cream",
+    "expected": "Dairy & Eggs"
+  },
+  {
+    "name": "black pepper",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "red bell pepper",
+    "expected": "Produce"
+  },
+  {
+    "name": "chicken thighs",
+    "expected": "Meat & Seafood"
+  },
+  {
+    "name": "tomato paste",
+    "expected": "Produce"
+  },
+  {
+    "name": "Frozen peas",
+    "expected": "Frozen"
+  },
+  {
+    "name": "berries",
+    "expected": "Produce"
+  },
+  {
+    "name": "paper towels",
+    "expected": "Uncategorized"
+  },
+  {
+    "name": "dragon fruit",
+    "expected": "Uncategorized"
+  },
+  {
+    "name": "Olive Oil",
+    "expected": "Condiments & Sauces"
+  },
+  {
+    "name": "cherries",
+    "expected": "Uncategorized"
+  },
+  {
+    "name": "tomatoes",
+    "expected": "Produce"
+  },
+  {
+    "name": "Chocolate chips",
+    "expected": "Snacks"
+  },
+  {
+    "name": "",
+    "expected": "Uncategorized"
+  }
+]

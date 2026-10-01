@@ -216,6 +216,17 @@ class TestGenerate(ShoppingListTestCase):
 
         self.assertEqual(shopping_list.list_items(self.conn)[0]["in_pantry"], 1)
 
+    def test_crossed_out_pantry_item_does_not_count_as_on_hand(self):
+        recipe_id = _insert_recipe(self.conn)
+        _insert_ingredient(self.conn, recipe_id, "All Purpose Flour", "2", "cups")
+        meal_calendar.assign_meal(self.conn, "2026-09-01", "Dinner", recipe_id)
+        self.conn.execute('INSERT INTO "pantry_item" ("name", "active") VALUES (?, 0)', ("flour",))
+        self.conn.commit()
+
+        shopping_list.generate(self.conn, date(2026, 8, 31))
+
+        self.assertEqual(shopping_list.list_items(self.conn)[0]["in_pantry"], 0)
+
     def test_no_pantry_match_sets_in_pantry_false(self):
         recipe_id = _insert_recipe(self.conn)
         _insert_ingredient(self.conn, recipe_id, "Baking Soda", "2", "tsp")
@@ -392,6 +403,21 @@ class TestGenerate(ShoppingListTestCase):
         items = shopping_list.list_items(self.conn)
         self.assertEqual(len(items), 1)
         self.assertEqual((items[0]["name"], items[0]["amount"], items[0]["unit"]), ("Flour", "2", "cups"))
+
+    def test_an_amountless_item_never_loses_an_amount_the_week_adds(self):
+        # The week needs flour in two units that can't be combined. The first
+        # fills the hand-added amountless row; the second must not then merge
+        # into that same row as if it were still amountless and overwrite it.
+        shopping_list.add_item(self.conn, "Flour")
+        recipe_id = _insert_recipe(self.conn)
+        _insert_ingredient(self.conn, recipe_id, "flour", "2", "cups", order_num=0)
+        _insert_ingredient(self.conn, recipe_id, "flour", "1", "lb", order_num=1)
+        meal_calendar.assign_meal(self.conn, "2026-09-01", "Dinner", recipe_id)
+
+        shopping_list.generate(self.conn, date(2026, 8, 31))
+
+        amounts = sorted((row["amount"], row["unit"]) for row in shopping_list.list_items(self.conn))
+        self.assertEqual(amounts, [("1", "lb"), ("2", "cups")])
 
 
 class TestListItems(ShoppingListTestCase):

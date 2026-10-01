@@ -1,0 +1,1449 @@
+[
+  {
+    "file": "baked-ziti-only.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Baked Ziti",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Baked Ziti",
+            "category": "None",
+            "subcategory": "Pasta",
+            "ingredients": [
+              {
+                "Onion": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "minced"
+                  ]
+                }
+              },
+              {
+                "Garlic": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Minced"
+                  ]
+                }
+              },
+              {
+                "Carrot": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Diced Fine"
+                  ]
+                }
+              },
+              {
+                "Celery": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Diced Fine"
+                  ]
+                }
+              },
+              {
+                "Hot Italian Sausage": {
+                  "amounts": [
+                    {
+                      "amount": "4",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Salt & pepper": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Dried Oregano": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Fresh parsley": {
+                  "amounts": [
+                    {
+                      "amount": "1/4",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ]
+                }
+              },
+              {
+                "Wine - Red": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomatoes": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Brown the sausage in a heavy pan, then slice it into rounds. Simmer the sauce and bake at 350° for 30 minutes."
+              },
+              {
+                "step": "Enjoy! Test Kitchen 2020"
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: example.com",
+              "Easy to make",
+              "Cuisine: Italian"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "collection.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Baked Ziti",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Baked Ziti",
+            "category": "None",
+            "subcategory": "Pasta",
+            "ingredients": [
+              {
+                "Onion": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "minced"
+                  ]
+                }
+              },
+              {
+                "Garlic": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Minced"
+                  ]
+                }
+              },
+              {
+                "Carrot": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Diced Fine"
+                  ]
+                }
+              },
+              {
+                "Celery": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "Diced Fine"
+                  ]
+                }
+              },
+              {
+                "Hot Italian Sausage": {
+                  "amounts": [
+                    {
+                      "amount": "4",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Salt & pepper": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Dried Oregano": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Fresh parsley": {
+                  "amounts": [
+                    {
+                      "amount": "1/4",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ]
+                }
+              },
+              {
+                "Wine - Red": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomatoes": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Brown the sausage in a heavy pan, then slice it into rounds. Simmer the sauce and bake at 350° for 30 minutes."
+              },
+              {
+                "step": "Enjoy! Test Kitchen 2020"
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: example.com",
+              "Easy to make",
+              "Cuisine: Italian"
+            ]
+          }
+        },
+        {
+          "title": "Rice Croquettes with Ham and Mozzarella",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Rice Croquettes with Ham and Mozzarella",
+            "category": "None",
+            "subcategory": "Rice",
+            "ingredients": [
+              {
+                "Beef stock": {
+                  "amounts": [
+                    {
+                      "amount": "4",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Unsalted butter": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Arborio Rice": {
+                  "amounts": [
+                    {
+                      "amount": "1 1/2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomato sauce": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "Parmesan cheese": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "grated"
+                  ]
+                }
+              },
+              {
+                "Salt & pepper": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "as required"
+                  ]
+                }
+              },
+              {
+                "Egg yolk": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lg"
+                    }
+                  ],
+                  "notes": [
+                    "beaten"
+                  ]
+                }
+              },
+              {
+                "Smoked Ham": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "sl"
+                    }
+                  ],
+                  "notes": [
+                    "diced"
+                  ]
+                }
+              },
+              {
+                "Fresh mozzarella cheese": {
+                  "amounts": [
+                    {
+                      "amount": "3",
+                      "unit": "oz"
+                    }
+                  ],
+                  "notes": [
+                    "diced"
+                  ]
+                }
+              },
+              {
+                "Peas": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "boiled 1 min & drained"
+                  ]
+                }
+              },
+              {
+                "Bread crumbs": {
+                  "amounts": [
+                    {
+                      "amount": "2 1/2",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "Peanut oil": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "pk"
+                    }
+                  ],
+                  "notes": [
+                    "for deep Frying"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Pour the stock into a saucepan and bring it to a simmer."
+              },
+              {
+                "step": "Melt the butter in a second pan. Add the rice and stir to coat."
+              },
+              {
+                "step": "Remove from the heat and stir in the tomato sauce and cheese."
+              },
+              {
+                "step": "Shape into balls, coat with crumbs and fry in hot oil. Serve immediately."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: Example Cookbook",
+              "Any stock works in place of the beef stock",
+              "Cuisine: Italian"
+            ]
+          }
+        },
+        {
+          "title": "Layered Pasta Bake",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Layered Pasta Bake",
+            "category": "None",
+            "subcategory": "Pasta",
+            "ingredients": [
+              {
+                "Hot milk": {
+                  "amounts": [
+                    {
+                      "amount": "3",
+                      "unit": "c"
+                    }
+                  ],
+                  "section": "White Sauce"
+                }
+              },
+              {
+                "Butter": {
+                  "amounts": [
+                    {
+                      "amount": "6",
+                      "unit": "tb"
+                    }
+                  ],
+                  "section": "White Sauce"
+                }
+              },
+              {
+                "Flour": {
+                  "amounts": [
+                    {
+                      "amount": "6",
+                      "unit": "tb"
+                    }
+                  ],
+                  "section": "White Sauce"
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "ts"
+                    }
+                  ],
+                  "section": "White Sauce"
+                }
+              },
+              {
+                "Ground beef": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lb"
+                    }
+                  ],
+                  "section": "Meat Sauce"
+                }
+              },
+              {
+                "Onion": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "sm"
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ],
+                  "section": "Meat Sauce"
+                }
+              },
+              {
+                "Crushed tomatoes": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "c"
+                    }
+                  ],
+                  "section": "Meat Sauce"
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "to taste"
+                  ],
+                  "section": "Meat Sauce"
+                }
+              },
+              {
+                "Lasagna sheets": {
+                  "amounts": [
+                    {
+                      "amount": "12",
+                      "unit": ""
+                    }
+                  ],
+                  "section": "Pasta"
+                }
+              },
+              {
+                "Grated parmesan": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "c"
+                    }
+                  ],
+                  "section": "Pasta"
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Make the white sauce, then the meat sauce. Layer with the pasta and bake at 375° for 40 minutes."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 8,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Freezes well",
+              "Cuisine: Italian"
+            ]
+          }
+        },
+        {
+          "title": "Pan Seared Steak",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Pan Seared Steak",
+            "category": "None",
+            "subcategory": "Steak",
+            "ingredients": [
+              {
+                "Steak": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "ea"
+                    }
+                  ]
+                }
+              },
+              {
+                "Butter": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "tb"
+                    }
+                  ]
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "to taste"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Sear the steak in a hot pan, then rest it before slicing."
+              }
+            ],
+            "notes": [
+              "Source: Test Source"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "empty-cuisine.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Sunrise Sausage Squares",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Sunrise Sausage Squares",
+            "category": "None",
+            "subcategory": "None",
+            "ingredients": [
+              {
+                "Pork sausageroll": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lb"
+                    }
+                  ]
+                }
+              },
+              {
+                "bread": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "cut into 1/2 inch cubes"
+                  ]
+                }
+              },
+              {
+                "green peppers": {
+                  "amounts": [
+                    {
+                      "amount": "3/4",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "diced"
+                  ]
+                }
+              },
+              {
+                "shredded sharp Cheddar cheese": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "eggs": {
+                  "amounts": [
+                    {
+                      "amount": "6",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "milk": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "salt": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "ts"
+                    }
+                  ]
+                }
+              },
+              {
+                "dry mustard": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "ts"
+                    }
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Preheat oven to 350 degrees F. Cook the sausage in a skillet until browned."
+              },
+              {
+                "step": "Bake until set. Let stand 5 minutes before cutting into squares; serve hot."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: Example Diner",
+              "Serve squares on toasted muffins."
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "missing-title.mmf",
+    "expected": {
+      "recipes": [],
+      "errors": [
+        [
+          "Categories: Pasta",
+          "Missing Title: line"
+        ]
+      ]
+    }
+  },
+  {
+    "file": "multiline-notes.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Pasta and Kidney Bean Soup (Pasta e Fagioli)",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Pasta and Kidney Bean Soup (Pasta e Fagioli)",
+            "category": "None",
+            "subcategory": "Beans",
+            "ingredients": [
+              {
+                "Kidney beans": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "dried - White"
+                  ]
+                }
+              },
+              {
+                "Extra virgin olive oil": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "tb"
+                    }
+                  ]
+                }
+              },
+              {
+                "Chicken stock": {
+                  "amounts": [
+                    {
+                      "amount": "4",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "Pasta": {
+                  "amounts": [
+                    {
+                      "amount": "3/4",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "dried"
+                  ]
+                }
+              },
+              {
+                "Parmesan": {
+                  "amounts": [
+                    {
+                      "amount": "6",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "grated"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Sort the beans and soak them overnight."
+              },
+              {
+                "step": "Ladle the soup into warmed bowls. Top with cheese."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Can replace chicken stock with vegetable stock or water. Very long cook time and prep time.",
+              "Cuisine: Italian"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "no-yield-footer.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Pan Seared Rib Eye",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Pan Seared Rib Eye",
+            "category": "None",
+            "subcategory": "Steak",
+            "ingredients": [
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "to taste"
+                  ]
+                }
+              },
+              {
+                "Boneless Ribeye Steak": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "ea"
+                    }
+                  ],
+                  "notes": [
+                    "thawed"
+                  ]
+                }
+              },
+              {
+                "Pepper": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "to taste"
+                  ]
+                }
+              },
+              {
+                "PAM": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "or Canola Oil"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Place a cast iron skillet in the oven and heat it to 450 degrees."
+              },
+              {
+                "step": "Move the steak to a plate, cover loosely, and rest for 2 minutes."
+              }
+            ],
+            "notes": [
+              "Source: Test Source",
+              "Quick to make",
+              "Cuisine: American"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "rice-croquettes-only.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Rice Croquettes with Ham and Mozzarella",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Rice Croquettes with Ham and Mozzarella",
+            "category": "None",
+            "subcategory": "Rice",
+            "ingredients": [
+              {
+                "Beef stock": {
+                  "amounts": [
+                    {
+                      "amount": "4",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Unsalted butter": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Arborio Rice": {
+                  "amounts": [
+                    {
+                      "amount": "1 1/2",
+                      "unit": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomato sauce": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "Parmesan cheese": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "grated"
+                  ]
+                }
+              },
+              {
+                "Salt & pepper": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": ""
+                    }
+                  ],
+                  "notes": [
+                    "as required"
+                  ]
+                }
+              },
+              {
+                "Egg yolk": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lg"
+                    }
+                  ],
+                  "notes": [
+                    "beaten"
+                  ]
+                }
+              },
+              {
+                "Smoked Ham": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "sl"
+                    }
+                  ],
+                  "notes": [
+                    "diced"
+                  ]
+                }
+              },
+              {
+                "Fresh mozzarella cheese": {
+                  "amounts": [
+                    {
+                      "amount": "3",
+                      "unit": "oz"
+                    }
+                  ],
+                  "notes": [
+                    "diced"
+                  ]
+                }
+              },
+              {
+                "Peas": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "boiled 1 min & drained"
+                  ]
+                }
+              },
+              {
+                "Bread crumbs": {
+                  "amounts": [
+                    {
+                      "amount": "2 1/2",
+                      "unit": "c"
+                    }
+                  ]
+                }
+              },
+              {
+                "Peanut oil": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "pk"
+                    }
+                  ],
+                  "notes": [
+                    "for deep Frying"
+                  ]
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Pour the stock into a saucepan and bring it to a simmer."
+              },
+              {
+                "step": "Melt the butter in a second pan. Add the rice and stir to coat."
+              },
+              {
+                "step": "Remove from the heat and stir in the tomato sauce and cheese."
+              },
+              {
+                "step": "Shape into balls, coat with crumbs and fry in hot oil. Serve immediately."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: Example Cookbook",
+              "Any stock works in place of the beef stock",
+              "Cuisine: Italian"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "file": "sections-only.mmf",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Two Sauce Casserole",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Two Sauce Casserole",
+            "category": "None",
+            "subcategory": "Pasta",
+            "ingredients": [
+              {
+                "Butter": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": ""
+                    }
+                  ],
+                  "section": "Sauce One"
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "ts"
+                    }
+                  ],
+                  "section": "Sauce One"
+                }
+              },
+              {
+                "Onion": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "sm"
+                    }
+                  ],
+                  "notes": [
+                    "chopped"
+                  ],
+                  "section": "Sauce Two"
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Combine the sauces and bake."
+              }
+            ],
+            "notes": [
+              "Source: Test Source"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "name": "continuations, notes, units, sections",
+    "text": "MMMMM----- Recipe via Meal-Master (tm) v8.05\n\n      Title: Pasta Night\n Categories: Main dish, Pasta\n      Yield: 4 Servings\n\n      1 lb  Spaghetti\n      2 c   Tomato sauce -- warmed\n      1 ts  Oregano, dried and crumbled very\n            -finely\n      =====for the topping=====\n      1/2 c  Parmesan\n        Salt\n\nBoil the pasta.\nDrain it.\n\nToss with sauce.\n\nSource:\n  \"Grandma's\n  box\"\nNotes:\n  \"Freezes well.\"\nS(\"Italian\")\n  \"Italian\"\nYield:\n  \"6 servings\"\nMMMMM\n",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Pasta Night",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Pasta Night",
+            "category": "None",
+            "subcategory": "Main dish, Pasta",
+            "ingredients": [
+              {
+                "Spaghetti": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lb"
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomato sauce": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "warmed"
+                  ]
+                }
+              },
+              {
+                "Oregano, dried and crumbled veryfinely": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "ts"
+                    }
+                  ]
+                }
+              },
+              {
+                "Parmesan": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "section": "For The Topping"
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "section": "For The Topping"
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Boil the pasta. Drain it."
+              },
+              {
+                "step": "Toss with sauce."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: Grandma's box",
+              "Freezes well.",
+              "Cuisine: Italian"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  {
+    "name": "form feed and no instructions",
+    "text": "MMMMM----- Recipe\n\n      Title: Empty\n\n      1 c  Rice\n\fMMMMM\n",
+    "expected": {
+      "recipes": [],
+      "errors": [
+        [
+          "Title: Empty",
+          "No instructions found"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "continuations, notes, units, sections (CRLF)",
+    "text": "MMMMM----- Recipe via Meal-Master (tm) v8.05\r\n\r\n      Title: Pasta Night\r\n Categories: Main dish, Pasta\r\n      Yield: 4 Servings\r\n\r\n      1 lb  Spaghetti\r\n      2 c   Tomato sauce -- warmed\r\n      1 ts  Oregano, dried and crumbled very\r\n            -finely\r\n      =====for the topping=====\r\n      1/2 c  Parmesan\r\n        Salt\r\n\r\nBoil the pasta.\r\nDrain it.\r\n\r\nToss with sauce.\r\n\r\nSource:\r\n  \"Grandma's\r\n  box\"\r\nNotes:\r\n  \"Freezes well.\"\r\nS(\"Italian\")\r\n  \"Italian\"\r\nYield:\r\n  \"6 servings\"\r\nMMMMM\r\n",
+    "expected": {
+      "recipes": [
+        {
+          "title": "Pasta Night",
+          "data": {
+            "recipe_uuid": "None",
+            "recipe_name": "Pasta Night",
+            "category": "None",
+            "subcategory": "Main dish, Pasta",
+            "ingredients": [
+              {
+                "Spaghetti": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "lb"
+                    }
+                  ]
+                }
+              },
+              {
+                "Tomato sauce": {
+                  "amounts": [
+                    {
+                      "amount": "2",
+                      "unit": "c"
+                    }
+                  ],
+                  "notes": [
+                    "warmed"
+                  ]
+                }
+              },
+              {
+                "Oregano, dried and crumbled veryfinely": {
+                  "amounts": [
+                    {
+                      "amount": "1",
+                      "unit": "ts"
+                    }
+                  ]
+                }
+              },
+              {
+                "Parmesan": {
+                  "amounts": [
+                    {
+                      "amount": "1/2",
+                      "unit": "c"
+                    }
+                  ],
+                  "section": "For The Topping"
+                }
+              },
+              {
+                "Salt": {
+                  "amounts": [
+                    {
+                      "amount": "",
+                      "unit": ""
+                    }
+                  ],
+                  "section": "For The Topping"
+                }
+              }
+            ],
+            "steps": [
+              {
+                "step": "Boil the pasta. Drain it."
+              },
+              {
+                "step": "Toss with sauce."
+              }
+            ],
+            "yields": [
+              {
+                "amount": 6,
+                "unit": "servings"
+              }
+            ],
+            "notes": [
+              "Source: Grandma's box",
+              "Freezes well.",
+              "Cuisine: Italian"
+            ]
+          }
+        }
+      ],
+      "errors": []
+    }
+  }
+]

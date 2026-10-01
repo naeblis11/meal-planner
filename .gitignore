@@ -30,3 +30,16 @@ google-calendar-key.json
 
 # Python virtual environment (install.ps1 and pi/install.sh create it here)
 .venv/
+
+# Android app (android/): build output, IDE state, machine-local SDK path,
+# and release signing. A keystore signs every future update of the app, so
+# it must never be committed -- or exported to the public repo.
+android/.gradle/
+android/.kotlin/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+*.jks
+*.keystore

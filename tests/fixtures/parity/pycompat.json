@@ -1,0 +1,220 @@
+{
+  "title": [
+    {
+      "text": "main dish",
+      "expected": "Main Dish"
+    },
+    {
+      "text": "DON'T stop",
+      "expected": "Don'T Stop"
+    },
+    {
+      "text": "for the SAUCE",
+      "expected": "For The Sauce"
+    },
+    {
+      "text": "émincé de veau",
+      "expected": "Émincé De Veau"
+    },
+    {
+      "text": "x2y z",
+      "expected": "X2Y Z"
+    },
+    {
+      "text": "",
+      "expected": ""
+    }
+  ],
+  "splitlines": [
+    {
+      "text": "a\nb",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a\r\nb\r",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a\fb",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a\u001cb",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a b",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a\n",
+      "expected": [
+        "a"
+      ]
+    },
+    {
+      "text": "",
+      "expected": []
+    },
+    {
+      "text": "\n\n",
+      "expected": [
+        "",
+        ""
+      ]
+    },
+    {
+      "text": "ab",
+      "expected": [
+        "a",
+        "b"
+      ]
+    }
+  ],
+  "split": [
+    {
+      "text": "  a  b ",
+      "maxsplit": -1,
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "a b c ",
+      "maxsplit": 1,
+      "expected": [
+        "a",
+        "b c "
+      ]
+    },
+    {
+      "text": "x  y",
+      "maxsplit": 1,
+      "expected": [
+        "x",
+        "y"
+      ]
+    },
+    {
+      "text": "a b c",
+      "maxsplit": 1,
+      "expected": [
+        "a",
+        "b c"
+      ]
+    },
+    {
+      "text": " 2 cups flour",
+      "maxsplit": 1,
+      "expected": [
+        "2",
+        "cups flour"
+      ]
+    },
+    {
+      "text": "",
+      "maxsplit": 1,
+      "expected": []
+    },
+    {
+      "text": "one",
+      "maxsplit": 1,
+      "expected": [
+        "one"
+      ]
+    }
+  ],
+  "strip": [
+    {
+      "text": "  a ",
+      "expected": "a"
+    },
+    {
+      "text": " a ",
+      "expected": "a"
+    },
+    {
+      "text": "\u001ca",
+      "expected": "a"
+    },
+    {
+      "text": "\t\n",
+      "expected": ""
+    }
+  ],
+  "str": [
+    {
+      "value": 1,
+      "expected": "1"
+    },
+    {
+      "value": 2.0,
+      "expected": "2.0"
+    },
+    {
+      "value": 1.5,
+      "expected": "1.5"
+    },
+    {
+      "value": true,
+      "expected": "True"
+    },
+    {
+      "value": false,
+      "expected": "False"
+    },
+    {
+      "value": null,
+      "expected": "None"
+    },
+    {
+      "value": "x",
+      "expected": "x"
+    },
+    {
+      "value": 100000000000000000000,
+      "expected": "100000000000000000000"
+    },
+    {
+      "value": 0.1,
+      "expected": "0.1"
+    },
+    {
+      "value": -0.0,
+      "expected": "-0.0"
+    },
+    {
+      "value": 350,
+      "expected": "350"
+    }
+  ],
+  "cp1252": {
+    "bytes": [
+      65,
+      129,
+      133,
+      147,
+      148,
+      150,
+      233,
+      141
+    ],
+    "expected": "A�…“”–é�"
+  }
+}

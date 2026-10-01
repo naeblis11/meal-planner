@@ -50,8 +50,10 @@ def generate(conn: sqlite3.Connection, week_start: date) -> None:
         date_strs,
     ).fetchall()
 
+    # Only what is on hand: a crossed-out pantry item is one the household
+    # has run out of, so it needs buying like anything else.
     pantry_items = conn.execute(
-        'SELECT "name", "exact_match" FROM "pantry_item"'
+        'SELECT "name", "exact_match" FROM "pantry_item" WHERE "active" = 1'
     ).fetchall()
     known_aisles = {
         row["name"].lower(): row["aisle"]
@@ -79,9 +81,15 @@ def generate(conn: sqlite3.Connection, week_start: date) -> None:
     # never by generating. A generated ingredient folds into a row already
     # on the list when their amounts can be combined; otherwise it gets a
     # row of its own.
-    existing = conn.execute(
-        'SELECT "id", "name", "amount", "unit", "aisle" FROM "shopping_list_item"'
-    ).fetchall()
+    # Kept current as rows are merged, so a later line of the same ingredient
+    # sees what an earlier one just wrote: an amountless row that has taken
+    # "2 cups" can't then also take "1 lb" as if it were still amountless.
+    existing = [
+        dict(row)
+        for row in conn.execute(
+            'SELECT "id", "name", "amount", "unit", "aisle" FROM "shopping_list_item"'
+        ).fetchall()
+    ]
     for name, amount, unit in lines:
         in_pantry = any(matches_pantry_item(item, name) for item in pantry_items)
         # A remembered manual correction always wins; otherwise start the
@@ -103,6 +111,7 @@ def generate(conn: sqlite3.Connection, week_start: date) -> None:
                        WHERE "id" = ?""",
                     (merged[0], merged[1], row["aisle"] or aisle, 1 if in_pantry else 0, row["id"]),
                 )
+                row.update(amount=merged[0], unit=merged[1], aisle=row["aisle"] or aisle)
                 break
         if merged is not None:
             continue

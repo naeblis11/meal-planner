@@ -1,0 +1,2011 @@
+{
+  "docs": [
+    {
+      "name": "banana-bread.yaml",
+      "doc": {
+        "recipe_uuid": "None",
+        "recipe_name": "Banana Bread",
+        "source_authors": "Joseph Hall <perlhoser@gmail.com>",
+        "source_url": "None",
+        "source_book": "None",
+        "oven_temp": [
+          {
+            "amount": 350,
+            "unit": "F"
+          }
+        ],
+        "oven_fan": false,
+        "oven_time": "50 - 60 minutes",
+        "yields": [
+          {
+            "amount": 3,
+            "unit": "loaves"
+          }
+        ],
+        "ingredients": [
+          {
+            "All Purpose Flour": {
+              "usda_num": 20581,
+              "amounts": [
+                {
+                  "amount": "3 1/2",
+                  "unit": "cups"
+                }
+              ],
+              "substitutions": [
+                {
+                  "Oat Flour": {
+                    "usda_num": "08122",
+                    "amounts": [
+                      {
+                        "amount": "3 1/2",
+                        "unit": "cups"
+                      }
+                    ],
+                    "notes": [
+                      "Make oat flour by processing instant oats in food processor."
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Baking Soda": {
+              "usda_num": 18372,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Baking Powder": {
+              "usda_num": 18369,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Salt": {
+              "usda_num": "02047",
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Cinnamon, Ground": {
+              "usda_num": "02010",
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Cloves, Ground": {
+              "usda_num": "02011",
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Nutmeg, Ground": {
+              "usda_num": "02025",
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Bananas": {
+              "usda_num": "09040",
+              "amounts": [
+                {
+                  "amount": 6,
+                  "unit": "each"
+                }
+              ]
+            }
+          },
+          {
+            "Butter, Unsalted": {
+              "usda_num": "01145",
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "cup"
+                }
+              ],
+              "notes": [
+                "Melted"
+              ]
+            }
+          },
+          {
+            "Granulated Sugar": {
+              "usda_num": 19335,
+              "amounts": [
+                {
+                  "amount": "1 1/2",
+                  "unit": "cups"
+                }
+              ]
+            }
+          },
+          {
+            "Eggs, Large": {
+              "usda_num": "01123",
+              "amounts": [
+                {
+                  "amount": 4,
+                  "unit": "cups"
+                }
+              ]
+            }
+          },
+          {
+            "Vanilla Extract": {
+              "usda_num": "02050",
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          },
+          {
+            "Chocolate Chips, Bittersweet": {
+              "usda_num": 19080,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cups"
+                }
+              ],
+              "notes": [
+                "Optional"
+              ]
+            }
+          }
+        ],
+        "steps": [
+          {
+            "step": "Preheat oven to 350F."
+          },
+          {
+            "step": "Whisk together the flour, baking soda, baking powder, salt, cinnamon, cloves and nutmeg."
+          },
+          {
+            "step": "Roughly mash the bananas with a potato masher."
+          },
+          {
+            "step": "Mix the bananas, melted butter, sugar, eggs and vanilla extract."
+          },
+          {
+            "step": "Combine the wet ingredients with the dry ingredients."
+          },
+          {
+            "step": "Mix with a rubber spatula, until just combined. Be careful not to overmix."
+          },
+          {
+            "step": "Gently fold in the chocolate chips."
+          },
+          {
+            "step": "Pour into prepared bread pans."
+          },
+          {
+            "step": "Bake at 350F until a toothpick inserted in the center comes out clean."
+          }
+        ],
+        "notes": [
+          "This recipe is designed for high altitude (~4500 ft) baking.",
+          "Other than the chocolate chips, this recipe may serve as a reference recipe for banana bread. Other ingredients may be used in addition to or instead of the chocolate chips, or they may be ommitted entirely.",
+          "Yields three 3 x 4 x 9 loaves."
+        ]
+      },
+      "unparseable": [],
+      "editable": [
+        {
+          "index": 0,
+          "name": "All Purpose Flour",
+          "amount": "3 1/2",
+          "unit": "cups",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 1,
+          "name": "Baking Soda",
+          "amount": 2,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 2,
+          "name": "Baking Powder",
+          "amount": 2,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 3,
+          "name": "Salt",
+          "amount": 1,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 4,
+          "name": "Cinnamon, Ground",
+          "amount": 2,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 5,
+          "name": "Cloves, Ground",
+          "amount": 1,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 6,
+          "name": "Nutmeg, Ground",
+          "amount": 1,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 7,
+          "name": "Bananas",
+          "amount": 6,
+          "unit": "each",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 8,
+          "name": "Butter, Unsalted",
+          "amount": 1,
+          "unit": "cup",
+          "section": null,
+          "notes": [
+            "Melted"
+          ],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 9,
+          "name": "Granulated Sugar",
+          "amount": "1 1/2",
+          "unit": "cups",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 10,
+          "name": "Eggs, Large",
+          "amount": 4,
+          "unit": "cups",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 11,
+          "name": "Vanilla Extract",
+          "amount": 2,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 12,
+          "name": "Chocolate Chips, Bittersweet",
+          "amount": 2,
+          "unit": "cups",
+          "section": null,
+          "notes": [
+            "Optional"
+          ],
+          "multi_amount": false,
+          "needs_input": false
+        }
+      ],
+      "editor_rows": [
+        {
+          "kind": "ingredient",
+          "key": "e0",
+          "name": "All Purpose Flour",
+          "amount": "3 1/2",
+          "unit": "cups",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e1",
+          "name": "Baking Soda",
+          "amount": 2,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e2",
+          "name": "Baking Powder",
+          "amount": 2,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e3",
+          "name": "Salt",
+          "amount": 1,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e4",
+          "name": "Cinnamon, Ground",
+          "amount": 2,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e5",
+          "name": "Cloves, Ground",
+          "amount": 1,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e6",
+          "name": "Nutmeg, Ground",
+          "amount": 1,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e7",
+          "name": "Bananas",
+          "amount": 6,
+          "unit": "each",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e8",
+          "name": "Butter, Unsalted",
+          "amount": 1,
+          "unit": "cup",
+          "notes": "Melted",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e9",
+          "name": "Granulated Sugar",
+          "amount": "1 1/2",
+          "unit": "cups",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e10",
+          "name": "Eggs, Large",
+          "amount": 4,
+          "unit": "cups",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e11",
+          "name": "Vanilla Extract",
+          "amount": 2,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e12",
+          "name": "Chocolate Chips, Bittersweet",
+          "amount": 2,
+          "unit": "cups",
+          "notes": "Optional",
+          "locked": false,
+          "needs_input": false
+        }
+      ],
+      "first_yield": {
+        "amount": 3,
+        "unit": "loaves"
+      }
+    },
+    {
+      "name": "invalid-missing-name.yaml",
+      "doc": {
+        "steps": [
+          {
+            "step": "Do a thing"
+          }
+        ],
+        "ingredients": [
+          {
+            "Salt": {
+              "usda_num": "02047",
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "tsp"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "unparseable": [],
+      "editable": [
+        {
+          "index": 0,
+          "name": "Salt",
+          "amount": 1,
+          "unit": "tsp",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        }
+      ],
+      "editor_rows": [
+        {
+          "kind": "ingredient",
+          "key": "e0",
+          "name": "Salt",
+          "amount": 1,
+          "unit": "tsp",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        }
+      ],
+      "first_yield": null
+    },
+    {
+      "name": "metric-ingredients.yaml",
+      "doc": {
+        "recipe_uuid": "None",
+        "recipe_name": "Metric Test Recipe",
+        "ingredients": [
+          {
+            "Milk": {
+              "amounts": [
+                {
+                  "amount": 480,
+                  "unit": "ml"
+                }
+              ]
+            }
+          },
+          {
+            "Butter": {
+              "amounts": [
+                {
+                  "amount": 56,
+                  "unit": "g"
+                }
+              ],
+              "substitutions": [
+                {
+                  "Margarine": {
+                    "amounts": [
+                      {
+                        "amount": 112,
+                        "unit": "g"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Flour": {
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cups"
+                }
+              ]
+            }
+          }
+        ],
+        "steps": [
+          {
+            "step": "Mix everything together."
+          }
+        ]
+      },
+      "unparseable": [],
+      "editable": [
+        {
+          "index": 0,
+          "name": "Milk",
+          "amount": 480,
+          "unit": "ml",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 1,
+          "name": "Butter",
+          "amount": 56,
+          "unit": "g",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 2,
+          "name": "Flour",
+          "amount": 2,
+          "unit": "cups",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": false
+        }
+      ],
+      "editor_rows": [
+        {
+          "kind": "ingredient",
+          "key": "e0",
+          "name": "Milk",
+          "amount": 480,
+          "unit": "ml",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e1",
+          "name": "Butter",
+          "amount": 56,
+          "unit": "g",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e2",
+          "name": "Flour",
+          "amount": 2,
+          "unit": "cups",
+          "notes": "",
+          "locked": false,
+          "needs_input": false
+        }
+      ],
+      "first_yield": null
+    },
+    {
+      "name": "orf-sample-1.yaml",
+      "doc": {
+        "recipe_uuid": "blah-001",
+        "recipe_name": "My Recipe",
+        "author": "Me",
+        "source_url": "http://localhost/",
+        "source_book": "none",
+        "oven_temp": "none",
+        "oven_fan": "none",
+        "oven_time": "none",
+        "yields": [
+          {
+            "servings": 4
+          },
+          {
+            "servings": 10
+          }
+        ],
+        "ingredients": [
+          {
+            "apple": {
+              "usda_num": "09003",
+              "amounts": [
+                {
+                  "amount": 4,
+                  "unit": "each"
+                },
+                {
+                  "amount": 10,
+                  "unit": "each"
+                }
+              ],
+              "processing": [
+                "whole",
+                "raw"
+              ],
+              "substitutions": [
+                {
+                  "pears": {
+                    "usda_num": "09252",
+                    "amounts": [
+                      {
+                        "amount": 4,
+                        "unit": "each"
+                      },
+                      {
+                        "amount": 10,
+                        "unit": "each"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "notes": [
+                "Use whole apples",
+                "Pears may be substituted, but produce a different flavor and mouthfeel"
+              ]
+            }
+          },
+          {
+            "banana": {
+              "usda_num": "09040",
+              "amounts": [
+                {
+                  "amount": 4,
+                  "unit": "each"
+                },
+                {
+                  "amount": 10,
+                  "unit": "each"
+                }
+              ]
+            }
+          }
+        ],
+        "steps": [
+          {
+            "step": "Hand out the apples",
+            "haccp": {
+              "control_point": "The apples must be clean"
+            },
+            "notes": [
+              "Some people like green",
+              "Some people like red"
+            ]
+          },
+          {
+            "step": "Hand out the bananas",
+            "haccp": {
+              "control_point": "The bananas must be clean"
+            },
+            "notes": [
+              "Some people like green",
+              "Most people don't like black"
+            ]
+          },
+          {
+            "step": "Enjoy"
+          }
+        ],
+        "notes": [
+          "This is a note",
+          "This is another note"
+        ],
+        "nutrition": {
+          "apple": [
+            {
+              "unit": "g",
+              "amount": 100,
+              "proximates": {
+                "water": 85.56,
+                "energy": 52,
+                "protein": 0.26,
+                "lipid_total": 0.17,
+                "carbohydrate": 13.81,
+                "fiber_total": 2.4,
+                "sugars_total": 10.39
+              },
+              "minerals": {
+                "calcium": 6,
+                "iron": 0.12,
+                "magnesium": 5,
+                "phosphorus": 11,
+                "potassium": 107,
+                "sodium": 1,
+                "zinc": 0.04
+              },
+              "vitamins": {
+                "vitamin_c": 4.6,
+                "thiamin": 0.017,
+                "riboflavin": 0.026,
+                "niacin": 0.091,
+                "vitamin_b6": 0.041,
+                "folate_total": 3,
+                "vitamin_b12": 0,
+                "vitamin_a_rae": 3,
+                "vitamin_a_iu": 54,
+                "vitamin_e_alpha_tocopherol": 0.18,
+                "vitamin_d2_d3": 0,
+                "vitamin_d": 0,
+                "vitamin_k": 2.2
+              },
+              "lipids": {
+                "total_saturated": 0.028,
+                "total_monounsaturated": 0.007,
+                "total_polyunsaturated": 0.051,
+                "cholesterol": 0
+              },
+              "other": {
+                "caffeine": 0
+              }
+            }
+          ]
+        }
+      },
+      "unparseable": [],
+      "editable": [
+        {
+          "index": 0,
+          "name": "apple",
+          "amount": 4,
+          "unit": "each",
+          "section": null,
+          "notes": [
+            "Use whole apples",
+            "Pears may be substituted, but produce a different flavor and mouthfeel"
+          ],
+          "multi_amount": true,
+          "needs_input": false
+        },
+        {
+          "index": 1,
+          "name": "banana",
+          "amount": 4,
+          "unit": "each",
+          "section": null,
+          "notes": [],
+          "multi_amount": true,
+          "needs_input": false
+        }
+      ],
+      "editor_rows": [
+        {
+          "kind": "ingredient",
+          "key": "e0",
+          "name": "apple",
+          "amount": 4,
+          "unit": "each",
+          "notes": "Use whole apples; Pears may be substituted, but produce a different flavor and mouthfeel",
+          "locked": true,
+          "needs_input": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e1",
+          "name": "banana",
+          "amount": 4,
+          "unit": "each",
+          "notes": "",
+          "locked": true,
+          "needs_input": false
+        }
+      ],
+      "first_yield": {
+        "amount": 4,
+        "unit": "servings"
+      }
+    },
+    {
+      "name": "edit doc",
+      "doc": {
+        "recipe_name": "Cake",
+        "ingredients": [
+          {
+            "Flour": {
+              "usda_num": 20081,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cup"
+                }
+              ],
+              "notes": [
+                "sifted"
+              ]
+            }
+          },
+          {
+            "Sugar": {
+              "amounts": [
+                {
+                  "amount": "a pinch",
+                  "unit": ""
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Butter": {
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "cup"
+                },
+                {
+                  "amount": 8,
+                  "unit": "oz"
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Eggs": {
+              "amounts": [
+                {
+                  "amount": "some",
+                  "unit": ""
+                }
+              ],
+              "substitutions": [
+                {
+                  "Flax": {
+                    "amounts": [
+                      {
+                        "amount": 1,
+                        "unit": "tbsp"
+                      },
+                      {
+                        "amount": "lots",
+                        "unit": ""
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "steps": [
+          {
+            "step": "Mix.",
+            "notes": [
+              "well"
+            ]
+          },
+          {
+            "step": "Bake.",
+            "haccp": {
+              "control_point": "350F"
+            }
+          }
+        ]
+      },
+      "unparseable": [
+        {
+          "slot_index": 1,
+          "ingredient_name": "Sugar",
+          "amount": "a pinch",
+          "unit": "",
+          "ingredient_line": "a pinch Sugar"
+        },
+        {
+          "slot_index": 4,
+          "ingredient_name": "Eggs",
+          "amount": "some",
+          "unit": "",
+          "ingredient_line": "some Eggs"
+        },
+        {
+          "slot_index": 6,
+          "ingredient_name": "Flax",
+          "amount": "lots",
+          "unit": "",
+          "ingredient_line": "lots Flax"
+        }
+      ],
+      "editable": [
+        {
+          "index": 0,
+          "name": "Flour",
+          "amount": 2,
+          "unit": "cup",
+          "section": null,
+          "notes": [
+            "sifted"
+          ],
+          "multi_amount": false,
+          "needs_input": false
+        },
+        {
+          "index": 1,
+          "name": "Sugar",
+          "amount": "a pinch",
+          "unit": "",
+          "section": "Frosting",
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": true
+        },
+        {
+          "index": 2,
+          "name": "Butter",
+          "amount": 1,
+          "unit": "cup",
+          "section": "Frosting",
+          "notes": [],
+          "multi_amount": true,
+          "needs_input": false
+        },
+        {
+          "index": 3,
+          "name": "Eggs",
+          "amount": "some",
+          "unit": "",
+          "section": null,
+          "notes": [],
+          "multi_amount": false,
+          "needs_input": true
+        }
+      ],
+      "editor_rows": [
+        {
+          "kind": "ingredient",
+          "key": "e0",
+          "name": "Flour",
+          "amount": 2,
+          "unit": "cup",
+          "notes": "sifted",
+          "locked": false,
+          "needs_input": false
+        },
+        {
+          "kind": "section",
+          "key": "s1",
+          "name": "Frosting",
+          "amount": "",
+          "unit": "",
+          "notes": "",
+          "locked": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e1",
+          "name": "Sugar",
+          "amount": "a pinch",
+          "unit": "",
+          "notes": "",
+          "locked": false,
+          "needs_input": true
+        },
+        {
+          "kind": "ingredient",
+          "key": "e2",
+          "name": "Butter",
+          "amount": 1,
+          "unit": "cup",
+          "notes": "",
+          "locked": true,
+          "needs_input": false
+        },
+        {
+          "kind": "section",
+          "key": "s4",
+          "name": "",
+          "amount": "",
+          "unit": "",
+          "notes": "",
+          "locked": false
+        },
+        {
+          "kind": "ingredient",
+          "key": "e3",
+          "name": "Eggs",
+          "amount": "some",
+          "unit": "",
+          "notes": "",
+          "locked": false,
+          "needs_input": true
+        }
+      ],
+      "first_yield": null
+    }
+  ],
+  "ingredients_from_form": [
+    {
+      "name": "reorder, rename, metric, new row, notes",
+      "old": [
+        {
+          "Flour": {
+            "usda_num": 20081,
+            "amounts": [
+              {
+                "amount": 2,
+                "unit": "cup"
+              }
+            ],
+            "notes": [
+              "sifted"
+            ]
+          }
+        },
+        {
+          "Sugar": {
+            "amounts": [
+              {
+                "amount": "a pinch",
+                "unit": ""
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Butter": {
+            "amounts": [
+              {
+                "amount": 1,
+                "unit": "cup"
+              },
+              {
+                "amount": 8,
+                "unit": "oz"
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Eggs": {
+            "amounts": [
+              {
+                "amount": "some",
+                "unit": ""
+              }
+            ],
+            "substitutions": [
+              {
+                "Flax": {
+                  "amounts": [
+                    {
+                      "amount": 1,
+                      "unit": "tbsp"
+                    },
+                    {
+                      "amount": "lots",
+                      "unit": ""
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "rows": [
+        {
+          "key": "s0",
+          "kind": "section",
+          "name": "Base"
+        },
+        {
+          "key": "e1",
+          "kind": "ingredient",
+          "name": "Sugar",
+          "amount": "250",
+          "unit": "ml",
+          "notes": "fine; divided"
+        },
+        {
+          "key": "e0",
+          "kind": "ingredient",
+          "name": "Cake flour",
+          "amount": "2",
+          "unit": "cup",
+          "notes": ""
+        },
+        {
+          "key": "n1",
+          "kind": "ingredient",
+          "name": "Salt",
+          "amount": "1/2",
+          "unit": "tsp"
+        },
+        {
+          "key": "s1",
+          "kind": "section",
+          "name": ""
+        },
+        {
+          "key": "e2",
+          "kind": "ingredient",
+          "name": "Butter",
+          "amount": "",
+          "unit": ""
+        }
+      ],
+      "expected": [
+        {
+          "Sugar": {
+            "amounts": [
+              {
+                "amount": "1 1/24",
+                "unit": "cup"
+              }
+            ],
+            "section": "Base",
+            "notes": [
+              "fine",
+              "divided"
+            ]
+          }
+        },
+        {
+          "Cake flour": {
+            "amounts": [
+              {
+                "amount": "2",
+                "unit": "cup"
+              }
+            ],
+            "section": "Base"
+          }
+        },
+        {
+          "Salt": {
+            "amounts": [
+              {
+                "amount": "1/2",
+                "unit": "tsp"
+              }
+            ],
+            "section": "Base"
+          }
+        },
+        {
+          "Butter": {
+            "amounts": [
+              {
+                "amount": 1,
+                "unit": "cup"
+              },
+              {
+                "amount": 8,
+                "unit": "oz"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "notes absent keeps them, blank names dropped",
+      "old": [
+        {
+          "Flour": {
+            "usda_num": 20081,
+            "amounts": [
+              {
+                "amount": 2,
+                "unit": "cup"
+              }
+            ],
+            "notes": [
+              "sifted"
+            ]
+          }
+        },
+        {
+          "Sugar": {
+            "amounts": [
+              {
+                "amount": "a pinch",
+                "unit": ""
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Butter": {
+            "amounts": [
+              {
+                "amount": 1,
+                "unit": "cup"
+              },
+              {
+                "amount": 8,
+                "unit": "oz"
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Eggs": {
+            "amounts": [
+              {
+                "amount": "some",
+                "unit": ""
+              }
+            ],
+            "substitutions": [
+              {
+                "Flax": {
+                  "amounts": [
+                    {
+                      "amount": 1,
+                      "unit": "tbsp"
+                    },
+                    {
+                      "amount": "lots",
+                      "unit": ""
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "rows": [
+        {
+          "key": "e0",
+          "kind": "ingredient",
+          "name": "Flour",
+          "amount": "3",
+          "unit": "cups"
+        },
+        {
+          "key": "n2",
+          "kind": "ingredient",
+          "name": "   ",
+          "amount": "1",
+          "unit": "cup"
+        },
+        {
+          "key": "e9",
+          "kind": "ingredient",
+          "name": "Vanilla",
+          "amount": "1",
+          "unit": "tsp"
+        }
+      ],
+      "expected": [
+        {
+          "Flour": {
+            "amounts": [
+              {
+                "amount": "3",
+                "unit": "cups"
+              }
+            ],
+            "usda_num": 20081,
+            "notes": [
+              "sifted"
+            ]
+          }
+        },
+        {
+          "Vanilla": {
+            "amounts": [
+              {
+                "amount": "1",
+                "unit": "tsp"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "steps_from_form": [
+    {
+      "name": "reorder, split, new, blank",
+      "old": [
+        {
+          "step": "Mix.",
+          "notes": [
+            "well"
+          ]
+        },
+        {
+          "step": "Bake.",
+          "haccp": {
+            "control_point": "350F"
+          }
+        }
+      ],
+      "rows": [
+        {
+          "key": "e1",
+          "text": "Bake at 350."
+        },
+        {
+          "key": "e0",
+          "text": "Mix dry."
+        },
+        {
+          "key": "n0",
+          "text": "Then mix wet."
+        },
+        {
+          "key": "n1",
+          "text": "   "
+        }
+      ],
+      "expected": [
+        {
+          "step": "Bake at 350.",
+          "haccp": {
+            "control_point": "350F"
+          }
+        },
+        {
+          "step": "Mix dry.",
+          "notes": [
+            "well"
+          ]
+        },
+        {
+          "step": "Then mix wet."
+        }
+      ]
+    }
+  ],
+  "amount_corrections": {
+    "doc": {
+      "recipe_name": "Cake",
+      "ingredients": [
+        {
+          "Flour": {
+            "usda_num": 20081,
+            "amounts": [
+              {
+                "amount": 2,
+                "unit": "cup"
+              }
+            ],
+            "notes": [
+              "sifted"
+            ]
+          }
+        },
+        {
+          "Sugar": {
+            "amounts": [
+              {
+                "amount": "a pinch",
+                "unit": ""
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Butter": {
+            "amounts": [
+              {
+                "amount": 1,
+                "unit": "cup"
+              },
+              {
+                "amount": 8,
+                "unit": "oz"
+              }
+            ],
+            "section": "Frosting"
+          }
+        },
+        {
+          "Eggs": {
+            "amounts": [
+              {
+                "amount": "some",
+                "unit": ""
+              }
+            ],
+            "substitutions": [
+              {
+                "Flax": {
+                  "amounts": [
+                    {
+                      "amount": 1,
+                      "unit": "tbsp"
+                    },
+                    {
+                      "amount": "lots",
+                      "unit": ""
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "steps": [
+        {
+          "step": "Mix.",
+          "notes": [
+            "well"
+          ]
+        },
+        {
+          "step": "Bake.",
+          "haccp": {
+            "control_point": "350F"
+          }
+        }
+      ]
+    },
+    "cases": [
+      {
+        "slot_index": 1,
+        "amount": "1/4",
+        "unit": "tsp",
+        "expected_ingredients": [
+          {
+            "Flour": {
+              "usda_num": 20081,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cup"
+                }
+              ],
+              "notes": [
+                "sifted"
+              ]
+            }
+          },
+          {
+            "Sugar": {
+              "amounts": [
+                {
+                  "amount": "1/4",
+                  "unit": "tsp"
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Butter": {
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "cup"
+                },
+                {
+                  "amount": 8,
+                  "unit": "oz"
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Eggs": {
+              "amounts": [
+                {
+                  "amount": "some",
+                  "unit": ""
+                }
+              ],
+              "substitutions": [
+                {
+                  "Flax": {
+                    "amounts": [
+                      {
+                        "amount": 1,
+                        "unit": "tbsp"
+                      },
+                      {
+                        "amount": "lots",
+                        "unit": ""
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "slot_index": 3,
+        "amount": "250",
+        "unit": "ml",
+        "expected_ingredients": [
+          {
+            "Flour": {
+              "usda_num": 20081,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cup"
+                }
+              ],
+              "notes": [
+                "sifted"
+              ]
+            }
+          },
+          {
+            "Sugar": {
+              "amounts": [
+                {
+                  "amount": "a pinch",
+                  "unit": ""
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Butter": {
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "cup"
+                },
+                {
+                  "amount": "1 1/24",
+                  "unit": "cup"
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Eggs": {
+              "amounts": [
+                {
+                  "amount": "some",
+                  "unit": ""
+                }
+              ],
+              "substitutions": [
+                {
+                  "Flax": {
+                    "amounts": [
+                      {
+                        "amount": 1,
+                        "unit": "tbsp"
+                      },
+                      {
+                        "amount": "lots",
+                        "unit": ""
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "slot_index": 5,
+        "amount": "2",
+        "unit": "tbsp",
+        "expected_ingredients": [
+          {
+            "Flour": {
+              "usda_num": 20081,
+              "amounts": [
+                {
+                  "amount": 2,
+                  "unit": "cup"
+                }
+              ],
+              "notes": [
+                "sifted"
+              ]
+            }
+          },
+          {
+            "Sugar": {
+              "amounts": [
+                {
+                  "amount": "a pinch",
+                  "unit": ""
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Butter": {
+              "amounts": [
+                {
+                  "amount": 1,
+                  "unit": "cup"
+                },
+                {
+                  "amount": 8,
+                  "unit": "oz"
+                }
+              ],
+              "section": "Frosting"
+            }
+          },
+          {
+            "Eggs": {
+              "amounts": [
+                {
+                  "amount": "some",
+                  "unit": ""
+                }
+              ],
+              "substitutions": [
+                {
+                  "Flax": {
+                    "amounts": [
+                      {
+                        "amount": "2",
+                        "unit": "tbsp"
+                      },
+                      {
+                        "amount": "lots",
+                        "unit": ""
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "build_new_ingredient": [
+    {
+      "args": [
+        "Milk",
+        "250",
+        "ml",
+        null,
+        null
+      ],
+      "expected": {
+        "Milk": {
+          "amounts": [
+            {
+              "amount": "1 1/24",
+              "unit": "cup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "Flour",
+        "2",
+        "cups",
+        "Dough",
+        {
+          "usda_num": "1",
+          "notes": [
+            "sifted"
+          ],
+          "amounts": [
+            {
+              "amount": 9
+            }
+          ],
+          "section": "Old",
+          "processing": [],
+          "substitutions": null
+        }
+      ],
+      "expected": {
+        "Flour": {
+          "amounts": [
+            {
+              "amount": "2",
+              "unit": "cups"
+            }
+          ],
+          "section": "Dough",
+          "usda_num": "1",
+          "notes": [
+            "sifted"
+          ]
+        }
+      }
+    },
+    {
+      "args": [
+        "Salt",
+        "",
+        "",
+        "",
+        {}
+      ],
+      "expected": {
+        "Salt": {
+          "amounts": [
+            {
+              "amount": "",
+              "unit": ""
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "parse_yield_text": [
+    {
+      "text": "4 servings",
+      "expected": {
+        "amount": 4,
+        "unit": "servings"
+      }
+    },
+    {
+      "text": "6",
+      "expected": {
+        "amount": 6,
+        "unit": "servings"
+      }
+    },
+    {
+      "text": "Serves a crowd",
+      "expected": null
+    },
+    {
+      "text": "0",
+      "expected": null
+    },
+    {
+      "text": "12 Muffins",
+      "expected": {
+        "amount": 12,
+        "unit": "muffins"
+      }
+    },
+    {
+      "text": " 3  cups ",
+      "expected": {
+        "amount": 3,
+        "unit": "cups"
+      }
+    },
+    {
+      "text": null,
+      "expected": null
+    },
+    {
+      "text": "None",
+      "expected": null
+    },
+    {
+      "text": "-2",
+      "expected": null
+    },
+    {
+      "text": "10pcs",
+      "expected": {
+        "amount": 10,
+        "unit": "pcs"
+      }
+    }
+  ],
+  "normalize_rating": [
+    {
+      "value": 3,
+      "expected": 3
+    },
+    {
+      "value": "4",
+      "expected": 4
+    },
+    {
+      "value": " 5 ",
+      "expected": 5
+    },
+    {
+      "value": "3.0",
+      "expected": null
+    },
+    {
+      "value": 0,
+      "expected": null
+    },
+    {
+      "value": 6,
+      "expected": null
+    },
+    {
+      "value": true,
+      "expected": null
+    },
+    {
+      "value": null,
+      "expected": null
+    },
+    {
+      "value": "None",
+      "expected": null
+    },
+    {
+      "value": "",
+      "expected": null
+    },
+    {
+      "value": "+2",
+      "expected": 2
+    },
+    {
+      "value": "2_0",
+      "expected": null
+    },
+    {
+      "value": 2.0,
+      "expected": null
+    },
+    {
+      "value": "x",
+      "expected": null
+    }
+  ],
+  "parse_notes_field": [
+    {
+      "text": "sifted",
+      "expected": [
+        "sifted"
+      ]
+    },
+    {
+      "text": "a; b ;",
+      "expected": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "text": "",
+      "expected": []
+    },
+    {
+      "text": null,
+      "expected": []
+    },
+    {
+      "text": " ; ",
+      "expected": []
+    }
+  ],
+  "slugify": [
+    {
+      "name": "Banana Bread",
+      "expected": "banana-bread"
+    },
+    {
+      "name": "Mom's Best!!",
+      "expected": "mom-s-best"
+    },
+    {
+      "name": "---",
+      "expected": "recipe"
+    },
+    {
+      "name": "Crème brûlée",
+      "expected": "cr-me-br-l-e"
+    },
+    {
+      "name": "",
+      "expected": "recipe"
+    },
+    {
+      "name": "Chili 2.0",
+      "expected": "chili-2-0"
+    }
+  ],
+  "unique_filenames": {
+    "names": [
+      "Soup",
+      "soup",
+      "SOUP!",
+      "Stew",
+      "---",
+      "!!!"
+    ],
+    "expected": [
+      "soup.yaml",
+      "soup-2.yaml",
+      "soup-3.yaml",
+      "stew.yaml",
+      "recipe.yaml",
+      "recipe-2.yaml"
+    ]
+  }
+}
