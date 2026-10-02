@@ -430,3 +430,21 @@ class TestPantryAddedOn(PantryRouteTestCase):
 
         self.assertIn('<span class="pantry-date-note">Added Sep 13, 2026</span>', body)
         self.assertNotIn('action="/pantry/added-on"', body)
+
+
+class TestAisleDropdown(PantryRouteTestCase):
+    """Aisle fields get the store-aisle dropdown from static/aisle-picker.js, which
+    reads the page's aisle list; both pages must load it and carry every aisle."""
+
+    def _assert_dropdown(self, body):
+        self.assertIn("aisle-picker.js", body)
+        self.assertIn('list="aisle-suggestions"', body)
+        self.assertIn('<datalist id="aisle-suggestions">', body)
+        for aisle in app_module.DEFAULT_AISLES:
+            self.assertIn('<option value="%s">' % aisle.replace("&", "&amp;"), body)
+
+    def test_pantry_aisle_fields_offer_every_aisle(self):
+        self._assert_dropdown(self.client.get("/pantry").get_data(as_text=True))
+
+    def test_shopping_list_aisle_fields_offer_every_aisle(self):
+        self._assert_dropdown(self.client.get("/shopping-list").get_data(as_text=True))

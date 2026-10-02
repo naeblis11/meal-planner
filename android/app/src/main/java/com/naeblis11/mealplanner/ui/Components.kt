@@ -4,7 +4,6 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,15 +11,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -132,25 +137,34 @@ fun AttentionBanner(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * An aisle text field with one-tap chips for the store aisles whose names contain
- * what was typed (the Pi's datalist). An empty field, or an exact aisle, shows none.
+ * An aisle text field with a dropdown of the store aisles (the Pi's aisle list). Tapping
+ * the field opens every aisle; typing narrows it to the aisles containing the text, and
+ * a custom aisle can still be typed. An exact aisle shows the whole list again.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AisleField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, label: String = "Aisle (optional)") {
+    var expanded by remember { mutableStateOf(false) }
     val typed = value.trim()
-    val matches = if (typed.isEmpty()) {
-        emptyList()
+    val all = GroceryCategories.AISLE_ORDER
+    val options = if (typed.isEmpty() || all.any { it.equals(typed, ignoreCase = true) }) {
+        all
     } else {
-        GroceryCategories.AISLE_ORDER.filter { it.contains(typed, ignoreCase = true) && !it.equals(typed, ignoreCase = true) }
+        all.filter { it.contains(typed, ignoreCase = true) }
     }
-    Column(modifier.fillMaxWidth()) {
-        OutlinedTextField(value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        if (matches.isNotEmpty()) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp).horizontalScroll(rememberScrollState()),
-            ) {
-                for (aisle in matches) AssistChip(onClick = { onChange(aisle) }, label = { Text(aisle) })
+    val open = expanded && options.isNotEmpty()
+    ExposedDropdownMenuBox(expanded = open, onExpandedChange = { expanded = it }, modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onChange(it); expanded = true },
+            label = { Text(label) },
+            singleLine = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }) {
+            for (aisle in options) {
+                DropdownMenuItem(text = { Text(aisle) }, onClick = { onChange(aisle); expanded = false })
             }
         }
     }

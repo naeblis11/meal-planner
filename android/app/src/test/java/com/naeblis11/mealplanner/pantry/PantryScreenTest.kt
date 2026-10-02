@@ -7,15 +7,18 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.naeblis11.mealplanner.data.PantryItemEntity
 import com.naeblis11.mealplanner.domain.AisleGroup
+import com.naeblis11.mealplanner.domain.GroceryCategories
 import com.naeblis11.mealplanner.domain.PantryDates
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,6 +72,20 @@ class PantryScreenTest {
         compose.onNodeWithText("Dairy & Eggs").performClick()
         compose.onNodeWithText("Add").performClick()
         assertEquals("Milk" to "Dairy & Eggs", added)
+    }
+
+    @Test
+    fun tappingAnEmptyAisleFieldListsEveryAisle() {
+        show()
+        compose.onNodeWithText("Add an ingredient").performTextInput("Milk")
+        compose.onNodeWithText("Aisle (optional)").performClick()
+        // Every store aisle is offered before anything is typed ("Spices & Baking" also heads a group).
+        for (aisle in GroceryCategories.AISLE_ORDER) {
+            assertTrue(aisle, compose.onAllNodesWithText(aisle).fetchSemanticsNodes().isNotEmpty())
+        }
+        compose.onNodeWithText("Household").performClick()
+        compose.onNodeWithText("Add").performClick()
+        assertEquals("Milk" to "Household", added)
     }
 
     @Test

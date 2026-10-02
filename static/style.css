@@ -2303,3 +2303,30 @@ button[type="submit"],
 .shopping-add { margin: 0 0 1rem; }
 .shopping-add input[name="amount"] { flex: 0 1 6rem; min-width: 5rem; }
 .shopping-add input[name="unit"] { flex: 0 1 7rem; min-width: 6rem; }
+
+/* Aisle fields: the dropdown of store aisles (static/aisle-picker.js), floating
+   under the field so cards cannot clip it. */
+.aisle-menu {
+  position: fixed;
+  z-index: 50;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+}
+.aisle-menu li {
+  padding: 0.7rem 1rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: var(--ink);
+}
+.aisle-menu li:hover {
+  background: var(--accent-tint);
+  color: var(--accent-hover);
+}
