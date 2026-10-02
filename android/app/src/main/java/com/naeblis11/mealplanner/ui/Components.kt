@@ -162,7 +162,8 @@ fun AisleField(value: String, onChange: (String) -> Unit, modifier: Modifier = M
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
         )
-        ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }) {
+        // White like the rest of the app (DESIGN.md), not Material's tinted menu surface.
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }, containerColor = MealColors.Paper) {
             for (aisle in options) {
                 DropdownMenuItem(text = { Text(aisle) }, onClick = { onChange(aisle); expanded = false })
             }
