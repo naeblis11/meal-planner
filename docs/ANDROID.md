@@ -83,10 +83,10 @@ if (Test-Path $jks) {
   $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
   try { $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
   $lines = @(
-    "storeFile=" + ($jks -replace '\\', '/'),
-    "storePassword=" + ($plain -replace '\\', '\\'),
+    ("storeFile=" + ($jks -replace '\\', '/')),
+    ("storePassword=" + ($plain -replace '\\', '\\')),
     "keyAlias=meal-planner",
-    "keyPassword=" + ($plain -replace '\\', '\\')
+    ("keyPassword=" + ($plain -replace '\\', '\\'))
   )
   $text = ($lines -join "`n") + "`n"
   [System.IO.File]::WriteAllText((Join-Path (Get-Location) "android\keystore.properties"), $text, (New-Object System.Text.UTF8Encoding $false))
