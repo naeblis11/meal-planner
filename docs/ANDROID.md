@@ -67,7 +67,7 @@ Releases are signed with your own keystore, which lives outside the repository i
 
 Run this once, in Windows PowerShell, from the repository folder. It makes the keystore if there isn't one yet, then writes `android\keystore.properties` from a password you type. The password is never written on a command line or in this document.
 
-When `keytool` asks, choose a keystore password (at least 6 characters), type it again to confirm, and answer the name questions however you like, and type `yes` at the last question ("Is CN=... correct?"): pressing Enter there means no and sends you back to the name questions. (It does not ask for a separate key password: the key uses the same one.) Then type the same password once more at the script's own prompt, "Type the keystore password again".
+When `keytool` asks, choose a keystore password (at least 6 characters) and type it again to confirm. It asks no name questions: the certificate is named "Meal Planner", because whatever is in it can be read by anyone who downloads the app, for every version. (It does not ask for a separate key password: the key uses the same one.) Then type the same password once more at the script's own prompt, "Type the keystore password again".
 
 ```powershell
 if (-not (Test-Path "android\gradlew.bat")) { Write-Warning "Run this from the Meal Planner repository folder." } else {
@@ -76,7 +76,7 @@ $dir = Join-Path $env:LOCALAPPDATA "Meal Planner"
 $jks = Join-Path $dir "android-release.jks"
 if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
 if (-not (Test-Path $jks)) {
-  & $keytool -genkeypair -keystore $jks -storetype PKCS12 -alias meal-planner -keyalg RSA -keysize 4096 -validity 10000
+  & $keytool -genkeypair -keystore $jks -storetype PKCS12 -alias meal-planner -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Meal Planner"
 }
 if (Test-Path $jks) {
   $secure = Read-Host "Type the keystore password again" -AsSecureString
