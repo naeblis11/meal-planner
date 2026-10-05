@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -24,13 +26,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -181,5 +189,31 @@ fun AisleHeader(aisle: String, count: Int) {
     ) {
         Text(aisle, style = MaterialTheme.typography.titleMedium)
         Text(if (count == 1) "1 item" else "$count items", color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** The web app's open-book outline: the marker for a recipe that came from a cookbook. */
+val BookIcon: ImageVector by lazy {
+    ImageVector.Builder("Book", 20.dp, 20.dp, 20f, 20f).addPath(
+        pathData = addPathNodes("M10 5.5C8.3 4.2 5.8 3.8 2.5 4v11c3.3-.2 5.8.2 7.5 1.5 1.7-1.3 4.2-1.7 7.5-1.5V4c-3.3-.2-5.8.2-7.5 1.5zM10 5.5v11"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 1.5f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round,
+    ).build()
+}
+
+/** "From <book>" under a recipe's title. */
+@Composable
+fun BookChip(book: String) {
+    Surface(color = MealColors.PaperAlt, shape = RoundedCornerShape(50)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
+            Icon(BookIcon, contentDescription = null, tint = MealColors.Muted, modifier = Modifier.size(16.dp))
+            Text(book, color = MealColors.Muted, style = MaterialTheme.typography.labelLarge)
+        }
     }
 }

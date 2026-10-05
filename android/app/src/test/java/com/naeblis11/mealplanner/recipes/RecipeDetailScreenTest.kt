@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme
 import org.junit.Assert.assertEquals
@@ -23,7 +24,7 @@ class RecipeDetailScreenTest {
 
     private val view = RecipeView(
         id = 1, name = "Soup", category = "Soups & Stews", subcategory = null, imageFilename = null, rating = 3,
-        author = null, sourceUrl = null, oven = null, notes = listOf("Freezes well."), servings = "4",
+        author = null, sourceUrl = null, book = null, oven = null, notes = listOf("Freezes well."), servings = "4",
         servingsUnit = "servings", canScale = true,
         ingredients = listOf(IngredientView(null, "Stock", "2", "cup", emptyList(), emptyList())),
         steps = listOf(StepView(1, "Simmer.", emptyList())),
@@ -46,6 +47,17 @@ class RecipeDetailScreenTest {
         assertEquals("8", scaled)
         compose.onNodeWithContentDescription("Rate 5 stars").performClick()
         assertEquals(5, rated)
+    }
+
+    @Test
+    fun showsTheCookbookARecipeCameFrom() {
+        compose.setContent {
+            MealPlannerTheme {
+                RecipeDetailScreen(view.copy(author = "Ann", book = "Flanders Family Cookbook"), null, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            }
+        }
+        compose.onNodeWithText("Flanders Family Cookbook").assertIsDisplayed()
+        compose.onNodeWithText("Source: Ann \u00b7 Flanders Family Cookbook").performScrollTo().assertIsDisplayed()
     }
 
     @Test

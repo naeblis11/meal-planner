@@ -56,17 +56,18 @@ interface RecipeDao {
     @Query("SELECT COUNT(*) FROM recipe WHERE image_filename = :imageFilename")
     suspend fun countImageUsers(imageFilename: String): Int
 
-    @Query("SELECT id, name, category, subcategory, image_filename, rating FROM recipe ORDER BY name")
+    @Query("SELECT id, name, category, subcategory, image_filename, rating, source_book_json FROM recipe ORDER BY name")
     fun observeSummaries(): Flow<List<RecipeSummary>>
 
-    /** The Pi's `_search_recipes`: name, category, subcategory, ingredient names and section headings. */
+    /** The Pi's `_search_recipes`: name, category, subcategory, cookbook, ingredient names and section headings. */
     @Query(
-        """SELECT DISTINCT r.id, r.name, r.category, r.subcategory, r.image_filename, r.rating
+        """SELECT DISTINCT r.id, r.name, r.category, r.subcategory, r.image_filename, r.rating, r.source_book_json
            FROM recipe r
            LEFT JOIN recipe_ingredient i ON i.recipe_id = r.id
            WHERE r.name LIKE :like
               OR r.category LIKE :like
               OR r.subcategory LIKE :like
+              OR r.source_book_json LIKE :like
               OR i.name LIKE :like
               OR i.section LIKE :like
            ORDER BY r.name""",

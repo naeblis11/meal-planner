@@ -17,9 +17,10 @@ class RecipeViewsTest {
         ovenTime: String? = null,
         ovenFan: String? = null,
         notes: String? = null,
+        sourceBook: String? = null,
     ) = RecipeEntity(
         id = 7, recipeUuid = "u", name = "Soup", author = "Ann", sourceAuthorsJson = null, sourceUrl = null,
-        sourceBookJson = null, ovenTempJson = ovenTemp, ovenFan = ovenFan, ovenTime = ovenTime, yieldsJson = yields,
+        sourceBookJson = sourceBook, ovenTempJson = ovenTemp, ovenFan = ovenFan, ovenTime = ovenTime, yieldsJson = yields,
         notesJson = notes, category = "Soups & Stews", subcategory = null, imageFilename = "u.jpg", rating = 4,
         rawYaml = "",
     )
@@ -80,5 +81,11 @@ class RecipeViewsTest {
         assertEquals("350\u00b0F \u00b7 45 min \u00b7 fan", view.oven)
         assertNull(RecipeViews.build(detail).oven)
     }
-}
 
+    @Test
+    fun namesTheCookbook() {
+        assertNull(RecipeViews.build(detail).book)
+        val fromBook = detail.copy(recipe = recipe(sourceBook = "\"Flanders Family Cookbook\""))
+        assertEquals("Flanders Family Cookbook", RecipeViews.build(fromBook).book)
+    }
+}

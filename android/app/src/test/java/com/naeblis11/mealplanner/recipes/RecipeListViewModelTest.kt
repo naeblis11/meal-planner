@@ -64,4 +64,28 @@ class RecipeListViewModelTest {
         val found = vm.groups.first { it != null && it.size == 1 }!!
         assertEquals(listOf("Pho"), found.single().recipes.map { it.name })
     }
+
+    @Test
+    fun narrowsTheListToOneCookbook() = runTest {
+        repo.save(doc("recipe_name: Toffee\nsource_book: Flanders Family Cookbook\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        repo.save(doc("recipe_name: Fudge\nsource_book: [Flanders Family Cookbook]\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        repo.save(doc("recipe_name: Brownies\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        val vm = newVm()
+        // The names in the list once it holds exactly [count] recipes.
+        suspend fun namesWhen(count: Int) =
+            vm.groups.first { it?.singleOrNull()?.recipes?.size == count }!!.single().recipes.map { it.name }
+
+        assertEquals(listOf("Flanders Family Cookbook"), vm.books.first { it.isNotEmpty() })
+
+        vm.setBook("Flanders Family Cookbook")
+        assertEquals(listOf("Fudge", "Toffee"), namesWhen(2))
+
+        vm.setQuery("toff")
+        assertEquals(listOf("Toffee"), namesWhen(1))
+
+        // Search finds the book's title, with no book picked.
+        vm.setQuery("flanders")
+        vm.setBook(null)
+        assertEquals(listOf("Fudge", "Toffee"), namesWhen(2))
+    }
 }

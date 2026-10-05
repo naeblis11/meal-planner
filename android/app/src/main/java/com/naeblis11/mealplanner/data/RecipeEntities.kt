@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.naeblis11.mealplanner.domain.Books
 
 /**
  * A recipe, mirroring the Pi's `recipe` table. [rawYaml] is the whole ORF
@@ -74,4 +75,8 @@ data class RecipeSummary(
     val subcategory: String?,
     @ColumnInfo(name = "image_filename") val imageFilename: String?,
     val rating: Int?,
-)
+    @ColumnInfo(name = "source_book_json") val sourceBookJson: String? = null,
+) {
+    /** The cookbook this recipe came from, or null. */
+    val book: String? get() = Books.name(sourceBookJson)
+}

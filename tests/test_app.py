@@ -227,6 +227,93 @@ class TestRecipesList(AppTestCase):
         self.assertIn("Cookies", body)
 
 
+class TestCookbookSource(AppTestCase):
+    """A recipe whose ORF `source_book` names a cookbook is marked with a book
+    icon in the list and on its page, and the list can be narrowed to one book."""
+
+    BOOK = "Flanders Family Cookbook"
+
+    def setUp(self):
+        super().setUp()
+        self._add_recipe("toffee.yaml", "English Toffee", f"source_book: {self.BOOK}\n")
+        self._add_recipe("fudge.yaml", "Grandma Fudge", f"source_book: [{self.BOOK}]\n")
+
+    def _add_recipe(self, file_name, name, extra=""):
+        (self.recipes_dir / file_name).write_text(
+            f"recipe_name: {name}\n{extra}steps: [{{step: cook}}]\n"
+            "ingredients: [{Sugar: {amounts: [{amount: '1', unit: cup}]}}]\n",
+            encoding="utf-8",
+        )
+        recipe_sync.sync_recipes(self.recipes_dir, self.db_path)
+
+    def _recipe_id(self, name):
+        conn = db.get_connection(self.db_path)
+        try:
+            return conn.execute("SELECT id FROM recipe WHERE name = ?", (name,)).fetchone()[0]
+        finally:
+            conn.close()
+
+    def _row(self, body, name):
+        """The list row (one <li>) holding the recipe called `name`."""
+        start = body.index(name)
+        return body[body.rindex("<li", 0, start):body.index("</li>", start)]
+
+    def test_list_marks_cookbook_recipes_only(self):
+        body = self.client.get("/recipes").get_data(as_text=True)
+
+        self.assertIn('class="book-mark"', self._row(body, "English Toffee"))
+        self.assertIn(f'title="From {self.BOOK}"', self._row(body, "English Toffee"))
+        self.assertIn('class="book-mark"', self._row(body, "Grandma Fudge"))
+        self.assertNotIn('class="book-mark"', self._row(body, "Banana Bread"))
+
+    def test_list_offers_a_filter_per_book(self):
+        body = self.client.get("/recipes").get_data(as_text=True)
+
+        self.assertIn('class="book-filter"', body)
+        self.assertIn("?book=Flanders+Family+Cookbook", body)
+
+    def test_no_book_filter_when_no_recipe_names_a_book(self):
+        for path in self.recipes_dir.glob("*.yaml"):
+            if path.name in ("toffee.yaml", "fudge.yaml"):
+                path.unlink()
+        recipe_sync.sync_recipes(self.recipes_dir, self.db_path)
+
+        body = self.client.get("/recipes").get_data(as_text=True)
+
+        self.assertNotIn('class="book-filter"', body)
+
+    def test_book_filter_shows_only_that_books_recipes(self):
+        body = self.client.get("/recipes?book=Flanders Family Cookbook").get_data(as_text=True)
+
+        self.assertIn("English Toffee", body)
+        self.assertIn("Grandma Fudge", body)
+        self.assertNotIn("Banana Bread", body)
+        self.assertIn('aria-current="true"', body)
+
+    def test_book_filter_combines_with_search(self):
+        body = self.client.get("/recipes?book=Flanders Family Cookbook&q=toffee").get_data(as_text=True)
+
+        self.assertIn("English Toffee", body)
+        self.assertNotIn("Grandma Fudge", body)
+
+    def test_search_matches_the_book_name(self):
+        body = self.client.get("/recipes?q=flanders").get_data(as_text=True)
+
+        self.assertIn("English Toffee", body)
+        self.assertNotIn("Banana Bread", body)
+
+    def test_detail_shows_the_book(self):
+        body = self.client.get(f"/recipes/{self._recipe_id('English Toffee')}").get_data(as_text=True)
+
+        self.assertIn('class="book-chip"', body)
+        self.assertIn(self.BOOK, body)
+
+    def test_detail_without_a_book_has_no_chip(self):
+        body = self.client.get(f"/recipes/{self._recipe_id('Banana Bread')}").get_data(as_text=True)
+
+        self.assertNotIn('class="book-chip"', body)
+
+
 class TestRecipeDetail(AppTestCase):
     def test_shows_ingredients_and_steps(self):
         import db

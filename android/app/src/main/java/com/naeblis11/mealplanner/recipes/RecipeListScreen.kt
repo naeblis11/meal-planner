@@ -1,6 +1,7 @@
 package com.naeblis11.mealplanner.recipes
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,11 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -29,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.data.RecipeSummary
 import com.naeblis11.mealplanner.domain.CategoryGroup
+import com.naeblis11.mealplanner.ui.BookIcon
 import com.naeblis11.mealplanner.ui.PhotoImage
 import com.naeblis11.mealplanner.ui.RatingStars
 import com.naeblis11.mealplanner.ui.theme.MealColors
@@ -45,6 +50,9 @@ fun RecipeListScreen(
     onImport: () -> Unit,
     onSettings: () -> Unit,
     thumbnail: (RecipeSummary) -> File?,
+    books: List<String> = emptyList(),
+    book: String? = null,
+    onBookChange: (String?) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -72,6 +80,7 @@ fun RecipeListScreen(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
             }
+            if (books.isNotEmpty()) item(key = "books") { BookFilter(books, book, onBookChange) }
             when {
                 groups == null -> item { CircularProgressIndicator(Modifier.padding(24.dp)) }
                 groups.isEmpty() -> item {
@@ -108,10 +117,32 @@ private fun RecipeRow(recipe: RecipeSummary, thumbnail: File?, onOpen: (Long) ->
         ) {
             PhotoImage(thumbnail, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
             Column {
-                Text(recipe.name, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(recipe.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                    recipe.book?.let { Icon(BookIcon, contentDescription = "From $it", tint = MealColors.Accent, modifier = Modifier.size(16.dp)) }
+                }
                 if (recipe.rating != null) RatingStars(recipe.rating, size = MaterialTheme.typography.bodyMedium.fontSize)
             }
         }
         HorizontalDivider(color = MealColors.LineSoft)
+    }
+}
+
+/** "All recipes" plus one chip per cookbook in the library; the selected one narrows the list. */
+@Composable
+private fun BookFilter(books: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 4.dp),
+    ) {
+        FilterChip(selected = selected == null, onClick = { onSelect(null) }, label = { Text("All recipes") })
+        for (book in books) {
+            FilterChip(
+                selected = selected == book,
+                onClick = { onSelect(if (selected == book) null else book) },
+                label = { Text(book) },
+                leadingIcon = { Icon(BookIcon, contentDescription = null, modifier = Modifier.size(16.dp)) },
+            )
+        }
     }
 }

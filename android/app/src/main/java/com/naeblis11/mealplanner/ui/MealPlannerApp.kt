@@ -85,10 +85,15 @@ fun MealPlannerApp(container: AppContainer) {
                 val vm: RecipeListViewModel = viewModel { RecipeListViewModel(container.recipes) }
                 val groups by vm.groups.collectAsStateWithLifecycle()
                 val query by vm.query.collectAsStateWithLifecycle()
+                val books by vm.books.collectAsStateWithLifecycle()
+                val book by vm.book.collectAsStateWithLifecycle()
                 RecipeListScreen(
                     groups = groups,
                     query = query,
                     onQueryChange = vm::setQuery,
+                    books = books,
+                    book = book,
+                    onBookChange = vm::setBook,
                     onOpen = dropUnlessResumedWith { id: Long -> nav.navigate(Routes.recipe(id)) },
                     onNew = dropUnlessResumed { nav.navigate(Routes.NEW) },
                     onImport = startImport,

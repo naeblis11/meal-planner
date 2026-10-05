@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.recipes
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -47,5 +48,29 @@ class RecipeListScreenTest {
     fun explainsAnEmptyLibrary() {
         compose.setContent { MealPlannerTheme { RecipeListScreen(emptyList(), "", {}, {}, {}, {}, {}, { null }) } }
         compose.onNodeWithText("No recipes yet. Add one, or import a file.").assertIsDisplayed()
+    }
+
+    @Test
+    fun marksCookbookRecipesAndFiltersByBook() {
+        val toffee = RecipeSummary(3, "Toffee", "Desserts", null, null, null, "\"Flanders Family Cookbook\"")
+        var picked: String? = "unset"
+        compose.setContent {
+            MealPlannerTheme {
+                RecipeListScreen(
+                    listOf(CategoryGroup("Desserts", emptyList(), listOf(toffee))), "", {}, {}, {}, {}, {}, { null },
+                    books = listOf("Flanders Family Cookbook"), book = null, onBookChange = { picked = it },
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("From Flanders Family Cookbook").assertIsDisplayed()
+        compose.onNodeWithText("All recipes").assertIsDisplayed()
+        compose.onNodeWithText("Flanders Family Cookbook").performClick()
+        assertEquals("Flanders Family Cookbook", picked)
+    }
+
+    @Test
+    fun noCookbookFilterWithoutCookbooks() {
+        compose.setContent { MealPlannerTheme { RecipeListScreen(groups, "", {}, {}, {}, {}, {}, { null }) } }
+        compose.onNodeWithText("All recipes").assertDoesNotExist()
     }
 }

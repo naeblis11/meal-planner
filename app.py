@@ -146,29 +146,44 @@ def _display_value(value) -> str:
     return value
 
 
+def _book_name(source_book_json):
+    """The cookbook a recipe came from as one display string, or None. ORF
+    lets `source_book` be a single title or a list of them."""
+    value = _load_json(source_book_json)
+    if isinstance(value, list):
+        value = ", ".join(str(v).strip() for v in value if str(v).strip())
+    if value is None or isinstance(value, dict):
+        return None
+    return str(value).strip() or None
+
+
 def _search_recipes(conn, query: str):
     """Recipes matching `query` across everything a cook might search by:
-    the recipe's own name, the category and subcategory it files under, and
-    the ingredient list, including the section headings inside it."""
+    the recipe's own name, the category and subcategory it files under, the
+    cookbook it came from, and the ingredient list, including the section
+    headings inside it. Each row carries `book`, the cookbook's title or None."""
     if not query:
-        return conn.execute(
-            "SELECT id, name, category, subcategory, image_filename, rating FROM recipe ORDER BY name"
+        rows = conn.execute(
+            "SELECT id, name, category, subcategory, image_filename, rating, source_book_json"
+            " FROM recipe ORDER BY name"
         ).fetchall()
-
-    like = f"%{query}%"
-    return conn.execute(
-        """SELECT DISTINCT r."id", r."name", r."category", r."subcategory",
-                  r."image_filename", r."rating"
-           FROM "recipe" r
-           LEFT JOIN "recipe_ingredient" i ON i."recipe_id" = r."id"
-           WHERE r."name" LIKE ?
-              OR r."category" LIKE ?
-              OR r."subcategory" LIKE ?
-              OR i."name" LIKE ?
-              OR i."section" LIKE ?
-           ORDER BY r."name\"""",
-        (like, like, like, like, like),
-    ).fetchall()
+    else:
+        like = f"%{query}%"
+        rows = conn.execute(
+            """SELECT DISTINCT r."id", r."name", r."category", r."subcategory",
+                      r."image_filename", r."rating", r."source_book_json"
+               FROM "recipe" r
+               LEFT JOIN "recipe_ingredient" i ON i."recipe_id" = r."id"
+               WHERE r."name" LIKE ?
+                  OR r."category" LIKE ?
+                  OR r."subcategory" LIKE ?
+                  OR r."source_book_json" LIKE ?
+                  OR i."name" LIKE ?
+                  OR i."section" LIKE ?
+               ORDER BY r."name\"""",
+            (like, like, like, like, like, like),
+        ).fetchall()
+    return [dict(row, book=_book_name(row["source_book_json"])) for row in rows]
 
 
 def _group_recipes_by_category(rows) -> list:
@@ -444,6 +459,7 @@ def _recipe_row_to_dict(row) -> dict:
         "source_authors": _load_json(row["source_authors_json"]),
         "source_url": row["source_url"],
         "source_book": _load_json(row["source_book_json"]),
+        "book": _book_name(row["source_book_json"]),
         "oven_temp": _load_json(row["oven_temp_json"]),
         "oven_fan": row["oven_fan"],
         "oven_time": row["oven_time"],
@@ -780,14 +796,26 @@ def create_app(
     @app.route("/recipes")
     def recipes_list():
         query = request.args.get("q", "").strip()
+        book = request.args.get("book", "").strip()
         conn = get_db()
         rows = _search_recipes(conn, query)
+        # The filter offers every cookbook in the library, not just the ones
+        # in the current search, so it doesn't jump around as you type.
+        books = sorted(
+            {b for b in (_book_name(r["source_book_json"]) for r in conn.execute(
+                "SELECT source_book_json FROM recipe WHERE source_book_json IS NOT NULL")) if b},
+            key=str.lower,
+        )
+        if book:
+            rows = [r for r in rows if r["book"] == book]
         groups = _group_recipes_by_category(rows)
         return render_template(
             "recipes_list.html",
             groups=groups,
             has_recipes=bool(rows),
             query=query,
+            book=book,
+            books=books,
             max_rating=recipe_sync.MAX_RATING,
         )
 

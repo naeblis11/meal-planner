@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import breadcrumb, star_rating %}
+{% from "_macros.html" import breadcrumb, star_rating, book_icon %}
 {% block title %}{{ recipe['name'] }} - Meal Planner{% endblock %}
 {% block breadcrumb %}{{ breadcrumb([("Recipes", url_for('recipes_list')), (recipe['name'], none)]) }}{% endblock %}
 {% block content %}
@@ -31,6 +31,9 @@
             </details>
           </div>
         </div>
+        {% if recipe['book'] %}
+          <a class="book-chip" href="{{ url_for('recipes_list', book=recipe['book']) }}" title="More recipes from {{ recipe['book'] }}">{{ book_icon() }}{{ recipe['book'] }}</a>
+        {% endif %}
 
         <div class="recipe-meta-row">
           <span class="recipe-meta-item recipe-rating">
@@ -180,12 +183,13 @@
       <ul class="notes">{% for n in recipe['notes'] %}<li>{{ n }}</li>{% endfor %}</ul>
     {% endif %}
 
-    {% if recipe['author'] or recipe['source_authors'] or recipe['source_url'] %}
+    {% if recipe['author'] or recipe['source_authors'] or recipe['source_url'] or recipe['book'] %}
       <div class="subcategory">
         <h3>Source</h3>
       </div>
       <p class="source-line">
         {% if recipe['author'] %}{{ recipe['author'] }}{% elif recipe['source_authors'] %}{{ recipe['source_authors'] | join(', ') }}{% endif %}
+        {% if recipe['book'] %}{% if recipe['author'] or recipe['source_authors'] %} &mdash; {% endif %}<cite>{{ recipe['book'] }}</cite>{% endif %}
         {% if recipe['source_url'] %} &mdash; <a href="{{ recipe['source_url'] }}">{{ recipe['source_url'] }}</a>{% endif %}
       </p>
     {% endif %}

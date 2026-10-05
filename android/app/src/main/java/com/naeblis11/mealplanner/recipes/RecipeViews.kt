@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.recipes
 
 import com.naeblis11.mealplanner.data.RecipeDetail
 import com.naeblis11.mealplanner.domain.Amounts
+import com.naeblis11.mealplanner.domain.Books
 import com.naeblis11.mealplanner.domain.Fraction
 import com.naeblis11.mealplanner.domain.JsonTree
 import com.naeblis11.mealplanner.domain.OrfEditing
@@ -30,6 +31,7 @@ data class RecipeView(
     val rating: Int?,
     val author: String?,
     val sourceUrl: String?,
+    val book: String?,
     val oven: String?,
     val notes: List<String>,
     val servings: String?,
@@ -93,6 +95,7 @@ object RecipeViews {
             rating = recipe.rating,
             author = recipe.author,
             sourceUrl = recipe.sourceUrl,
+            book = Books.name(recipe.sourceBookJson),
             oven = oven,
             notes = OrfEditing.notesList(JsonTree.decode(recipe.notesJson)),
             servings = servings,

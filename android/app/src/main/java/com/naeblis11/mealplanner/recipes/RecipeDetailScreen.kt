@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.ui.AttentionBanner
+import com.naeblis11.mealplanner.ui.BookChip
 import com.naeblis11.mealplanner.ui.PhotoImage
 import com.naeblis11.mealplanner.ui.Pill
 import com.naeblis11.mealplanner.ui.RatingStars
@@ -137,6 +138,7 @@ fun RecipeDetailScreen(
             item(key = "header") {
                 Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(view.name, style = MaterialTheme.typography.headlineMedium)
+                    view.book?.let { BookChip(it) }
                     listOfNotNull(view.category, view.subcategory).takeIf { it.isNotEmpty() }?.let { Pill(it.joinToString(" \u00b7 ")) }
                     RatingStars(view.rating, onRate = onRate)
                     if (view.rating != null) TextButton(onClick = { onRate(0) }) { Text("Clear rating") }
@@ -164,7 +166,7 @@ fun RecipeDetailScreen(
                 item(key = "notes-label") { SectionLabel("Notes") }
                 for ((index, note) in view.notes.withIndex()) item(key = "note-$index") { Text(note, modifier = Modifier.padding(vertical = 4.dp)) }
             }
-            val source = listOfNotNull(view.author, view.sourceUrl)
+            val source = listOfNotNull(view.author, view.book, view.sourceUrl)
             if (source.isNotEmpty()) item(key = "source") { Text("Source: ${source.joinToString(" \u00b7 ")}", color = MealColors.Muted, modifier = Modifier.padding(top = 16.dp)) }
         }
     }
