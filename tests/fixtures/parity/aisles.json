@@ -74,5 +74,81 @@
   {
     "name": "",
     "expected": "Uncategorized"
+  },
+  {
+    "name": "green peppers",
+    "expected": "Produce"
+  },
+  {
+    "name": "crushed red pepper flakes",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "garlic cloves",
+    "expected": "Produce"
+  },
+  {
+    "name": "ground cloves",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "pepper jack cheese",
+    "expected": "Dairy & Eggs"
+  },
+  {
+    "name": "melted oleo",
+    "expected": "Dairy & Eggs"
+  },
+  {
+    "name": "canola oil",
+    "expected": "Condiments & Sauces"
+  },
+  {
+    "name": "Worcestershire sauce",
+    "expected": "Condiments & Sauces"
+  },
+  {
+    "name": "spaghetti sauce",
+    "expected": "Dry Goods & Pasta"
+  },
+  {
+    "name": "chopped pecans",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "dry roasted peanuts",
+    "expected": "Snacks"
+  },
+  {
+    "name": "yellow cake mix",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "chocolate pudding",
+    "expected": "Spices & Baking"
+  },
+  {
+    "name": "Cool Whip",
+    "expected": "Frozen"
+  },
+  {
+    "name": "pot roast",
+    "expected": "Meat & Seafood"
+  },
+  {
+    "name": "dry roasted",
+    "expected": "Uncategorized"
+  },
+  {
+    "name": "taco toppings",
+    "expected": "Uncategorized"
+  },
+  {
+    "name": "hot pepper sauce",
+    "expected": "Condiments & Sauces"
+  },
+  {
+    "name": "pineapple juice",
+    "expected": "Beverages"
   }
 ]

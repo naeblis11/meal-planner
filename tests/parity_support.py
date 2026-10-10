@@ -65,7 +65,13 @@ COMBINE = [
 AISLES = ["Yellow onions", "eggs", "Cornstarch", "corn", "sour cream", "Heavy cream",
           "black pepper", "red bell pepper", "chicken thighs", "tomato paste",
           "Frozen peas", "berries", "paper towels", "dragon fruit", "Olive Oil",
-          "cherries", "tomatoes", "Chocolate chips", ""]
+          "cherries", "tomatoes", "Chocolate chips", "",
+          # the keywords added from the family cookbook, and the orderings they rely on
+          "green peppers", "crushed red pepper flakes", "garlic cloves", "ground cloves",
+          "pepper jack cheese", "melted oleo", "canola oil", "Worcestershire sauce",
+          "spaghetti sauce", "chopped pecans", "dry roasted peanuts", "yellow cake mix",
+          "chocolate pudding", "Cool Whip", "pot roast", "dry roasted", "taco toppings",
+          "hot pepper sauce", "pineapple juice"]
 
 PANTRY_MATCH = [["salt", False, "Kosher salt"], ["salt", True, "Kosher salt"],
                 ["Salt", True, "salt"], ["oil", False, "Olive Oil"],
