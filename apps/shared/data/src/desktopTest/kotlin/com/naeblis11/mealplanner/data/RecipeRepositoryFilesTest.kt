@@ -3,6 +3,7 @@ package com.naeblis11.mealplanner.data
 import com.naeblis11.mealplanner.domain.RecipeYaml
 import com.naeblis11.mealplanner.domain.YamlMap
 import androidx.room.useWriterConnection
+import androidx.sqlite.SQLiteException
 import com.naeblis11.mealplanner.folder.FolderFileStore
 import com.naeblis11.mealplanner.folder.LIBRARY_BLOCKED_MESSAGE
 import com.naeblis11.mealplanner.folder.RecipeFileStore
@@ -103,8 +104,10 @@ class RecipeRepositoryFilesTest {
             ) { it.step() }
         }
         val soup = repo.doc(soupId)!!.apply { this["recipe_name"] = "Soup Changed" }
-        // Both files are written (soup.yaml overwritten, boom.yaml created), then the index transaction fails.
-        assertThrows(Exception::class.java) { runBlocking { repo.saveAll(listOf(soup, doc("Boom"))) } }
+        // Both files are written (soup.yaml overwritten, boom.yaml created), then the index transaction fails: the
+        // trigger's own failure reaches the caller, not one from the undo or a library-write message.
+        val failed = assertThrows(SQLiteException::class.java) { runBlocking { repo.saveAll(listOf(soup, doc("Boom"))) } }
+        assertTrue(failed.message, failed.message!!.contains("boom"))
         assertEquals(folderBefore, folder())
         assertEquals(rowsBefore, db.recipeDao().allRecipes())
         // The index still matches the restored file.

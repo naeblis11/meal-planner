@@ -15,6 +15,7 @@ import com.naeblis11.mealplanner.backup.StagedImport
 import com.naeblis11.mealplanner.backup.StagedKind
 import com.naeblis11.mealplanner.backup.StagedRecipe
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.domain.OrfEditing
 import com.naeblis11.mealplanner.domain.RecipeFormatException
 import com.naeblis11.mealplanner.folder.LIBRARY_BLOCKED_MESSAGE
@@ -29,9 +30,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,6 +78,14 @@ class ImportViewModel(
     private val _state = MutableStateFlow<ImportState>(ImportState.Idle)
     val state: StateFlow<ImportState> = _state.asStateFlow()
     private var job: Job? = null
+
+    /**
+     * The category editors' suggestions: the built-in lists plus what the library uses (owner, 2026-10-10).
+     * Collected by the screen, which starts from [CategoryOptions.DEFAULT]; nothing runs in this ViewModel's scope.
+     */
+    val categoryOptions: Flow<CategoryOptions> = repository.categoryOptions()
+        .catch { emit(CategoryOptions.DEFAULT) }
+
     @Volatile private var staged: StagedImport? = null
     @Volatile private var stagingDir: File? = null
     // Bumped by every start() and cancel(); a read from an older generation must not touch shared state.

@@ -8,7 +8,7 @@ A library moves between the phone and the Windows app as a zip of recipe files (
 
 Android 8.0 or newer.
 
-1. On the phone, open this repository's **Releases** page on GitHub and download the latest `meal-planner-<version>.apk` from **Assets**.
+1. On the phone, open this repository's **Releases** page on GitHub and download the latest `MealPlanner-<version>.apk` from **Assets**.
 2. Open the downloaded file. Android asks whether your browser (or file app) may install unknown apps: allow it for that app, install, and turn the setting off again afterwards if you like.
 3. Open **Meal Planner**.
 
@@ -115,7 +115,7 @@ The signed APK is `apps\androidApp\build\outputs\apk\release\androidApp-release.
 
 ## Releasing a new version
 
-The version is in `apps/gradle.properties`: raise `mealplanner.androidVersionCode` by one for every release and set `mealplanner.androidVersionName` (`1.0.1`, `1.1.0`, ...). One release carries both the Android and the Windows app, with the signed `latest.json` the apps check against; `tools/release.ps1` builds, signs and (after asking) publishes it. See [RELEASING.md](RELEASING.md).
+The version is in `apps/gradle.properties`: raise `mealplanner.androidVersionCode` by one for every release and set `mealplanner.androidVersionName` (`1.0.1`, `1.1.0`, ...). One release carries both the Android and the Windows app, with the signed `latest.json` the apps check against; `tools/release.ps1` (in the private working repository, outside the public one) builds, signs and (after asking) publishes it. See [RELEASING.md](RELEASING.md).
 
 ## Privacy
 

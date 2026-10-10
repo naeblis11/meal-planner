@@ -9,6 +9,7 @@ import com.naeblis11.mealplanner.data.PantryRepository
 import com.naeblis11.mealplanner.data.RecipeDetail
 import com.naeblis11.mealplanner.data.RecipeRepository
 import com.naeblis11.mealplanner.data.Stocked
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.domain.PantryRule
 import com.naeblis11.mealplanner.domain.Py
 import com.naeblis11.mealplanner.domain.ServingsInput
@@ -65,6 +66,14 @@ class RecipeDetailViewModel(
     val plannedMeals: StateFlow<Int> = repository.plannedCount(id)
         .catch { emit(0) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /**
+     * The Category form's suggestions: the built-in lists plus what the library uses (owner, 2026-10-10).
+     * Collected by the screen, which starts from [CategoryOptions.DEFAULT]; nothing runs in this ViewModel's scope.
+     */
+    val categoryOptions: Flow<CategoryOptions> = repository.categoryOptions()
+        .catch { emit(CategoryOptions.DEFAULT) }
+
     private val _deleted = MutableStateFlow(false)
 
     /**

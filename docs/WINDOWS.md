@@ -1,16 +1,16 @@
 # Windows desktop app
 
-Status: **preview**. The desktop app runs the same screens as the Android app, laid out for a PC
+The desktop app runs the same screens as the Android app, laid out for a PC
 window, and lives in the system tray. Its recipe library is a folder of Open Recipe Format files.
 While it runs it answers the Chrome extension and Alexa (through Home Assistant) on port 5000, and
 sends the week's meals to a Google calendar.
-It installs for your Windows account from an MSI (below). It does not yet sync phones; that arrives
-in phase 2 (docs/superpowers/specs/2026-10-04-cross-platform-apps-design.md).
+It installs for your Windows account from an MSI (below). It does not yet sync phones; that is
+planned as LAN sync (docs/superpowers/specs/2026-10-10-lan-sync-design.md).
 
 ## Install, update, uninstall
 
 Meal Planner installs from an MSI file for your Windows account only. It needs no administrator
-rights and asks for no folder. Double-click `Meal Planner-<version>.msi`.
+rights and asks for no folder. Double-click `MealPlanner-<version>.msi`.
 
 - **"Windows protected your PC."** The MSI isn't code-signed, so SmartScreen may stop it. Choose
   **More info**, check the file name, then choose **Run anyway**.
@@ -282,7 +282,8 @@ These are shared with the Android app:
 - **Recipe page.** An ingredient already in your pantry shows **In pantry**; any other shows
   **+ Pantry**, which adds it to the pantry in one click. **Assign to calendar** plans the recipe at
   the servings the page is scaled to. **More > Category** edits the category in place. On the recipe
-  list, a recipe's stars sit on their own line and rate it; the current star clears the rating.
+  list, small stars only show a recipe's rating; it is changed on the recipe page, where the current
+  star clears it.
 - **Instructions.** **Split here** cuts a step in two at the cursor, as does Ctrl+Enter (Cmd+Enter
   on a Mac) in the step's field.
 - **Reordering.** On the PC, each ingredient and step row has a drag handle, used with the primary
@@ -566,7 +567,8 @@ the property. That file has the same form and must exist, and a relative path th
 not from the folder your shell is in. With neither the property nor the file, the
 build still succeeds and has no client, and Settings asks for the client file. Google treats a
 Desktop app's client secret as not confidential, since it ships inside the app, but keep both files
-out of the repo all the same: the public export (`tools/export_public.py`) refuses a tracked
+out of the repo all the same: the public export (`tools/export_public.py`, in the private working
+repository, outside the public one) refuses a tracked
 `google-client.properties` or `google-client.json`.
 
 ## Build the installer
@@ -658,6 +660,7 @@ Its hard rules:
 - It never touches `Documents\Meal Planner` or `%LOCALAPPDATA%\Meal Planner`.
 - It never uses port 5000.
 - It never announces itself on the network.
+- It never checks for updates (it never contacts GitHub).
 
 Because it runs on its own data folder, the app uses the preview's Java settings node,
 `HKCU\Software\JavaSoft\Prefs\com\naeblis11\mealplanner\preview`, which `:desktopApp:run` shares:
@@ -665,7 +668,7 @@ the run reads it, and creates it if it isn't there. The installed app's own sett
 `...\mealplanner` node above it, are neither read nor changed.
 
 It passes these settings through `JAVA_TOOL_OPTIONS`: `-Dmealplanner.startWithWindows=off`,
-`-Dmealplanner.peers=off`, `-Dmealplanner.selfCheck=on`, `-Dmealplanner.dataDir`,
+`-Dmealplanner.peers=off`, `-Dmealplanner.updates=off`, `-Dmealplanner.selfCheck=on`, `-Dmealplanner.dataDir`,
 `-Dmealplanner.port` and `-Djava.io.tmpdir`. The JVM reads that variable before the launcher's own
 options, so it can add settings but never undo `installed=true`; the app therefore lets an explicit
 `off` win over `installed=true`. If the image's launcher options aren't exactly the installed app's,

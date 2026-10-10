@@ -175,16 +175,23 @@ fun AttentionBanner(text: String, modifier: Modifier = Modifier, action: String?
 }
 
 /**
- * An aisle text field with a dropdown of the store aisles (the Pi's aisle list). Tapping
- * the field opens every aisle; typing narrows it to the aisles containing the text, and
- * a custom aisle can still be typed. An exact aisle shows the whole list again.
+ * An aisle text field with a dropdown of the store aisles (the Pi's aisle list); see [SuggestField].
+ */
+@Composable
+fun AisleField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, label: String = "Aisle (optional)") {
+    SuggestField(value, onChange, GroceryCategories.AISLE_ORDER, label, modifier)
+}
+
+/**
+ * A text field that suggests as you type. Tapping the field opens every option; typing
+ * narrows it to the options containing the text, and anything else can still be typed.
+ * An exact option shows the whole list again.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AisleField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, label: String = "Aisle (optional)") {
+fun SuggestField(value: String, onChange: (String) -> Unit, all: List<String>, label: String, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     val typed = value.trim()
-    val all = GroceryCategories.AISLE_ORDER
     val options = if (typed.isEmpty() || all.any { it.equals(typed, ignoreCase = true) }) {
         all
     } else {
@@ -202,8 +209,8 @@ fun AisleField(value: String, onChange: (String) -> Unit, modifier: Modifier = M
         )
         // White like the rest of the app (DESIGN.md), not Material's tinted menu surface.
         ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }, containerColor = MealColors.Paper) {
-            for (aisle in options) {
-                DropdownMenuItem(text = { Text(aisle) }, onClick = { onChange(aisle); expanded = false })
+            for (option in options) {
+                DropdownMenuItem(text = { Text(option) }, onClick = { onChange(option); expanded = false })
             }
         }
     }

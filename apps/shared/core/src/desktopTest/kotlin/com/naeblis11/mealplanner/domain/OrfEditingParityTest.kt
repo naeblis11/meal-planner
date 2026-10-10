@@ -34,7 +34,7 @@ class OrfEditingParityTest {
 
     @Test
     fun documentHelpers() {
-        for (case in cases["docs"]!!.jsonArray) {
+        for (case in cases.cases("docs")) {
             val name = case.obj["name"]!!.str()
             val doc = doc(case.obj["doc"]!!)
             assertEquals("$name unparseable", case.obj["unparseable"],
@@ -49,7 +49,7 @@ class OrfEditingParityTest {
 
     @Test
     fun ingredientsFromRows() {
-        for (case in cases["ingredients_from_form"]!!.jsonArray) {
+        for (case in cases.cases("ingredients_from_form")) {
             val rows = case.obj["rows"]!!.jsonArray.map { r ->
                 SubmittedRow(
                     key = r.obj["key"]!!.str()!!, kind = r.obj["kind"]!!.str()!!, name = r.obj["name"]!!.str()!!,
@@ -64,7 +64,7 @@ class OrfEditingParityTest {
 
     @Test
     fun stepsFromRows() {
-        for (case in cases["steps_from_form"]!!.jsonArray) {
+        for (case in cases.cases("steps_from_form")) {
             val rows = case.obj["rows"]!!.jsonArray.map { SubmittedStep(it.obj["key"]!!.str()!!, it.obj["text"]!!.str()!!) }
             assertEquals(case.obj["name"]!!.str(), case.obj["expected"],
                 JsonTree.toJson(OrfEditing.stepsFromRows(rows, list(case.obj["old"]!!))))
@@ -74,7 +74,7 @@ class OrfEditingParityTest {
     @Test
     fun amountCorrections() {
         val corrections = cases["amount_corrections"]!!.obj
-        for (case in corrections["cases"]!!.jsonArray) {
+        for (case in corrections.cases("cases")) {
             val doc = doc(corrections["doc"]!!)
             val slot = case.obj["slot_index"]!!.jsonPrimitive.int
             OrfEditing.applyAmountCorrection(doc, slot, case.obj["amount"]!!.str()!!, case.obj["unit"]!!.str()!!)
@@ -84,7 +84,7 @@ class OrfEditingParityTest {
 
     @Test
     fun buildNewIngredient() {
-        for (case in cases["build_new_ingredient"]!!.jsonArray) {
+        for (case in cases.cases("build_new_ingredient")) {
             val args = case.obj["args"]!!.jsonArray
             @Suppress("UNCHECKED_CAST")
             val preserved = JsonTree.fromJson(args[4]) as Map<Any?, Any?>?
@@ -95,27 +95,27 @@ class OrfEditingParityTest {
 
     @Test
     fun smallHelpers() {
-        for (case in cases["parse_yield_text"]!!.jsonArray) {
+        for (case in cases.cases("parse_yield_text")) {
             val text = case.obj["text"]!!.str()
             assertEquals("parse_yield_text($text)", case.obj["expected"], JsonTree.toJson(OrfEditing.parseYieldText(text)))
         }
-        for (case in cases["normalize_rating"]!!.jsonArray) {
+        for (case in cases.cases("normalize_rating")) {
             val value = JsonTree.fromJson(case.obj["value"]!!)
             assertEquals("normalize_rating($value)", case.obj["expected"], JsonTree.toJson(Orf.normalizeRating(value)))
         }
-        for (case in cases["parse_notes_field"]!!.jsonArray) {
+        for (case in cases.cases("parse_notes_field")) {
             val text = case.obj["text"]!!.str()
             assertEquals("parse_notes_field($text)", case.obj["expected"], JsonTree.toJson(OrfEditing.parseNotesField(text)))
         }
-        for (case in cases["slugify"]!!.jsonArray) {
+        for (case in cases.cases("slugify")) {
             val name = case.obj["name"]!!.str()!!
             assertEquals("slugify($name)", case.obj["expected"]!!.str(), OrfEditing.slugify(name))
         }
         val unique = cases["unique_filenames"]!!.obj
         val taken = mutableSetOf<String>()
         assertEquals(
-            unique["expected"]!!.jsonArray.map { it.str() },
-            unique["names"]!!.jsonArray.map { OrfEditing.uniqueFilename(it.str()!!, taken) },
+            unique.cases("expected").map { it.str() },
+            unique.cases("names").map { OrfEditing.uniqueFilename(it.str()!!, taken) },
         )
     }
 }

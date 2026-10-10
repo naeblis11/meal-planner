@@ -16,7 +16,7 @@ class FakeGoogleCalendarApi : GoogleCalendarApi {
     val events = linkedMapOf<Pair<String, String>, Stored>()
     val writes = mutableListOf<String>()
 
-    /** Event ids whose insert or update Google refuses (500). */
+    /** Event ids whose insert, update or delete Google refuses (500). */
     val failing = mutableSetOf<String>()
 
     /** Event ids Google answers 410 for (deleted long ago and purged): an update of one is refused. */
@@ -60,6 +60,7 @@ class FakeGoogleCalendarApi : GoogleCalendarApi {
 
     override fun deleteEvent(calendarId: String, eventId: String): Boolean {
         gate()
+        if (eventId in failing) throw GoogleApiException(500, "Google answered 500: Backend Error")
         // As HttpGoogleCalendarApi: a 404 (the event or its calendar) or a 410 is "already gone".
         if (!hasCalendar(calendarId)) return false
         val stored = events[calendarId to eventId]

@@ -35,6 +35,7 @@ class ExtensionImport(
             WebPayloadCheck.COMPLETE -> Unit
             WebPayloadCheck.MISSING -> return JsonReply.error(400, MISSING)
             WebPayloadCheck.ADDRESS_TOO_LONG -> return JsonReply.error(400, ADDRESS_TOO_LONG)
+            WebPayloadCheck.IMAGE_ADDRESS_TOO_LONG -> return JsonReply.error(400, IMAGE_ADDRESS_TOO_LONG)
             WebPayloadCheck.FIELD_TOO_LONG -> return JsonReply.error(400, FIELD_TOO_LONG)
         }
         val uuid = newUuid()
@@ -74,6 +75,7 @@ class ExtensionImport(
 
         /** The desktop's own (Python has no caps): an address or a field over WebExtraction.checkPayload's caps. */
         const val ADDRESS_TOO_LONG = "That page's address is too long. Remove the part after ? and send it again."
+        const val IMAGE_ADDRESS_TOO_LONG = "That page's photo has an address that is too long to import."
         const val FIELD_TOO_LONG = "That recipe has a field that is too long to import."
         const val PHOTO_WARNING = "Could not download photo"
         const val QUEUE_FULL = "Meal Planner already has recipes waiting for review. Review those, then send this one again."

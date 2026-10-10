@@ -16,7 +16,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.LockSupport
-import java.util.prefs.Preferences
 import kotlin.concurrent.thread
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -30,16 +29,15 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** The settings are always MapSettings: the default PreferencesStore is the registry (HKCU\Software\JavaSoft\Prefs). */
 class DesktopStartupTest {
     private val dir: File = Files.createTempDirectory("mp-startup").toFile()
-    private val prefsNode = "com/naeblis11/mealplanner/test-${System.nanoTime()}"
-    private val app = DesktopApp(dir, prefsNode)
+    private val app = DesktopApp(dir, settingsFactory = { MapSettings() })
 
     @After
     fun tearDown() {
         app.close()
         dir.deleteRecursively()
-        Preferences.userRoot().node(prefsNode).removeNode()
     }
 
     private fun Thread.isParked() = state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING
@@ -73,7 +71,7 @@ class DesktopStartupTest {
     fun aRecipeFolderThatCantBeReadAtStartupIsListedAndNotWatched() {
         val other = Files.createTempDirectory("mp-startup-broken").toFile()
         val recipes = File(other, "recipes").apply { writeText("a file where the folder should be") }
-        val broken = DesktopApp(other, prefsNode)
+        val broken = DesktopApp(other, settingsFactory = { MapSettings() })
         try {
             runBlocking { broken.start().join() }
             assertEquals(listOf("Can't read the recipe folder: ${recipes.path}. Meal Planner will pick it up again when it is back."), broken.folder.problems.value.map { it.message })
@@ -126,7 +124,7 @@ class DesktopStartupTest {
         val inTrash = CountDownLatch(1)
         val release = CountDownLatch(1)
         // The Recycle Bin is slow: the delete holds the recipe lock while it waits.
-        val slow = DesktopApp(other, prefsNode, moveToTrash = { file -> inTrash.countDown(); release.await(); file.delete() })
+        val slow = DesktopApp(other, settingsFactory = { MapSettings() }, moveToTrash = { file -> inTrash.countDown(); release.await(); file.delete() })
         try {
             File(slow.recipesDir, "soup.yaml").writeText(recipe("Soup"))
             runBlocking { slow.folder.sync() }
@@ -230,14 +228,14 @@ class DesktopStartupTest {
     fun aRecipeFolderMissingAtStartupIsListedNotRecreatedAndNotWatched() {
         val other = Files.createTempDirectory("mp-startup-missing").toFile()
         try {
-            val first = DesktopApp(other, prefsNode)
+            val first = DesktopApp(other, settingsFactory = { MapSettings() })
             File(first.recipesDir, "soup.yaml").writeText(recipe("Soup"))
             runBlocking { first.start().join() }
             first.close()
             // The folder goes away between runs (deleted, or an offline Documents folder).
             assertTrue(first.recipesDir.deleteRecursively())
 
-            val second = DesktopApp(other, prefsNode)
+            val second = DesktopApp(other, settingsFactory = { MapSettings() })
             try {
                 runBlocking {
                     second.start().join()

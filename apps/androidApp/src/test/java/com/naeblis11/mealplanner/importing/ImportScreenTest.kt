@@ -9,17 +9,23 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.naeblis11.mealplanner.backup.ImportAction
 import com.naeblis11.mealplanner.backup.StagedKind
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.recipes.EditorRowState
+import com.naeblis11.mealplanner.ui.CATEGORY_SUGGESTIONS_TAG
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -54,6 +60,21 @@ class ImportScreenTest {
         compose.onNodeWithText("bad.yaml: Missing required field(s): steps").assertExists()
         compose.onNodeWithText("Confirm").performClick()
         assertTrue(confirmed)
+    }
+
+    @Test
+    fun eachCardSuggestsTheLibrarysCategoriesAndTappingOneSetsIt() {
+        // Owner, 2026-10-10: the review a Chrome extension recipe lands in offers the same buttons as the edit page.
+        var rows = listOf(row(0, StagedKind.NEW, "Snickerdoodles"))
+        val state = ImportState.Reviewing("example.com", rows, emptyList())
+        val options = CategoryOptions.from(listOf("Cookies" to "Bars"))
+        compose.setContent {
+            MealPlannerTheme {
+                ImportScreen(state, { id, change -> rows = rows.map { if (it.tempId == id) change(it) else it } }, {}, {}, {}, categoryOptions = options)
+            }
+        }
+        compose.onNode(hasText("Cookies") and hasAnyAncestor(hasTestTag(CATEGORY_SUGGESTIONS_TAG))).performScrollTo().performClick()
+        assertEquals("Cookies", rows.single().category)
     }
 
     @Test

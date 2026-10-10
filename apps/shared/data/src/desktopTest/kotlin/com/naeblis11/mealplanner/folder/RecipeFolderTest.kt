@@ -371,6 +371,93 @@ class RecipeFolderTest {
         assertTrue(!dir.exists())
     }
 
+    /** A folder on [dir] whose uuid-patch write throws [failure], counting how often the notice is told in [told]. */
+    private fun refusing(failure: () -> IOException, told: () -> Unit) = RecipeFolder(
+        dir, db, recipes, newUuid = { "uuid-${++fileUuids}" }, clock = { now },
+        writer = { _, _ -> throw failure() }, onLibraryBlocked = told,
+    )
+
+    @Test
+    fun aUuidPatchWindowsRefusesListsTheFileAsBlockedAndTellsTheNotice() {
+        // P7-R10b: the sync's write of a recipe_uuid line is a library write like a save. Controlled folder access
+        // refuses the temp file: the file is listed with the one message, the notice is told, and the rest is indexed.
+        var told = 0
+        val blocked = refusing({ java.nio.file.AccessDeniedException(File(dir, ".soup.yaml.1.tmp").path) }, { told++ })
+        write("soup.yaml", recipe("Soup"))
+        write("stew.yaml", recipe("Stew", "u-stew"))
+        assertEquals(RecipeFolder.SyncResult(indexed = 1, unchanged = 0, removed = 0), runBlocking { blocked.sync() })
+        assertEquals(1, told)
+        val problem = blocked.problems.value.single()
+        assertEquals("soup.yaml", problem.fileName)
+        assertEquals(RecipeFileProblem.Kind.UNREADABLE, problem.kind)
+        assertEquals(LIBRARY_BLOCKED_MESSAGE, problem.message)
+        assertEquals(recipe("Soup"), File(dir, "soup.yaml").readText())
+        assertEquals(listOf("Stew"), names())
+    }
+
+    @Test
+    fun aUuidPatchThatFailsOtherwiseListsWhyWithNoPath() {
+        // Not the block: the reason, never a path (java.io puts the temp file's path before it; NIO names it as its file).
+        val temp = File(dir, ".soup.yaml.1.tmp")
+        val cases = listOf(
+            java.io.FileNotFoundException("${temp.path} (There is not enough space on the disk)") to "There is not enough space on the disk",
+            java.nio.file.FileSystemException(temp.path, null, "The device is not ready") to "The device is not ready",
+            ExistingFileRefusedException(java.nio.file.AccessDeniedException(temp.path)) to "the file may be open or read-only",
+        )
+        for ((failure, reason) in cases) {
+            var told = 0
+            val failing = refusing({ failure }, { told++ })
+            write("soup.yaml", recipe("Soup"))
+            runBlocking { failing.sync() }
+            assertEquals(0, told)
+            val problem = failing.problems.value.single()
+            assertEquals("soup.yaml", problem.fileName)
+            assertEquals("Couldn't save to Documents\\Meal Planner: $reason", problem.message)
+            assertFalse(problem.message, problem.message.contains(root.path))
+            assertEquals(recipe("Soup"), File(dir, "soup.yaml").readText())
+        }
+    }
+
+    @Test
+    fun assignNewIdWindowsRefusesSaysHowToAllowTheAppAndTellsTheNotice() {
+        var told = 0
+        val blocked = refusing({ java.nio.file.AccessDeniedException(File(dir, ".b.yaml.1.tmp").path) }, { told++ })
+        write("a.yaml", recipe("Recipe A", "dupe-1"))
+        write("b.yaml", recipe("Recipe B", "dupe-1"))
+        runBlocking { blocked.sync() }
+        val refused = assertThrows(LibraryBlockedException::class.java) { runBlocking { blocked.assignNewId("b.yaml") } }
+        assertEquals(LIBRARY_BLOCKED_MESSAGE, refused.message)
+        assertEquals(1, told)
+        assertEquals(recipe("Recipe B", "dupe-1"), File(dir, "b.yaml").readText())
+        assertEquals(listOf("Recipe A"), names())
+    }
+
+    @Test
+    fun aRemovalsWaitSurvivesASyncThatThrows() {
+        // R1: the folder goes away while a removal waits (an offline Documents folder). The sync that finds it gone
+        // throws and changes nothing, and once it is back the wait counts from the first miss, not from then.
+        write("soup.yaml", recipe("Soup", "u-soup"))
+        write("stew.yaml", recipe("Stew", "u-stew"))
+        sync()
+        File(dir, "soup.yaml").delete()
+        sync()
+        assertTrue(folder.removalsPending)
+        val away = File(root, "away")
+        assertTrue(dir.renameTo(away))
+        now += RecipeFolder.REMOVAL_DELAY_MILLIS / 2
+        assertThrows(IOException::class.java) { sync() }
+        assertTrue(folder.removalsPending)
+        assertEquals(listOf("Soup", "Stew"), names())
+        assertEquals(RecipeFileProblem.Kind.FOLDER, problems().single().kind)
+        assertTrue(away.renameTo(dir))
+        now += RecipeFolder.REMOVAL_DELAY_MILLIS / 2
+        // Had the wait started over, nothing would be removed yet.
+        assertEquals(RecipeFolder.SyncResult(indexed = 0, unchanged = 1, removed = 1), sync())
+        assertEquals(listOf("Stew"), names())
+        assertFalse(folder.removalsPending)
+        assertEquals(emptyList<RecipeFileProblem>(), problems())
+    }
+
     // Two steps, through a name of its own: a one-step rename that only changes letter case is
     // not one Java promises on Windows.
     private fun renameTo(from: String, to: String) {
@@ -623,6 +710,36 @@ class RecipeFolderTest {
         runBlocking { other.sync() }
         assertEquals(listOf("A", "B"), names())
         assertEquals(setOf(a), runBlocking { other.heldSummary() }.ids)
+    }
+
+    @Test
+    fun whileMovedAHeldRowWithTheHigherIdNeverMakesThePresentFileLookChanged() {
+        // P7-R10d b again, with recipe A indexed after B (its file sorts later, so its row has the higher id). Held, A's
+        // row and B's then share the name z.yaml; the file is unchanged by whichever row its hash matches, so it isn't
+        // parsed and upserted again every sync.
+        write("b.yaml", recipe("B", "u-b"))
+        write("z.yaml", recipe("A", "u-a"))
+        sync()
+        val a = row("u-a").id
+        assertTrue(a > row("u-b").id)
+        plan(a)
+        val moved = movedFolder()
+        File(moved, "z.yaml").writeText(recipe("B", "u-b"))
+        val other = RecipeFolder(moved, db, recipes, clock = { now })
+        assertEquals(RecipeFolder.SyncResult(indexed = 1, unchanged = 0, removed = 0), runBlocking { other.sync() })
+        later()
+        assertEquals(RecipeFolder.SyncResult(indexed = 0, unchanged = 1, removed = 0), runBlocking { other.sync() })
+        assertEquals(listOf("A", "B"), names())
+        assertEquals("z.yaml", row("u-b").fileName)
+        assertEquals(a, row("u-a").id)
+        assertEquals(a, planned())
+        assertEquals(1, other.problems.value.single().missingFiles)
+        // Accepted: A joins the hold, and the file is still unchanged at every sync.
+        runBlocking { other.useNewFolder() }
+        later()
+        assertEquals(RecipeFolder.SyncResult(indexed = 0, unchanged = 1, removed = 0), runBlocking { other.sync() })
+        assertEquals(setOf(a), runBlocking { other.heldSummary() }.ids)
+        assertEquals(listOf("A", "B"), names())
     }
 
     // P7-R10g: a move accepted with [held] still waiting (in the old folder only); [kept] is in both folders.

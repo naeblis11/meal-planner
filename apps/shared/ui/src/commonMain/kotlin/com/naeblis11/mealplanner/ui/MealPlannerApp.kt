@@ -31,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.naeblis11.mealplanner.app.AppContainer
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import com.naeblis11.mealplanner.importing.CHROME_RECIPE_WAITING
 import com.naeblis11.mealplanner.importing.ImportInbox
@@ -142,7 +143,15 @@ private fun AppShell(
         }
     }
     // A form with unsaved changes holds a switch of section until the user discards them.
-    val openSection: (String) -> Unit = { target -> if (nav.currentDestination?.route != target) leaveGuard.request { nav.openTab(target) } }
+    val openSection: (String) -> Unit = { target ->
+        if (nav.currentDestination?.route != target) leaveGuard.request {
+            // An import the rail leaves while it is reading, finished or failed (a review holds the guard, so it asks
+            // first) is over: popped, not saved for the tab, and reset to Idle, or the next recipe from the extension
+            // would wait behind it until the next file import (review, 2026-10-10).
+            if (nav.currentDestination?.route == Routes.IMPORT) { importVm.cancel(); nav.popBackStack() }
+            nav.openTab(target)
+        }
+    }
     CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
         Scaffold(
             bottomBar = { if (!wide && tab != null) MainTabs(selected = tab, onSelect = { openSection(it.route) }) },
@@ -173,6 +182,7 @@ private fun AppShell(
                         recipeDestinations(nav, container)
                         composable(Routes.IMPORT) { entry ->
                             val state by importVm.state.collectAsStateWithLifecycle()
+                            val categoryOptions by importVm.categoryOptions.collectAsStateWithLifecycle(CategoryOptions.DEFAULT)
                             ImportScreen(
                                 state = state,
                                 onUpdate = { id, change -> importVm.update(id, change) },
@@ -189,6 +199,7 @@ private fun AppShell(
                                     // Wherever the import was started (Settings too), its result leads to the recipe list.
                                     if (nav.currentDestination?.route == Routes.IMPORT) nav.popBackStack(Routes.RECIPES, inclusive = false)
                                 },
+                                categoryOptions = categoryOptions,
                             )
                         }
                         container.folder?.let { folder ->

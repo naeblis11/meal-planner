@@ -66,19 +66,11 @@ sendButton.addEventListener("click", async () => {
     const response = await fetch(`${APP_ORIGIN}/recipes/import/extension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // Send the app's session cookie so the household login gate lets us in.
-      credentials: "include",
       body: JSON.stringify(extractedRecipe),
     });
     const data = await response.json();
 
-    if (response.status === 401) {
-      statusEl.textContent = data.error || "Sign in to the Meal Planning app first.";
-      statusEl.className = "message error";
-      sendButton.disabled = false;
-      chrome.tabs.create({ url: `${APP_ORIGIN}/login` });
-      return;
-    }
+    // The desktop app has no sign-in: every refusal (400, 403, 413, 415, 503, 500) comes with data.error.
     if (!response.ok || !data.ok) {
       statusEl.textContent = data.error || "The Meal Planning app rejected this recipe.";
       statusEl.className = "message error";

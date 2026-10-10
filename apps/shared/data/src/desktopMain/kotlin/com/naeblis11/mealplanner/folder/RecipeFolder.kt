@@ -53,6 +53,13 @@ class RecipeFolder(
      * it through NIO, so a folder Windows refuses (Controlled folder access) is logged and then listed as missing.
      */
     private val makeDir: (File) -> Unit = { it.mkdirs() },
+    /**
+     * Writes a recipe file the sync patches (a recipe_uuid line added, or a duplicate's new id): AtomicFiles.write, a
+     * real library write that Windows can refuse (P7-R10b); tests refuse it.
+     */
+    private val writer: (File, ByteArray) -> Unit = AtomicFiles::write,
+    /** Told when Windows refused one of those writes (isLibraryBlocked), so the window's notice shows. */
+    private val onLibraryBlocked: () -> Unit = {},
 ) : RecipeFolderStatus {
     /** What one sync did, for tests and the log. */
     data class SyncResult(val indexed: Int, val unchanged: Int, val removed: Int)
@@ -179,9 +186,11 @@ class RecipeFolder(
         val diskName = files.associate { key(it.name) to it.name }
         val onDisk = diskName.keys
 
-        // Pass 1: what every file holds now. Nothing is written to the index yet.
-        val rowByName = rows.mapNotNull { row -> row.fileName?.let { it to row } }.toMap()
-        val reads = files.map { read(it, rowByName[it.name]) }
+        // Pass 1: what every file holds now. Nothing is written to the index yet. Two rows can share a file name
+        // while one is held (P7-R10d, P7-R10g: the recipe now in the file, and the held one indexed from it before),
+        // so a file is unchanged when its bytes hash to ANY row of its name, whichever has the higher id.
+        val rowsByName = rows.filter { it.fileName != null }.groupBy { it.fileName!! }
+        val reads = files.map { read(it, rowsByName[it.name].orEmpty()) }
         val held = reads.associate { key(it.file.name) to it.uuid }
 
         // Pass 2: which file keeps each recipe_uuid. The index's file keeps it while it still holds it, or while
@@ -318,20 +327,22 @@ class RecipeFolder(
     private fun isMassRemoval(gone: Int, fileRows: Int): Boolean =
         gone > 0 && (gone == fileRows || (gone > MASS_REMOVAL_MIN && gone * 2 > fileRows))
 
-    // Pass 1 for one file: unchanged (by hash, under its exact name), parsed, or broken. A file without a
-    // recipe_uuid gets one here, written into it by a one-line patch; a new uuid can't clash with anything.
-    private fun read(file: File, row: RecipeFileRow?): Read {
+    // Pass 1 for one file: unchanged (by hash, against the index rows under its exact name), parsed, or broken. A
+    // file without a recipe_uuid gets one here, written into it by a one-line patch; a new uuid can't clash with
+    // anything. That patch is a real library write: one Windows refuses lists the file with LIBRARY_BLOCKED_MESSAGE
+    // and tells the notice; any other failure lists why, with no path (librarySaveFailedMessage).
+    private fun read(file: File, rows: List<RecipeFileRow>): Read {
         val name = file.name
         return try {
             var bytes = file.readBytes()
             var hash = AtomicFiles.sha256(bytes)
-            if (row != null && row.fileHash == hash) return Unchanged(file, row.recipeUuid, hash, bytes)
+            rows.firstOrNull { it.fileHash == hash }?.let { return Unchanged(file, it.recipeUuid, hash, bytes) }
             var text = decode(bytes)
             val patched = withUuid(text)
                 ?: return Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, NO_UUID_LINE))
             if (patched != text) {
                 bytes = patched.toByteArray(Charsets.UTF_8)
-                AtomicFiles.write(file, bytes)
+                patchFile(file, bytes)
                 hash = AtomicFiles.sha256(bytes)
                 text = patched
             }
@@ -344,8 +355,24 @@ class RecipeFolder(
             Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, "Couldn't read this file: it isn't UTF-8 text."))
         } catch (e: RecipeFormatException) {
             Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, "Couldn't read this file: ${e.message}"))
+        } catch (e: LibraryWriteException) {
+            // The uuid patch failed (judged by patchFile): the file is left as it was and listed with that message.
+            Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, e.message.orEmpty()))
         } catch (e: IOException) {
-            Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, "Couldn't read or update this file: ${e.message ?: e::class.simpleName}"))
+            Broken(file, RecipeFileProblem(name, RecipeFileProblem.Kind.UNREADABLE, "Couldn't read this file: ${e.message ?: e::class.simpleName}"))
+        }
+    }
+
+    // The sync's own writes into a recipe file (a recipe_uuid added, a duplicate's new id), judged by the one
+    // classifier like every library write (P7-R11b): LibraryBlockedException, telling the notice, when Windows refused
+    // it; else LibrarySaveException, whose message names no path.
+    private fun patchFile(file: File, bytes: ByteArray) {
+        try {
+            writer(file, bytes)
+        } catch (e: IOException) {
+            val failure = libraryWriteFailure(e, file)
+            if (failure is LibraryBlockedException) onLibraryBlocked()
+            throw failure
         }
     }
 
@@ -389,7 +416,8 @@ class RecipeFolder(
 
     // recipe_sync.reassign_recipe_uuid, for a file the sync listed as a duplicate (and only such a file,
     // so a name can never reach outside the folder). Letter case is ignored, as Windows ignores it. When the
-    // patch wouldn't take, the file is left alone and listed as needing a recipe_uuid line of its own.
+    // patch wouldn't take, the file is left alone and listed as needing a recipe_uuid line of its own. A write
+    // Windows refuses throws LibraryBlockedException (and tells the notice); any other failure LibrarySaveException.
     override suspend fun assignNewId(fileName: String) {
         val listed = problems.value.firstOrNull { key(it.fileName) == key(fileName) && it.canAssignNewId }
         require(listed != null) { "$fileName isn't a listed duplicate." }
@@ -400,7 +428,7 @@ class RecipeFolder(
                 val problem = RecipeFileProblem(listed.fileName, RecipeFileProblem.Kind.UNREADABLE, NO_UUID_LINE)
                 _problems.update { list -> list.map { if (it == listed) problem else it } }
             } else {
-                AtomicFiles.write(file, patched.toByteArray(Charsets.UTF_8))
+                patchFile(file, patched.toByteArray(Charsets.UTF_8))
                 syncLocked()
             }
         }

@@ -73,6 +73,9 @@ data class RecipeStepEntity(
 )
 
 /** A recipe's line in the library list. */
+/** One category and subcategory pairing in use (see [RecipeDao.observeCategoryPairs]). */
+data class CategoryPair(val category: String?, val subcategory: String?)
+
 data class RecipeSummary(
     val id: Long,
     val name: String,

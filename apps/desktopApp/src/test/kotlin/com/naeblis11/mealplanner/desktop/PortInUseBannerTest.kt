@@ -1,7 +1,7 @@
 package com.naeblis11.mealplanner.desktop
 
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.settings.SERVER_PANEL

@@ -1,6 +1,5 @@
 package com.naeblis11.mealplanner.domain
 
-import kotlinx.serialization.json.jsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -14,7 +13,7 @@ class MealMasterParityTest {
 
     @Test
     fun parseMatchesThePi() {
-        for (case in ParityFixtures.load("mealmaster.json").jsonArray) {
+        for (case in ParityFixtures.cases("mealmaster.json")) {
             val file = case.obj["file"]?.str()
             val text = if (file != null) {
                 MealMaster.decode(ParityFixtures.sibling("../mealmaster/$file").readBytes())

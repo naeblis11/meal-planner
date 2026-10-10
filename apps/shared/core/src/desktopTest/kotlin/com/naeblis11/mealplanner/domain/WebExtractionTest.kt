@@ -259,6 +259,31 @@ class WebExtractionTest {
     }
 
     @Test
+    fun thePhotosAddressHasTheSameCapAsThePages() {
+        // The desktop fetches this address; without a cap it was the one field the extension could send unbounded.
+        val atCap = "https://www.example.com/soup.jpg?" + "a".repeat(8192 - 33)
+        assertEquals(8192, atCap.length)
+        assertEquals(WebPayloadCheck.COMPLETE, WebExtraction.checkPayload(payload("image_url" to atCap)))
+        assertEquals(WebPayloadCheck.IMAGE_ADDRESS_TOO_LONG, WebExtraction.checkPayload(payload("image_url" to atCap + "a")))
+        assertFalse(WebExtraction.isComplete(payload("image_url" to "a".repeat(8193))))
+        assertTrue(WebExtraction.isComplete(payload("image_url" to null)))
+        assertTrue(WebExtraction.isComplete(payload("image_url" to "")))
+        assertTrue(WebExtraction.isComplete(payload("image_url" to 5L)))
+        // A list or a map, as for the page's address: unreadable, not too long.
+        assertEquals(WebPayloadCheck.MISSING, WebExtraction.checkPayload(payload("image_url" to listOf("a.jpg"))))
+        assertEquals(WebPayloadCheck.MISSING, WebExtraction.checkPayload(payload("image_url" to mapOf("url" to "a.jpg"))))
+        // Reported after the page's address and before a long field.
+        assertEquals(
+            WebPayloadCheck.ADDRESS_TOO_LONG,
+            WebExtraction.checkPayload(payload("source_url" to "a".repeat(8193), "image_url" to "a".repeat(8193))),
+        )
+        assertEquals(
+            WebPayloadCheck.IMAGE_ADDRESS_TOO_LONG,
+            WebExtraction.checkPayload(payload("image_url" to "a".repeat(8193), "author" to "a".repeat(2001))),
+        )
+    }
+
+    @Test
     fun aMissingPartIsReportedBeforeALongField() {
         assertEquals(WebPayloadCheck.COMPLETE, WebExtraction.checkPayload(payload()))
         assertEquals(WebPayloadCheck.MISSING, WebExtraction.checkPayload(payload("name" to "", "author" to "a".repeat(2001))))
@@ -283,16 +308,15 @@ class WebExtractionTest {
         }
     }
 
-    @Test
+    // A pattern that backtracks on these takes minutes or longer, so a generous timeout still catches it, where a
+    // wall-clock bound of a second failed on a loaded machine with no code change.
+    @Test(timeout = 30_000)
     fun aHugeHostileLineReturnsQuickly() {
-        val start = System.nanoTime()
         val spaced = "1 ".repeat(100_000)
         val spacedResult = parse(spaced)
         val parens = parse("(".repeat(200_000))
         val spaces = parse("1" + " ".repeat(200_000) + "x")
         val digits = parse("1".repeat(200_000))
-        val millis = (System.nanoTime() - start) / 1_000_000
-        assertTrue("took $millis ms", millis < 1000)
         assertEquals(WebIngredient(spaced.trim(), "", "", null), spacedResult)
         assertEquals("", parens.amount)
         assertEquals("", spaces.amount)

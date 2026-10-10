@@ -1,11 +1,13 @@
 package com.naeblis11.mealplanner.data
 
+import com.naeblis11.mealplanner.domain.RecipeDefaults
 import com.naeblis11.mealplanner.domain.RecipeYaml
 import com.naeblis11.mealplanner.domain.YamlMap
 import com.naeblis11.mealplanner.folder.FolderFileStore
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -67,5 +69,19 @@ class RecipeCategoryTest {
         assertThrows(IOException::class.java) { runBlocking { desktop.setCategory(id, "Salads", "") } }
         assertFalse(file.exists())
         assertEquals("Soups & Stews", db.recipeDao().recipe(id)!!.category)
+    }
+
+    @Test
+    fun theSuggestionsAddTheLibrarysOwnCategoriesAndFollowEachSave() = runBlocking {
+        assertEquals(RecipeDefaults.CATEGORIES, recipes.categoryOptions().first().categories)
+        val id = soup()
+        recipes.setCategory(id, "Cookies", "Bars")
+        val options = recipes.categoryOptions().first()
+        assertEquals(RecipeDefaults.CATEGORIES + "Cookies", options.categories)
+        assertEquals("Bars", options.subcategoriesFor("Cookies").first())
+
+        // A blank category is stored as None, which is never offered.
+        recipes.setCategory(id, "", "")
+        assertEquals(RecipeDefaults.CATEGORIES, recipes.categoryOptions().first().categories)
     }
 }

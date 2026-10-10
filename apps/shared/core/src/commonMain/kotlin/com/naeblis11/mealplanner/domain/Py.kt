@@ -12,12 +12,13 @@ import java.nio.charset.Charset
 object Py {
     // str.splitlines() boundaries (\r\n is handled as one break).
     private const val LINE_BREAKS = "\n\r\u000B\u000C\u001C\u001D\u001E\u0085\u2028\u2029"
-    private val INT_TEXT = Regex("[+-]?[0-9]+(?:_[0-9]+)*")
+    // int() reads any Unicode digit ("\u0663" is 3), as BigInteger(String) does.
+    private val INT_TEXT = Regex("[+-]?$RE_DIGIT+(?:_$RE_DIGIT+)*")
     /** CPython's default int/str conversion limit: `int()` of a longer digit run raises ValueError. */
     const val MAX_INT_DIGITS = 4300
 
-    /** Whether Python's `int()` would refuse [digits] (optional sign, digits, underscores) as too long. */
-    fun overIntLimit(digits: String): Boolean = digits.count { it in '0'..'9' } > MAX_INT_DIGITS
+    /** Whether Python's `int()` would refuse [digits] (optional sign, digits of any script, underscores) as too long. */
+    fun overIntLimit(digits: String): Boolean = digits.count { it.isDigit() } > MAX_INT_DIGITS
 
     private val CP1252: Charset = Charset.forName("windows-1252")
 

@@ -1,6 +1,5 @@
 package com.naeblis11.mealplanner.domain
 
-import kotlinx.serialization.json.jsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -9,7 +8,7 @@ class AmountsParityTest {
 
     @Test
     fun parseAmount() {
-        for (case in cases["parse_amount"]!!.jsonArray) {
+        for (case in cases.cases("parse_amount")) {
             val text = case.obj["text"]!!.str()
             assertEquals("parse_amount($text)", case.obj["expected"]!!.str(),
                 Amounts.parseAmount(text)?.toString())
@@ -18,7 +17,7 @@ class AmountsParityTest {
 
     @Test
     fun formatAmount() {
-        for (case in cases["format_amount"]!!.jsonArray) {
+        for (case in cases.cases("format_amount")) {
             val value = case.obj["value"]!!.str()!!
             assertEquals("format_amount($value)", case.obj["expected"]!!.str(),
                 Amounts.formatAmount(Fraction.parse(value)!!))
@@ -27,7 +26,7 @@ class AmountsParityTest {
 
     @Test
     fun servingsRatio() {
-        for (case in cases["servings_ratio"]!!.jsonArray) {
+        for (case in cases.cases("servings_ratio")) {
             val planned = case.obj["planned"]!!.str()
             val base = case.obj["base"]!!.str()
             assertEquals("servings_ratio($planned, $base)", case.obj["expected"]!!.str(),
@@ -37,7 +36,7 @@ class AmountsParityTest {
 
     @Test
     fun scaleAmountText() {
-        for (case in cases["scale_amount_text"]!!.jsonArray) {
+        for (case in cases.cases("scale_amount_text")) {
             val amount = case.obj["amount"]!!.str()
             val ratio = case.obj["ratio"]!!.str()!!
             assertEquals("scale_amount_text($amount, $ratio)", case.obj["expected"]!!.str(),

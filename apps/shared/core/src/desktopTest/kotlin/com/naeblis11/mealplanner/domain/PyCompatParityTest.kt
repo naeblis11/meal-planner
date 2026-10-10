@@ -11,7 +11,7 @@ class PyCompatParityTest {
 
     @Test
     fun title() {
-        for (case in cases["title"]!!.jsonArray) {
+        for (case in cases.cases("title")) {
             val text = case.obj["text"]!!.str()!!
             assertEquals("title($text)", case.obj["expected"]!!.str(), Py.title(text))
         }
@@ -19,7 +19,7 @@ class PyCompatParityTest {
 
     @Test
     fun splitLines() {
-        for (case in cases["splitlines"]!!.jsonArray) {
+        for (case in cases.cases("splitlines")) {
             val text = case.obj["text"]!!.str()!!
             assertEquals("splitlines(${text.toList()})", case.obj["expected"]!!.jsonArray.map { it.str() }, Py.splitLines(text))
         }
@@ -27,7 +27,7 @@ class PyCompatParityTest {
 
     @Test
     fun split() {
-        for (case in cases["split"]!!.jsonArray) {
+        for (case in cases.cases("split")) {
             val text = case.obj["text"]!!.str()!!
             val maxSplit = case.obj["maxsplit"]!!.jsonPrimitive.int
             assertEquals("split($text, $maxSplit)", case.obj["expected"]!!.jsonArray.map { it.str() }, Py.split(text, maxSplit))
@@ -36,7 +36,7 @@ class PyCompatParityTest {
 
     @Test
     fun strip() {
-        for (case in cases["strip"]!!.jsonArray) {
+        for (case in cases.cases("strip")) {
             val text = case.obj["text"]!!.str()!!
             assertEquals("strip(${text.toList()})", case.obj["expected"]!!.str(), Py.strip(text))
         }
@@ -44,7 +44,7 @@ class PyCompatParityTest {
 
     @Test
     fun str() {
-        for (case in cases["str"]!!.jsonArray) {
+        for (case in cases.cases("str")) {
             val value = JsonTree.fromJson(case.obj["value"]!!)
             assertEquals("str($value)", case.obj["expected"]!!.str(), Py.str(value))
         }

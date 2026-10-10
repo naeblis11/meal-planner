@@ -4,29 +4,56 @@ import com.naeblis11.mealplanner.app.SettingsStore
 import com.naeblis11.mealplanner.settings.StartupSwitch
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Runs reg.exe with [args] and returns its exit code (0 is success; for `query`, 1 means "not there"). Tests fake it. */
 fun interface RegistryRunner {
     fun run(args: List<String>): Int
 }
 
-/** The real reg.exe, from System32, never from PATH. No JNA: one short process per change. */
+/**
+ * The real reg.exe, in System32 as the known-folder API names it ([folders], FOLDERID_System; P8-PF2: never the
+ * environment, which whatever started the app can set, and never PATH). When Windows doesn't say where System32 is, or
+ * reg.exe isn't there, nothing runs: every call answers NOT_RUN, which reads as "not there" and "didn't happen", and it
+ * is said once in the log. No JNA for the registry itself: one short process per change, through [start] (tests pass
+ * a fake and never start a process).
+ */
 class RegExe(
-    private val exe: String = File(System.getenv("SystemRoot") ?: "C:\\Windows", "System32\\reg.exe").path,
+    private val folders: WindowsFolders = KnownWindowsFolders,
     private val timeoutMillis: Long = 10_000,
+    private val log: (String) -> Unit = { System.err.println(it) },
+    private val start: (List<String>) -> Process = { ProcessBuilder(it).redirectErrorStream(true).start() },
 ) : RegistryRunner {
+    private val saidMissing = AtomicBoolean(false)
+
     override fun run(args: List<String>): Int {
-        val process = ProcessBuilder(listOf(exe) + args).redirectErrorStream(true).start()
+        val exe = exe(folders)
+        if (exe == null) {
+            if (!saidMissing.getAndSet(true)) log("Meal Planner: Windows didn't say where $EXE_NAME is, so Start with Windows is left as it is.")
+            return NOT_RUN
+        }
+        val process = start(listOf(exe.path) + args)
         if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
             process.destroyForcibly()
-            System.err.println("Meal Planner: reg.exe ${args.firstOrNull()} didn't finish in $timeoutMillis ms")
-            return -1
+            log("Meal Planner: $EXE_NAME ${args.firstOrNull()} didn't finish in $timeoutMillis ms")
+            return NOT_RUN
         }
         // Its few lines fit the pipe, so it never waited on us; they are read once it has ended.
         val output = process.inputStream.readBytes().decodeToString().trim()
         val code = process.exitValue()
-        if (code != 0 && args.firstOrNull() != "query") System.err.println("Meal Planner: reg.exe ${args.firstOrNull()} failed ($code): $output")
+        if (code != 0 && args.firstOrNull() != "query") log("Meal Planner: $EXE_NAME ${args.firstOrNull()} failed ($code): $output")
         return code
+    }
+
+    companion object {
+        const val EXE_NAME = "reg.exe"
+
+        /** The answer when reg.exe never ran: not 0 (done) and not 1 (query: not there). */
+        const val NOT_RUN = -1
+
+        /** `<FOLDERID_System>\reg.exe`, or null when Windows names no absolute System32 or reg.exe isn't in it. */
+        fun exe(folders: WindowsFolders): File? =
+            folders.system()?.takeIf { it.isAbsolute }?.let { File(it, EXE_NAME) }?.takeIf { it.isFile }
     }
 }
 

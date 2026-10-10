@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naeblis11.mealplanner.data.RecipeChangedException
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.domain.EditorMoves
 import com.naeblis11.mealplanner.domain.RecipeFormatException
 import com.naeblis11.mealplanner.domain.RecipeYaml
@@ -12,9 +13,11 @@ import com.naeblis11.mealplanner.domain.SubmittedRow
 import com.naeblis11.mealplanner.domain.YamlMap
 import com.naeblis11.mealplanner.folder.LibraryWriteException
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -39,6 +42,13 @@ class RecipeEditViewModel(
     private val _state = MutableStateFlow(EditState(isNew = recipeId == null))
     val state: StateFlow<EditState> = _state.asStateFlow()
     private val _savedId = MutableStateFlow<Long?>(null)
+
+    /**
+     * The category editors' suggestions: the built-in lists plus what the library uses (owner, 2026-10-10).
+     * Collected by the screen, which starts from [CategoryOptions.DEFAULT]; nothing runs in this ViewModel's scope.
+     */
+    val categoryOptions: Flow<CategoryOptions> = repository.categoryOptions()
+        .catch { emit(CategoryOptions.DEFAULT) }
 
     /**
      * The saved recipe's id once Save succeeds. The destination navigates on it

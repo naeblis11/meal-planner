@@ -20,7 +20,7 @@ class ShoppingMergeParityTest {
 
     @Test
     fun addWeekMatchesThePythonApp() {
-        for (case in ParityFixtures.load("shopping_merge.json").jsonArray) {
+        for (case in ParityFixtures.cases("shopping_merge.json")) {
             val c = case.obj
             val meals = c["meals"]!!.jsonArray.map { m ->
                 ShoppingMerge.PlannedMeal(

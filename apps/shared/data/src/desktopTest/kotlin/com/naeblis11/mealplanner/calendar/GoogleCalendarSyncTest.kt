@@ -119,6 +119,27 @@ class GoogleCalendarSyncTest {
     }
 
     @Test
+    fun aRemovalGoogleRefusesKeepsItsRecordSoTheNextSendTriesAgain() = runBlocking {
+        plans.assign(monday, "Dinner", recipe("Soup"), null)
+        send()
+        val id = idFor(monday, "Dinner")
+        plans.unassign(monday, "Dinner")
+        google.failing += id
+
+        val refused = send()
+        assertEquals(0, refused.removed)
+        assertEquals(listOf(SendFailure(monday, "Dinner", "Google answered 500: Backend Error")), refused.failures)
+        // The event is still there, and so is its record: forgetting it would leave the event behind for good.
+        assertEquals("confirmed", google.status(id))
+        assertEquals(listOf(id), db.googleEventDao().all().map { it.eventId })
+
+        google.failing.clear()
+        assertEquals(1, send().removed)
+        assertEquals("cancelled", google.status(id))
+        assertEquals(emptyList<GoogleEventEntity>(), db.googleEventDao().all())
+    }
+
+    @Test
     fun anEventDeletedByHandComesBackWhenItsMealChanges() = runBlocking {
         val soup = recipe("Soup")
         plans.assign(monday, "Dinner", soup, "6")

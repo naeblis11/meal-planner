@@ -30,6 +30,7 @@ import androidx.navigation.navArgument
 import androidx.savedstate.read
 import com.naeblis11.mealplanner.app.AppContainer
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.folder.RecipeFileProblem
 import com.naeblis11.mealplanner.recipes.RecipeDetailScreen
 import com.naeblis11.mealplanner.recipes.RecipeDetailViewModel
@@ -84,6 +85,7 @@ fun NavGraphBuilder.recipeDestinations(nav: NavController, container: AppContain
         val loadError by vm.loadError.collectAsStateWithLifecycle()
         val deleted by vm.deleted.collectAsStateWithLifecycle()
         val plannedMeals by vm.plannedMeals.collectAsStateWithLifecycle()
+        val categoryOptions by vm.categoryOptions.collectAsStateWithLifecycle(CategoryOptions.DEFAULT)
         // Leaves once, with this composition's NavController, even if the page was recreated mid-delete.
         LaunchedEffect(deleted) { if (deleted) popIfCurrent(nav, entry) }
         RecipeDetailScreen(
@@ -106,6 +108,7 @@ fun NavGraphBuilder.recipeDestinations(nav: NavController, container: AppContain
             onAssign = vm::assign,
             today = vm.today(),
             onSetCategory = vm::setCategory,
+            categoryOptions = categoryOptions,
             onAddToShoppingList = if (vm.canShop) vm::addRecipeToShoppingList else null,
             onAddIngredientToList = if (vm.canShop) vm::addIngredientToShoppingList else null,
         )
@@ -250,6 +253,7 @@ private fun EditDestination(vm: RecipeEditViewModel, nav: NavController, onSaved
     val onLeave = dropUnlessResumedWith { switchSection: () -> Unit -> if (nav.popBackStack()) switchSection() }
     val state by vm.state.collectAsStateWithLifecycle()
     val savedId by vm.savedId.collectAsStateWithLifecycle()
+    val categoryOptions by vm.categoryOptions.collectAsStateWithLifecycle(CategoryOptions.DEFAULT)
     // The save's outcome is state the destination consumes once, so it is never lost to a rotation.
     LaunchedEffect(savedId) {
         savedId?.let { id ->
@@ -279,6 +283,7 @@ private fun EditDestination(vm: RecipeEditViewModel, nav: NavController, onSaved
             moveTo = { key, to -> vm.moveStepTo(key, to) },
         ),
         onLeave = onLeave,
+        categoryOptions = categoryOptions,
     )
 }
 

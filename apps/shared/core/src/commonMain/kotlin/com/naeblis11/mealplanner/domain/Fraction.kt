@@ -50,10 +50,16 @@ class Fraction private constructor(
         }
 
         // Python's fractions._RATIONAL_FORMAT: sign, then "n/d" or a decimal
-        // with an optional exponent; underscores between digits allowed.
+        // with an optional exponent; underscores between digits allowed. Its
+        // digit and space classes are Python's (any Unicode digit or space,
+        // Py.RE_DIGIT and Py.RE_SPACE), which BigInteger(String) reads as
+        // Python's int() does; Java's own are ASCII only, ICU's on the phone
+        // are not, so a bare class would parse differently on the two.
+        private const val D = Py.RE_DIGIT
+        private const val S = Py.RE_SPACE
         private val PATTERN = Regex(
-            """\s*([-+]?)(?=\d|\.\d)(\d+(?:_\d+)*)?""" +
-                """(?:/(\d+(?:_\d+)*)|(?:\.(\d+(?:_\d+)*)?)?(?:[eE]([-+]?\d+(?:_\d+)*))?)\s*""",
+            "$S*([-+]?)(?=$D|\\.$D)($D+(?:_$D+)*)?" +
+                "(?:/($D+(?:_$D+)*)|(?:\\.($D+(?:_$D+)*)?)?(?:[eE]([-+]?$D+(?:_$D+)*))?)$S*",
         )
 
         // Beyond this Python would build an enormous number; nobody's recipe

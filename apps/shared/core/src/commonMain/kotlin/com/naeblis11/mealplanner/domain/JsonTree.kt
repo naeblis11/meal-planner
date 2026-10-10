@@ -1,7 +1,6 @@
 package com.naeblis11.mealplanner.domain
 
 import java.math.BigInteger
-import java.util.Date
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -27,7 +26,6 @@ object JsonTree {
         is Double -> JsonPrimitive(value)
         is Map<*, *> -> JsonObject(value.entries.associate { (k, v) -> key(k) to toJson(v) })
         is List<*> -> JsonArray(value.map { toJson(it) })
-        is Date -> JsonPrimitive(value.toInstant().toString())
         else -> JsonPrimitive(value.toString())
     }
 

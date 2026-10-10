@@ -8,6 +8,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -83,6 +85,31 @@ class KtorEngineTest {
         }
         assertFalse("a stack trace on stderr:\n$err", "\tat " in err)
         // start() reports the bind failure; the engine's handler doesn't say it a second time.
+        assertEquals(emptyList<String>(), logs.toList())
+    }
+
+    @Test
+    fun aBindThatNeverSaysItIsBoundIsAStartTimeoutAndTheEngineIsStopped() {
+        // The wait for CIO's connectors runs out: a TimeoutCancellationException, with no BindException in its chain,
+        // used to come out as itself and land the server in FAILED for good. It is a ServerStartTimeoutException now,
+        // which the server retries, and the half-started engine is stopped so the port is free for that retry.
+        val port = freeLoopbackPort()
+        val logs = CopyOnWriteArrayList<String>()
+        val engine = KtorEngine(
+            portFree = { PortProbe.isFree(it, loopback) },
+            log = { logs += it },
+            startTimeoutMillis = 100,
+            awaitBound = { delay(10_000) },
+        )
+        try {
+            engine.start(MealPlannerServer.LOOPBACK, port) {}
+            fail("started although the bind never said it was done")
+        } catch (e: ServerStartTimeoutException) {
+            assertEquals(port, e.port)
+            assertTrue(e.cause is TimeoutCancellationException)
+        }
+        assertFalse("it says it listens after the start timed out", engine.listening)
+        assertTrue("the port is still held", PortProbe.isFree(port, loopback))
         assertEquals(emptyList<String>(), logs.toList())
     }
 

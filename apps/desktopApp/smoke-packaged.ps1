@@ -159,8 +159,12 @@ if ($missing.Count -eq 0) { Write-Ok ('the runtime has ' + ($requiredModules -jo
 # 2. A throwaway home for the run: never the real library or the secrets folder, never port 5000.
 $smokeDir = Join-Path ([IO.Path]::GetTempPath()) ('mp-smoke-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 if ($smokeDir.Contains(' ')) { throw "The temp folder $smokeDir has a space in it, which JAVA_TOOL_OPTIONS can't carry. Point TEMP at a folder without spaces." }
-foreach ($real in @([Environment]::GetFolderPath('MyDocuments'), (Join-Path $env:LOCALAPPDATA 'Meal Planner'))) {
-    if ([string]::IsNullOrEmpty($real)) { throw 'Windows named no Documents or LOCALAPPDATA folder, so the run cannot prove it stays out of them.' }
+# Both names are checked before either is used: Join-Path on an unset LOCALAPPDATA would throw (under -ErrorAction
+# Stop) before the plain message below could.
+$documentsDir = [Environment]::GetFolderPath('MyDocuments')
+$localAppData = $env:LOCALAPPDATA
+if ([string]::IsNullOrEmpty($documentsDir) -or [string]::IsNullOrEmpty($localAppData)) { throw 'Windows named no Documents or LOCALAPPDATA folder, so the run cannot prove it stays out of them.' }
+foreach ($real in @($documentsDir, (Join-Path $localAppData 'Meal Planner'))) {
     if ($smokeDir.StartsWith($real, [StringComparison]::OrdinalIgnoreCase)) { throw "The temp folder $smokeDir is inside $real." }
 }
 $dataDir = Join-Path $smokeDir 'data'

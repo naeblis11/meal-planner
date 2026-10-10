@@ -1,7 +1,6 @@
 package com.naeblis11.mealplanner.domain
 
 import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -9,7 +8,7 @@ import org.junit.Test
 class AislesAndPantryParityTest {
     @Test
     fun categorize() {
-        for (case in ParityFixtures.load("aisles.json").jsonArray) {
+        for (case in ParityFixtures.cases("aisles.json")) {
             val name = case.obj["name"]!!.str()!!
             assertEquals("categorize($name)", case.obj["expected"]!!.str(), GroceryCategories.categorize(name))
         }
@@ -17,7 +16,7 @@ class AislesAndPantryParityTest {
 
     @Test
     fun pantryMatch() {
-        for (case in ParityFixtures.load("pantry_match.json").jsonArray) {
+        for (case in ParityFixtures.cases("pantry_match.json")) {
             val rule = PantryRule(case.obj["pantry"]!!.str()!!, case.obj["exact"]!!.jsonPrimitive.boolean)
             val ingredient = case.obj["ingredient"]!!.str()!!
             assertEquals("$rule covers $ingredient", case.obj["expected"]!!.jsonPrimitive.boolean,

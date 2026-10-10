@@ -13,12 +13,16 @@ import java.net.InetSocketAddress
 import java.net.StandardProtocolFamily
 import java.nio.channels.SocketChannel
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
 /** Where the server listens, behind a seam so MealPlannerServer's rules are tested without sockets (FakeEngine). */
 interface ServerEngine {
-    /** Listens on [host]:[port] with [module]'s routes; throws PortInUseException when the port is taken. Blocking. */
+    /**
+     * Listens on [host]:[port] with [module]'s routes; throws PortInUseException when the port is taken and
+     * ServerStartTimeoutException when the bind didn't finish in time (both worth trying again later). Blocking.
+     */
     fun start(host: String, port: Int, module: Application.() -> Unit)
 
     /**
@@ -33,6 +37,12 @@ interface ServerEngine {
 
 /** Another program (the old Python server, most likely) holds [port]. */
 class PortInUseException(val port: Int, cause: Throwable) : IOException("Port $port is in use", cause)
+
+/**
+ * The engine was started but hadn't bound [port] within its start timeout (CIO binds in the background). Nothing is
+ * known to hold the port, but nothing listens either: the start is tried again later, as a port in use is.
+ */
+class ServerStartTimeoutException(val port: Int, cause: Throwable) : IOException("The server took too long to start on port $port", cause)
 
 /**
  * Is a port free on every interface? Windows lets 127.0.0.1:port be bound beside another program's 0.0.0.0:port, so
@@ -57,9 +67,11 @@ object PortProbe {
 
 /**
  * Ktor's CIO engine (P4-R1: no Netty). [portFree] is asked first, so a port held elsewhere on any interface is a
- * PortInUseException before CIO starts (tests pass a loopback probe; they never bind 0.0.0.0). Stopping lets requests
- * in flight finish for [graceMillis], and takes [timeoutMillis] at most. A failure inside the running engine is
- * [log]ged as one line, never as a stack trace.
+ * PortInUseException before CIO starts (tests pass a loopback probe; they never bind 0.0.0.0). A bind that hasn't
+ * finished within [startTimeoutMillis] ([awaitBound] waits for CIO's resolved connectors; tests pass a wait of their
+ * own) is a ServerStartTimeoutException, and the engine is stopped again. Stopping lets requests in flight finish for
+ * [graceMillis], and takes [timeoutMillis] at most. A failure inside the running engine is [log]ged as one line, never
+ * as a stack trace.
  */
 class KtorEngine(
     private val graceMillis: Long = GRACE_MILLIS,
@@ -67,6 +79,8 @@ class KtorEngine(
     private val portFree: (Int) -> Boolean = { PortProbe.isFree(it) },
     private val log: (String) -> Unit = { System.err.println(it) },
     private val stopServer: (EmbeddedServer<*, *>, Long, Long) -> Unit = { server, grace, timeout -> server.stop(grace, timeout) },
+    private val startTimeoutMillis: Long = START_TIMEOUT_MILLIS,
+    private val awaitBound: suspend (EmbeddedServer<*, *>) -> Unit = { it.engine.resolvedConnectors() },
 ) : ServerEngine {
     private var server: EmbeddedServer<*, *>? = null
 
@@ -99,7 +113,7 @@ class KtorEngine(
         try {
             created.start(wait = false)
             // CIO binds in the background: wait for it, so a port taken since the probe is known here.
-            runBlocking { withTimeout(START_TIMEOUT_MILLIS) { created.engine.resolvedConnectors() } }
+            runBlocking { withTimeout(startTimeoutMillis) { awaitBound(created) } }
         } catch (t: Throwable) {
             try {
                 created.stop(0, 0)
@@ -107,6 +121,8 @@ class KtorEngine(
                 // It never got going; the start's own failure is the one that matters.
             }
             if (generateSequence(t) { it.cause }.any { it is BindException }) throw PortInUseException(port, t)
+            // The wait ran out, with no bind failure to show for it: worth another try, like a port in use.
+            if (t is TimeoutCancellationException) throw ServerStartTimeoutException(port, t)
             throw t
         }
         server = created

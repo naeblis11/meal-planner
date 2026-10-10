@@ -202,6 +202,10 @@ class DesktopApp(
                     failures.firstOrNull { it.first == dir }?.let { throw it.second }
                 }
             },
+            // The sync's own writes into a recipe file (a recipe_uuid added) are library writes like a save: through
+            // libraryAccess, and one Windows refuses puts the notice up (P7-R10b).
+            writer = libraryAccess::writeFile,
+            onLibraryBlocked = ::libraryRefused,
         )
     }
 

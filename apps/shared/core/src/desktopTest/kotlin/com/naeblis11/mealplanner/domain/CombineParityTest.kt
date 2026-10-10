@@ -13,7 +13,7 @@ class CombineParityTest {
 
     @Test
     fun combineLines() {
-        for (case in ParityFixtures.load("combine.json").jsonArray) {
+        for (case in ParityFixtures.cases("combine.json")) {
             val rows = case.obj["rows"]!!.jsonArray.map(::line)
             val expected = case.obj["expected"]!!.jsonArray.map(::line)
             assertEquals("combine_lines($rows)", expected, Units.combineLines(rows))

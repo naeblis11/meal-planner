@@ -41,9 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.backup.ImportAction
 import com.naeblis11.mealplanner.backup.StagedKind
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.domain.EditorMoves
 import com.naeblis11.mealplanner.recipes.IngredientEditor
 import com.naeblis11.mealplanner.ui.AttentionBanner
+import com.naeblis11.mealplanner.ui.CategoryFields
 import com.naeblis11.mealplanner.ui.Pill
 import com.naeblis11.mealplanner.ui.theme.MealColors
 
@@ -66,6 +68,8 @@ fun ImportScreen(
      * cancelled first, so the section it leaves for never keeps it behind, then [switchSection] goes ahead.
      */
     onLeave: (switchSection: () -> Unit) -> Unit = { switchSection -> onCancel(); switchSection() },
+    /** Each card's Category and Subcategory suggestions (owner, 2026-10-10); the built-in lists until the library's arrive. */
+    categoryOptions: CategoryOptions = CategoryOptions.DEFAULT,
 ) {
     val busy = state is ImportState.Reviewing && state.busy
     // A switch of section while a review is open asks first, as an unsaved edit does: left behind, the review would
@@ -123,7 +127,7 @@ fun ImportScreen(
             ) {
                 item { Text("From ${state.sourceName}", color = MealColors.Muted) }
                 state.error?.let { item { AttentionBanner(it) } }
-                items(state.rows, key = { it.tempId }) { row -> ReviewCard(row) { change -> onUpdate(row.tempId, change) } }
+                items(state.rows, key = { it.tempId }) { row -> ReviewCard(row, categoryOptions) { change -> onUpdate(row.tempId, change) } }
                 if (state.errors.isNotEmpty()) {
                     item { Text("Could not be read", style = MaterialTheme.typography.titleMedium) }
                     items(state.errors.take(20)) { (item, reason) -> Text("$item: $reason", color = MealColors.Danger) }
@@ -143,7 +147,7 @@ private fun Message(padding: PaddingValues, text: String, button: String, onClic
 }
 
 @Composable
-private fun ReviewCard(row: ReviewRow, change: ((ReviewRow) -> ReviewRow) -> Unit) {
+private fun ReviewCard(row: ReviewRow, categoryOptions: CategoryOptions, change: ((ReviewRow) -> ReviewRow) -> Unit) {
     var showIngredients by rememberSaveable(row.tempId) { mutableStateOf(row.amountIssues > 0) }
     var next by rememberSaveable(row.tempId) { mutableStateOf(0) }
     Card(colors = CardDefaults.cardColors(containerColor = MealColors.Paper), border = CardDefaults.outlinedCardBorder()) {
@@ -164,10 +168,13 @@ private fun ReviewCard(row: ReviewRow, change: ((ReviewRow) -> ReviewRow) -> Uni
                 FilterChip(selected = row.action == ImportAction.SKIP, onClick = { change { it.copy(action = ImportAction.SKIP) } },
                     label = { Text("Skip") })
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(row.category, { v -> change { it.copy(category = v) } }, label = { Text("Category") }, singleLine = true, modifier = Modifier.weight(1f))
-                OutlinedTextField(row.subcategory, { v -> change { it.copy(subcategory = v) } }, label = { Text("Subcategory") }, singleLine = true, modifier = Modifier.weight(1f))
-            }
+            CategoryFields(
+                category = row.category,
+                subcategory = row.subcategory,
+                options = categoryOptions,
+                onCategory = { v -> change { it.copy(category = v) } },
+                onSubcategory = { v -> change { it.copy(subcategory = v) } },
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(row.servingsAmount, { v -> change { it.copy(servingsAmount = v) } }, label = { Text("Servings") }, singleLine = true, modifier = Modifier.weight(1f))
                 OutlinedTextField(row.servingsUnit, { v -> change { it.copy(servingsUnit = v) } }, label = { Text("Unit") }, singleLine = true, modifier = Modifier.weight(1f))

@@ -5,6 +5,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.naeblis11.mealplanner.app.SettingsStore
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 /** How Windows starts the app at sign-in (the Run key's command line): hidden in the tray. */
 const val MINIMIZED_ARG = "--minimized"
@@ -16,14 +19,18 @@ enum class CloseOutcome { HIDDEN, HIDDEN_FIRST_TIME, QUIT }
  * The window while the app lives in the tray (P3-R1, P3-R6). Closing hides it and the app keeps running, unless
  * there is no tray to come back from, when closing quits. The screens are composed from the window's first showing on
  * ([hasBeenShown]), so a start hidden in the tray runs no UI work and marks no message as seen. Compose state: read it
- * in composition, change it on the UI thread. [beforeShow] runs at every [show] before the window comes forward (P7-R12:
- * whether the app was replaced on disk), so no way of showing it skips that look.
+ * in composition, change it on the UI thread. [look] runs at every [show] (P7-R12: whether the app was replaced on
+ * disk), so no way of showing it skips that look; it runs on [lookOn], one background thread, after the window has
+ * been told to come forward, because it reads the disk (the jar's stamp, the folder's jar names, the cfg's hash) and
+ * show() is called on the Swing thread. What it finds goes into state that Compose collects (ReplacedNotice's flow),
+ * which is safe to set from that thread.
  */
 class WindowShell(
     startMinimized: Boolean,
     val traySupported: Boolean,
     private val notice: TrayNotice,
-    private val beforeShow: () -> Unit = {},
+    private val look: () -> Unit = {},
+    private val lookOn: Executor = LOOKS,
 ) {
     var isVisible by mutableStateOf(!(startMinimized && traySupported))
         private set
@@ -38,17 +45,32 @@ class WindowShell(
     var quitting by mutableStateOf(false)
         private set
 
+    private val looksDone = AtomicInteger()
+
+    /** How many of [show]'s looks have finished (whether or not they threw); tests wait on it. */
+    val looksCompleted: Int get() = looksDone.get()
+
     /** The tray's Open, a double click on its icon, a second launch, or a recipe from the extension. */
     fun show() {
         if (quitting) return
-        try {
-            beforeShow()
-        } catch (e: Exception) {
-            System.err.println("Meal Planner: looking before showing the window failed: ${e.javaClass.simpleName}")
-        }
         isVisible = true
         hasBeenShown = true
         raiseRequests++
+        try {
+            lookOn.execute {
+                try {
+                    look()
+                } catch (e: Exception) {
+                    System.err.println("Meal Planner: looking after showing the window failed: ${e.javaClass.simpleName}")
+                } finally {
+                    looksDone.incrementAndGet()
+                }
+            }
+        } catch (e: Exception) {
+            // The executor refused (shut down): the window is shown all the same.
+            System.err.println("Meal Planner: couldn't look after showing the window: ${e.javaClass.simpleName}")
+            looksDone.incrementAndGet()
+        }
     }
 
     /** The window's close button: hide, and say so the first time on this PC; with no tray the caller quits. */
@@ -64,6 +86,13 @@ class WindowShell(
         quitting = true
         isVisible = false
         return true
+    }
+
+    companion object {
+        // One daemon thread, so the looks run in order and never keep the process alive.
+        private val LOOKS: Executor = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "install-look").apply { isDaemon = true }
+        }
     }
 }
 

@@ -203,8 +203,8 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
     val prefsNode = DesktopPaths.prefsNode()
     val settings = PreferencesStore(Preferences.userRoot().node(prefsNode))
     // P7-R12: the installed files as they are now (the jar this code came from, the jar set beside it, the launcher's
-    // cfg), so a new MSI installed over the running app is noticed whenever the window is shown: every show looks first.
-    // Restart now is set once the window's quit exists.
+    // cfg), so a new MSI installed over the running app is noticed whenever the window is shown: every show looks, off
+    // the Swing thread (the look reads the disk). Restart now is set once the window's quit exists.
     val relauncher = Relauncher()
     val restartAction = AtomicReference<() -> Unit> {}
     val replaced = ReplacedNotice(AppJar.running(), relauncher, restart = { restartAction.get()() })
@@ -212,7 +212,7 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
         startMinimized = MINIMIZED_ARG in args,
         traySupported = isTraySupported,
         notice = TrayNotice(settings),
-        beforeShow = { replaced.look() },
+        look = { replaced.look() },
     )
     // A second launch on this app data folder only asks the first to come forward, then ends.
     val instance = SingleInstance.acquire(cacheDir) { SwingUtilities.invokeLater { shell.show() } } ?: exitProcess(0)

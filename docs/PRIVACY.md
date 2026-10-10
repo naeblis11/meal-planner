@@ -11,7 +11,7 @@ in any backup files you choose to export. Android's own cloud backup of the app 
 
 ## Google Calendar (optional)
 
-If you choose **Sign in** under Settings > Google Calendar, you sign in to your own Google account on
+If you choose **Sign in with Google** under Settings > Google Calendar, you sign in to your own Google account on
 Google's own page, and Meal Planner asks for two permissions:
 
 - `calendar.calendarlist.readonly`: to list your calendars, so you can pick the one meals go to.

@@ -8,7 +8,6 @@ import java.nio.file.Files
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.prefs.Preferences
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -26,11 +25,11 @@ import org.junit.Test
 /**
  * Window close while a save in the UI holds RecipeRepository's write lock and a watcher sync waits
  * behind it. The save resumes on the UI thread to let go of the lock, so a close that blocks that
- * thread waiting for the sync would never return.
+ * thread waiting for the sync would never return. The settings are MapSettings: the default PreferencesStore is the
+ * registry (HKCU\Software\JavaSoft\Prefs), which no test may touch.
  */
 class DesktopShutdownTest {
     private val dir: File = Files.createTempDirectory("mp-shutdown").toFile()
-    private val prefsNode = "com/naeblis11/mealplanner/test-${System.nanoTime()}"
 
     // The save's file step waits here, holding the write lock.
     private val gate = CountDownLatch(1)
@@ -65,7 +64,6 @@ class DesktopShutdownTest {
         uiThread.shutdownNow()
         System.setErr(realErr)
         dir.deleteRecursively()
-        Preferences.userRoot().node(prefsNode).removeNode()
     }
 
     private fun recipe(name: String) =
@@ -75,7 +73,7 @@ class DesktopShutdownTest {
     private fun lockedApp(saveOn: CoroutineDispatcher, closeTimeoutMillis: Long = DesktopApp.CLOSE_TIMEOUT_MILLIS): DesktopApp {
         val started = DesktopApp(
             dir,
-            prefsNode,
+            settingsFactory = { MapSettings() },
             moveToTrash = { file ->
                 trashing.countDown()
                 gate.await()

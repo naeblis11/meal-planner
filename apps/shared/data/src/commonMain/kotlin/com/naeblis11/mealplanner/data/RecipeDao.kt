@@ -59,6 +59,10 @@ interface RecipeDao {
     @Query("SELECT id, name, category, subcategory, image_filename, rating, source_book_json FROM recipe ORDER BY name")
     fun observeSummaries(): Flow<List<RecipeSummary>>
 
+    /** Every category and subcategory pairing the library uses, for the category editors' suggestions. */
+    @Query("SELECT DISTINCT category, subcategory FROM recipe")
+    fun observeCategoryPairs(): Flow<List<CategoryPair>>
+
     /** The Pi's `_search_recipes`: name, category, subcategory, cookbook, ingredient names and section headings. */
     @Query(
         """SELECT DISTINCT r.id, r.name, r.category, r.subcategory, r.image_filename, r.rating, r.source_book_json

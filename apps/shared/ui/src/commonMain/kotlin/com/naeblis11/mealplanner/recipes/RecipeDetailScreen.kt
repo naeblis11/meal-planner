@@ -1,7 +1,6 @@
 package com.naeblis11.mealplanner.recipes
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -56,7 +53,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.naeblis11.mealplanner.domain.RecipeDefaults
 import com.naeblis11.mealplanner.domain.ServingsInput
 import com.naeblis11.mealplanner.domain.Week
 import com.naeblis11.mealplanner.ui.AttentionBanner
@@ -69,6 +65,8 @@ import com.naeblis11.mealplanner.ui.SectionLabel
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import java.io.File
 import java.time.LocalDate
+import com.naeblis11.mealplanner.domain.CategoryOptions
+import com.naeblis11.mealplanner.ui.CategoryFields
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,6 +94,8 @@ fun RecipeDetailScreen(
     today: LocalDate = LocalDate.now(),
     /** P5-R7: the server's quick category form; null leaves Category out of More. */
     onSetCategory: ((String, String) -> Unit)? = null,
+    /** The Category form's suggestions (owner, 2026-10-10); the built-in lists until the library's arrive. */
+    categoryOptions: CategoryOptions = CategoryOptions.DEFAULT,
     /** Owner, 2026-10-09: puts every ingredient on the shopping list at the page's servings; null hides the button. */
     onAddToShoppingList: (() -> Unit)? = null,
     /** Owner, 2026-10-09: puts one ingredient on the shopping list (its "+ List"); null hides the buttons. */
@@ -226,7 +226,7 @@ fun RecipeDetailScreen(
         }
     }
     if (editingCategory && view != null && onSetCategory != null) {
-        CategoryDialog(view.category.orEmpty(), view.subcategory.orEmpty(), onDismiss = { editingCategory = false }) { category, subcategory ->
+        CategoryDialog(view.category.orEmpty(), view.subcategory.orEmpty(), categoryOptions, onDismiss = { editingCategory = false }) { category, subcategory ->
             editingCategory = false
             onSetCategory(category, subcategory)
         }
@@ -378,7 +378,7 @@ private fun AssignDialog(today: LocalDate, servings: String, onDismiss: () -> Un
 
 /** The server's quick category form: Category and Subcategory, with its suggestions. */
 @Composable
-private fun CategoryDialog(category: String, subcategory: String, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+private fun CategoryDialog(category: String, subcategory: String, options: CategoryOptions, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
     var main by rememberSaveable { mutableStateOf(category) }
     var sub by rememberSaveable { mutableStateOf(subcategory) }
     AlertDialog(
@@ -387,23 +387,11 @@ private fun CategoryDialog(category: String, subcategory: String, onDismiss: () 
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
         title = { Text("Category") },
         text = {
-            Column(Modifier.widthIn(min = 280.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = main, onValueChange = { main = it }, label = { Text("Category") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                SuggestionRow(RecipeDefaults.CATEGORIES) { main = it }
-                OutlinedTextField(value = sub, onValueChange = { sub = it }, label = { Text("Subcategory") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                SuggestionRow(RecipeDefaults.SUBCATEGORIES) { sub = it }
-            }
+            CategoryFields(main, sub, options, onCategory = { main = it }, onSubcategory = { sub = it }, modifier = Modifier.widthIn(min = 280.dp))
         },
         confirmButton = { TextButton(onClick = { onSave(main, sub) }) { Text("Save category") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
-}
-
-@Composable
-private fun SuggestionRow(options: List<String>, onPick: (String) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-        for (option in options) AssistChip(onClick = { onPick(option) }, label = { Text(option) })
-    }
 }
 
 // A day as its epoch day, for rememberSaveable.

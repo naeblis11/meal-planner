@@ -4,7 +4,7 @@ package com.naeblis11.mealplanner.domain
 data class WebIngredient(val name: String, val amount: String, val unit: String, val notes: List<String>?)
 
 /** What WebExtraction.checkPayload made of the extension's recipe: fine, or which rule it broke. */
-enum class WebPayloadCheck { COMPLETE, MISSING, ADDRESS_TOO_LONG, FIELD_TOO_LONG }
+enum class WebPayloadCheck { COMPLETE, MISSING, ADDRESS_TOO_LONG, IMAGE_ADDRESS_TOO_LONG, FIELD_TOO_LONG }
 
 /**
  * The Chrome extension's recipe (Schema.org JSON-LD fields, already plain strings) as Open Recipe Format: port of
@@ -128,19 +128,21 @@ object WebExtraction {
      * app.py's check before anything is staged: a name, and non-empty lists of ingredient lines and steps. The lines
      * and steps must be text (the Python server failed with a 500 on anything else). Also refuses a payload over the
      * size caps, which Python does not: 2000 characters in the title, any line or step, the yield or the author; 8192
-     * in the page's address; 500 lines or steps. The yield, the author and the address may be missing or null, but
-     * not a list or a map (the extension sends text or null; Python would str() one). Reported in this order:
-     * [WebPayloadCheck.MISSING] (an over-cap title, line or step, or a list or map, is one too), then
-     * [WebPayloadCheck.ADDRESS_TOO_LONG], then [WebPayloadCheck.FIELD_TOO_LONG].
+     * in the page's address and in the photo's; 500 lines or steps. The yield, the author and the two addresses may be
+     * missing or null, but not a list or a map (the extension sends text or null; Python would str() one). Reported
+     * in this order: [WebPayloadCheck.MISSING] (an over-cap title, line or step, or a list or map, is one too), then
+     * [WebPayloadCheck.ADDRESS_TOO_LONG], then [WebPayloadCheck.IMAGE_ADDRESS_TOO_LONG], then
+     * [WebPayloadCheck.FIELD_TOO_LONG].
      */
     fun checkPayload(payload: Map<*, *>): WebPayloadCheck {
         val name = payload["name"]
         if (text(name).isEmpty() || Py.str(name).length > MAX_TEXT_CHARS) return WebPayloadCheck.MISSING
         if (!isTextList(payload["ingredients"]) || !isTextList(payload["steps"])) return WebPayloadCheck.MISSING
-        val (yieldLength, authorLength, addressLength) =
+        val (yieldLength, authorLength, addressLength, imageAddressLength) =
             OPTIONAL_TEXT.map { scalarLength(payload[it]) ?: return WebPayloadCheck.MISSING }
         return when {
             addressLength > MAX_ADDRESS_CHARS -> WebPayloadCheck.ADDRESS_TOO_LONG
+            imageAddressLength > MAX_ADDRESS_CHARS -> WebPayloadCheck.IMAGE_ADDRESS_TOO_LONG
             yieldLength > MAX_TEXT_CHARS || authorLength > MAX_TEXT_CHARS -> WebPayloadCheck.FIELD_TOO_LONG
             else -> WebPayloadCheck.COMPLETE
         }
@@ -148,8 +150,9 @@ object WebExtraction {
 
     // parseYieldText reads every leading digit as one number, and a nested value's text has no bound short of walking
     // all of it: so text, a number or a flag within the cap, or nothing. A page's address, tracking and all, may pass
-    // 2000 characters; 8 KB is far past any real one.
-    private val OPTIONAL_TEXT = listOf("yield_text", "author", "source_url")
+    // 2000 characters; 8 KB is far past any real one, and the photo's address (which the desktop then fetches) gets
+    // the same cap.
+    private val OPTIONAL_TEXT = listOf("yield_text", "author", "source_url", "image_url")
     private const val MAX_ADDRESS_CHARS = 8192
 
     // The length of a scalar's text (0 for nothing or a flag); null for a list, a map or anything else.

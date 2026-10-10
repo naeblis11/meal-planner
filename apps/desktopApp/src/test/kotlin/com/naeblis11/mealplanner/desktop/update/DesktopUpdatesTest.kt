@@ -4,6 +4,8 @@ import com.naeblis11.mealplanner.desktop.MapSettings
 import com.naeblis11.mealplanner.ui.LeaveGuard
 import com.naeblis11.mealplanner.update.ReleaseEndpoints
 import com.naeblis11.mealplanner.update.ReleaseHttp
+import com.naeblis11.mealplanner.update.ReleaseKey
+import com.naeblis11.mealplanner.update.ReleaseKeyData
 import com.naeblis11.mealplanner.update.RunningApp
 import com.naeblis11.mealplanner.update.UpdateMessages
 import com.naeblis11.mealplanner.update.UpdateOffer
@@ -145,9 +147,17 @@ class DesktopUpdatesTest {
     @Test
     fun theKeyIsUpdatesReleaseKey() {
         // CARRY (Task 4): the default key is Updates.releaseKey()'s, which turns any key problem into "no update".
+        // Judged against the committed key (ReleaseKeyData.PUBLIC_KEY, written by tools/release-key.ps1), never
+        // against the function under test: the owner's key is in, it loads, and so the installed app is offered updates.
+        assertTrue("ReleaseKeyData.PUBLIC_KEY is blank", ReleaseKeyData.PUBLIC_KEY.isNotBlank())
+        val committed = ReleaseKey.builtIn() ?: error("the committed public key doesn't load")
+        assertEquals(committed, Updates.releaseKey())
         val updates = DesktopUpdates.create(File(dir, "data"), MapSettings(), quit = {}, version = "1.0.0", installed = "true", gate = null)
-        val expected = if (Updates.releaseKey() == null) UpdateMessages.NO_KEY else null
-        assertEquals(expected, updates.state.value.unavailableReason)
+        assertNull(updates.state.value.unavailableReason)
+        assertTrue(updates.state.value.offered)
+        // Without a key there would be no update, said so: the reason that path gives.
+        val keyless = DesktopUpdates.create(File(dir, "data"), MapSettings(), quit = {}, version = "1.0.0", installed = "true", gate = null, publicKey = null)
+        assertEquals(UpdateMessages.NO_KEY, keyless.state.value.unavailableReason)
         val source = File(
             File(System.getProperty("launcherOptionsScript") ?: error("launcherOptionsScript is not set; run through Gradle")).parentFile,
             "src/main/kotlin/com/naeblis11/mealplanner/desktop/update/DesktopUpdates.kt",

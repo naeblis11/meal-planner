@@ -6,7 +6,8 @@ package com.naeblis11.mealplanner.update
  * check compares the same way, part by part, as numbers.
  */
 object DesktopVersions {
-    private val PATTERN = Regex("""(\d{1,3})\.(\d{1,3})\.(\d{1,5})""")
+    // ASCII digits by intent: a version is the installer's and the manifest's, never a digit from another script.
+    private val PATTERN = Regex("""([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,5})""")
 
     /** The three parts, or null when [version] isn't one an MSI can carry ("dev", "1.0", "0.1.0"). */
     fun parse(version: String): List<Int>? {

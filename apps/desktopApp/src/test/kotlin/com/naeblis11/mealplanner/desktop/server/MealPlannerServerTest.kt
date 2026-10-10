@@ -44,6 +44,71 @@ class MealPlannerServerTest {
 
     private fun inUse() = PortInUseException(MealPlannerServer.PORT, BindException("Address already in use"))
 
+    // What KtorEngine throws when CIO never said it had bound within its start timeout.
+    private fun slow() = ServerStartTimeoutException(MealPlannerServer.PORT, IllegalStateException("Timed out waiting for 5000 ms"))
+
+    private fun jobs(): Job = scope.coroutineContext[Job]!!
+
+    @Test
+    fun aStartThatRanOutOfTimeIsFailedSaidOnceAndTriedAgainUntilItListens() {
+        // A bind whose wait for CIO's connectors ran out landed in FAILED with no BindException to retry on, and the
+        // minute's retry never came back to it: Settings said failed for the rest of the session.
+        engine.failNext(slow(), slow())
+        val server = server(token())
+        server.start(scope)
+        assertEquals(ServerStatus(ServerState.FAILED, MealPlannerServer.PORT), server.status.value)
+        assertEquals("a retry is scheduled", 1, jobs().children.count())
+        eventually { server.status.value.state == ServerState.LISTENING }
+        assertEquals(3, engine.attempts())
+        assertEquals(listOf(MealPlannerServer.LOOPBACK), engine.startedHosts())
+        assertEquals(1, logs.count { "took too long to start" in it })
+        assertTrue(logs.any { "listening on port ${MealPlannerServer.PORT}" in it })
+        // Settled: the loop ended once it listened.
+        eventually { jobs().children.none() }
+    }
+
+    @Test
+    fun aRetryTickThatLostTheLockToARebindDoesNothingAfterIt() {
+        // A tick that has left its delay when rebind() cancels the loop (cancellation is only seen at a suspension) still
+        // runs its body once it gets the lock. Held here just before it takes the lock, it sees the rebind's own loop
+        // took over and binds nothing: without the guard it would make a third attempt beside that loop.
+        val pastDelay = CountDownLatch(1)
+        val go = CountDownLatch(1)
+        val ticks = java.util.concurrent.atomic.AtomicInteger()
+        engine.failNext(inUse())
+        val server = MealPlannerServer(
+            token(),
+            ServerRoutes(),
+            engine,
+            retryMillis = 2_000,
+            log = { logs += it },
+            beforeRetryLock = {
+                // Only the first loop's first tick is held.
+                if (ticks.incrementAndGet() == 1) {
+                    pastDelay.countDown()
+                    go.await(10, TimeUnit.SECONDS)
+                }
+            },
+        )
+        server.start(scope)
+        assertEquals(ServerState.PORT_IN_USE, server.status.value.state)
+        assertTrue("the first tick never left its delay", pastDelay.await(10, TimeUnit.SECONDS))
+        // The rebind cancels the loop (too late for this tick), binds (in use again) and starts a loop of its own.
+        engine.failNext(inUse())
+        server.rebind()
+        assertEquals(2, engine.attempts())
+        assertEquals(2, jobs().children.count())
+        // The stale tick runs now, and ends without binding.
+        go.countDown()
+        eventually { jobs().children.count() == 1 }
+        assertEquals(2, engine.attempts())
+        assertEquals(ServerState.PORT_IN_USE, server.status.value.state)
+        // The rebind's own loop carries on and listens at its tick.
+        eventually(millis = 10_000) { server.status.value.state == ServerState.LISTENING }
+        assertEquals(3, engine.attempts())
+        assertEquals(2, ticks.get())
+    }
+
     @Test
     fun whileAnotherPcAnswersAlexaATokenListensOnThisPcOnly() {
         var allowed = false
@@ -307,10 +372,12 @@ class MealPlannerServerTest {
         server.start(scope)
         eventually { engine.attempts() >= 3 }
         server.stop()
+        // The loop is cancelled and ends; a tick already past its delay sees the stop and binds nothing.
+        eventually { jobs().children.none() }
         val after = engine.attempts()
-        Thread.sleep(200)
         server.start(scope)
         assertEquals(after, engine.attempts())
+        assertEquals("a loop was started again", 0, jobs().children.count())
         assertEquals(ServerState.STOPPED, server.status.value.state)
     }
 
@@ -319,10 +386,11 @@ class MealPlannerServerTest {
         engine.failNext(IllegalStateException("the engine broke"))
         val server = server(token(), retryMillis = 20)
         server.start(scope)
-        Thread.sleep(200)
         assertEquals(ServerState.FAILED, server.status.value.state)
         assertEquals(1, engine.attempts())
         assertTrue(logs.any { "couldn't start" in it })
+        // A retry would be a child of the scope, launched under the lock before start() returned: there is none.
+        assertEquals(0, jobs().children.count())
     }
 
     @Test

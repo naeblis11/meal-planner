@@ -3,7 +3,7 @@ package com.naeblis11.mealplanner.desktop
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextReplacement
@@ -155,6 +155,26 @@ class ExtensionReviewFlowTest {
         assertEquals(0, inbox.waiting.value)
         // Leave is the import's Cancel: its staged photos go.
         assertFalse(first.exists())
+    }
+
+    @Test
+    fun aFinishedImportLeftThroughTheRailLetsTheNextRecipeOpen() {
+        // Review, 2026-10-10: only a review holds the LeaveGuard, so Calendar on the rail used to pop a finished import's
+        // screen and leave its state Finished, and the inbox (which waits for Idle) never drained.
+        send("Recipe A")
+        compose.showAt(1000.dp) { MealPlannerApp(app.container, imports = inbox) }
+        compose.waitForText("Recipe A")
+        compose.onNodeWithText("Confirm").click()
+        compose.waitForText("Imported 1 recipe(s) from www.example.com")
+        send("Recipe B")
+        compose.waitForText(CHROME_RECIPE_WAITING)
+
+        compose.tab("Calendar").click()
+        compose.waitForText("Recipe B")
+        compose.waitForIdle()
+        assertEquals(0, inbox.waiting.value)
+        compose.onAllNodesWithText(CHROME_RECIPE_WAITING).assertCountEquals(0)
+        compose.onAllNodesWithText("Imported 1 recipe(s) from www.example.com").assertCountEquals(0)
     }
 
     @Test

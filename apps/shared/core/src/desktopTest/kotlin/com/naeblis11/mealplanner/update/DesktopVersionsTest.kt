@@ -26,4 +26,12 @@ class DesktopVersionsTest {
         assertFalse(DesktopVersions.isNewer("1.0.1", "dev"))
         assertFalse(DesktopVersions.isNewer("dev", "1.0.0"))
     }
+
+    @Test
+    fun onlyAsciiDigitsMakeAVersion() {
+        // The pattern is [0-9] by intent: the phone's regex engine reads \d as any script's digit, the PC's as ASCII.
+        assertNull(DesktopVersions.parse("\u0661.0.0"))
+        assertNull(DesktopVersions.parse("1.0.\u0663"))
+        assertFalse(DesktopVersions.isNewer("\u0662.0.0", "1.0.0"))
+    }
 }

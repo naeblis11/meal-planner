@@ -1,5 +1,6 @@
 package com.naeblis11.mealplanner.data
 
+import com.naeblis11.mealplanner.domain.CategoryOptions
 import com.naeblis11.mealplanner.domain.JsonTree
 import com.naeblis11.mealplanner.domain.Orf
 import com.naeblis11.mealplanner.domain.OrfEditing
@@ -426,6 +427,11 @@ class RecipeRepository(
         if (query.isBlank()) dao.observeSummaries() else dao.search("%${query.trim()}%")
 
     fun imageFile(name: String): File = File(imagesDir, name)
+
+    /** The category editors' suggestions: the built-in lists plus what the library uses; emits again after every save. */
+    fun categoryOptions(): Flow<CategoryOptions> = dao.observeCategoryPairs()
+        .map { pairs -> CategoryOptions.from(pairs.map { it.category to it.subcategory }) }
+        .flowOn(dispatcher)
 
     /** The recipe page's data; emits again after every save, and null once the recipe is deleted. */
     fun observeDetail(id: Long): Flow<RecipeDetail?> = dao.observeRecipe(id)

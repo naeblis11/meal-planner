@@ -1,5 +1,9 @@
 package com.naeblis11.mealplanner.desktop
 
+import com.naeblis11.mealplanner.desktop.server.eventually
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,7 +15,56 @@ import org.junit.Test
 class WindowShellTest {
     private val settings = MapSettings()
 
-    private fun shell(minimized: Boolean = false, tray: Boolean = true) = WindowShell(minimized, tray, TrayNotice(settings))
+    private fun shell(minimized: Boolean = false, tray: Boolean = true, look: () -> Unit = {}) =
+        WindowShell(minimized, tray, TrayNotice(settings), look = look)
+
+    @Test
+    fun theLookRunsOffTheCallingThreadOnceTheWindowIsShown() {
+        // The look reads the disk (P7-R12) and show() is called on the Swing thread: it must never wait on the look.
+        val seen = CopyOnWriteArrayList<String>()
+        val release = CountDownLatch(1)
+        lateinit var s: WindowShell
+        s = shell(minimized = true) {
+            seen += "visible=${s.isVisible} thread=${Thread.currentThread().name}"
+            release.await(10, TimeUnit.SECONDS)
+        }
+        s.show()
+        // Back at once, with the window told to come forward, while the look is still held.
+        assertTrue(s.isVisible)
+        assertTrue(s.hasBeenShown)
+        assertEquals(1, s.raiseRequests)
+        assertEquals(0, s.looksCompleted)
+        release.countDown()
+        eventually { s.looksCompleted == 1 }
+        assertEquals(1, seen.size)
+        assertTrue(seen.single(), seen.single().startsWith("visible=true thread=install-look"))
+        // Every show looks, in order, on the one thread.
+        s.show()
+        eventually { s.looksCompleted == 2 }
+        assertEquals(2, seen.size)
+        assertEquals(2, s.raiseRequests)
+    }
+
+    @Test
+    fun aLookThatThrowsStillCountsAndNeverStopsTheShow() {
+        val s = shell(minimized = true) { throw IllegalStateException("the disk is away") }
+        s.show()
+        assertTrue(s.isVisible)
+        eventually { s.looksCompleted == 1 }
+        s.show()
+        eventually { s.looksCompleted == 2 }
+        assertTrue(s.isVisible)
+    }
+
+    @Test
+    fun aQuittingShellDoesntLook() {
+        var looks = 0
+        val s = shell { looks++ }
+        assertTrue(s.quit())
+        s.show()
+        assertEquals(0, s.looksCompleted)
+        assertEquals(0, looks)
+    }
 
     @Test
     fun aMinimizedStartStaysInTheTrayUntilOpened() {

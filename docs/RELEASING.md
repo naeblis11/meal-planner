@@ -11,14 +11,17 @@ This page is for the person who makes releases. Making one needs this repository
 Android Studio, the full JDK for the installer (docs/WINDOWS.md, "Build the installer"), the
 Android keystore (docs/ANDROID.md, "Building a signed release"), your Google client file
 (docs/WINDOWS.md, "Building with your Google client") and the GitHub CLI (`gh`), signed in with
-`gh auth login` to an account that can publish to `naeblis11/meal-planner`.
+`gh auth login` to an account that can publish to `naeblis11/meal-planner`. The scripts this page
+names (`tools/release-key.ps1`, `tools/release.ps1` and `tools/export_public.py`) are the owner's
+private tooling, kept in the private working repository and outside the public repository.
 
 Publish the Google consent screen to production first (Google Cloud console, OAuth consent screen),
 or family members will be sent through Google's "unverified app" and test-user limits.
 
 **Run both scripts in a Windows PowerShell console window.** Never pipe them, never capture their
 output (`$x = .\tools\release.ps1`), and never run them in PowerShell ISE: the password prompts
-need a real console.
+need a real console. Windows blocks scripts by default, so the commands below start each one through
+`powershell -NoProfile -ExecutionPolicy Bypass -File`, which lifts that for the one run only.
 
 ## Once: the release key
 
@@ -26,7 +29,7 @@ The release key signs `latest.json`. It is an ECDSA P-256 key, kept beside the A
 `%LOCALAPPDATA%\Meal Planner\release-key\release-key.p12` and never in the repository. Make it
 once, from the repository folder, on a clean `master`:
 
-    .\tools\release-key.ps1
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release-key.ps1
 
 `keytool` asks you for a new password (6 characters or more) twice, and once more to export the
 public certificate. The script then writes the key's public half into
@@ -67,13 +70,15 @@ every PC and phone. From then on they trust the new key.
    it is building.
 4. From the repository folder, in a Windows PowerShell console window:
 
-       .\tools\release.ps1
+       powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release.ps1
 
    It checks `master`, that nothing is uncommitted, pulls `master` (fast-forward only), checks that
    public master's `EXPORTED_FROM` names this commit, then the release key, the packaging JDK, that
    `apps\keystore.properties` and `apps\google-client.properties` exist (it never reads them; it
    refuses without either, because releases carry the built-in Google client), `gh`'s sign-in, and
-   that the release's tag isn't on GitHub yet. It runs the Kotlin tests, builds the MSI (read back
+   that the release's tag isn't on GitHub yet, neither as a release nor as a leftover git tag (a
+   bare tag would make `gh release create` ignore where the tag should land: delete it or raise the
+   version). It runs the Kotlin tests, builds the MSI (read back
    by its inspector) and the signed APK, stages them with `latest.json` in a new folder under
    `%TEMP%`, and signs `latest.json`: the release tool asks for the release key's password itself
    (it isn't shown). It refuses to sign with a key the apps don't trust.
@@ -92,7 +97,7 @@ sets, commits and pushes `master`, ports any commits made directly on public, ex
 clone of the public repository, checks the scan and pushes public master. It never runs either
 script or touches the release key. Then you run, in a Windows PowerShell console window:
 
-    .\tools\release.ps1 -SkipTests
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release.ps1 -SkipTests
 
 and type the release key's password and `y` (on the same line as the question).
 

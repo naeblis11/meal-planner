@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.desktop
 
 import com.naeblis11.mealplanner.desktop.server.ExtensionImport
 import com.naeblis11.mealplanner.desktop.server.JsonReply
+import com.naeblis11.mealplanner.desktop.server.eventually
 import com.naeblis11.mealplanner.importing.ImportInbox
 import com.naeblis11.mealplanner.settings.AppReplaced
 import java.io.File
@@ -88,7 +89,10 @@ class AppReplacedTest {
         ReplacedNotice(AppJar.of(jarFile), relauncher, restart = restart, log = { said += it })
 
     private fun shell(notice: ReplacedNotice) =
-        WindowShell(startMinimized = true, traySupported = true, notice = TrayNotice(MapSettings()), beforeShow = { notice.look() })
+        WindowShell(startMinimized = true, traySupported = true, notice = TrayNotice(MapSettings()), look = { notice.look() })
+
+    // The look runs after the show, on the shell's own thread: wait for the [count]th to have finished.
+    private fun awaitLooks(shell: WindowShell, count: Int) = eventually { shell.looksCompleted >= count }
 
     private fun replaceJar() {
         jarFile.writeText("the new code, a little longer")
@@ -209,11 +213,13 @@ class AppReplacedTest {
         // Unchanged: the window comes forward and nothing is said.
         assertNull(SingleInstance.acquire(cache) {})
         assertTrue(first.await(10, TimeUnit.SECONDS))
+        awaitLooks(shell, 1)
         assertNull(notice.replaced.value)
         replaceJar()
         // The MSI replaced the app; the next launch's request finds it.
         assertNull(SingleInstance.acquire(cache) {})
         assertTrue(second.await(10, TimeUnit.SECONDS))
+        awaitLooks(shell, 2)
         assertEquals(AppReplaced(canRestart = true), notice.replaced.value)
     }
 
@@ -222,10 +228,12 @@ class AppReplacedTest {
         val notice = notice()
         val shell = shell(notice)
         shell.show()
+        awaitLooks(shell, 1)
         assertNull(notice.replaced.value)
         assertTrue(jarFile.delete())
         shell.show()
         assertTrue(shell.isVisible)
+        awaitLooks(shell, 2)
         assertEquals(AppReplaced(canRestart = true), notice.replaced.value)
         assertEquals(TRAY_REPLACED_TOOLTIP, trayTooltip(notice.replaced.value))
         assertEquals(TrayNotice.TITLE, trayTooltip(null))
@@ -256,6 +264,7 @@ class AppReplacedTest {
         )
         assertEquals(JsonReply.ok(), reply)
         assertTrue(shell.isVisible)
+        awaitLooks(shell, 1)
         assertEquals(AppReplaced(canRestart = true), notice.replaced.value)
     }
 
@@ -266,6 +275,8 @@ class AppReplacedTest {
         assertTrue(shell.quit())
         replaceJar()
         shell.show()
+        // Nothing was queued: a quitting shell returns before any look.
+        assertEquals(0, shell.looksCompleted)
         assertNull(notice.replaced.value)
     }
 

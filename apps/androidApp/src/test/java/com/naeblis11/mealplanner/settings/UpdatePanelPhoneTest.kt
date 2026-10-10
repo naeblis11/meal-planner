@@ -1,6 +1,6 @@
 package com.naeblis11.mealplanner.settings
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme

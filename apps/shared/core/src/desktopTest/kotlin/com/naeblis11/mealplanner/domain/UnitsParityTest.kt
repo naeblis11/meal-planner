@@ -11,7 +11,7 @@ class UnitsParityTest {
 
     @Test
     fun normalizeUnit() {
-        for (case in cases["normalize_unit"]!!.jsonArray) {
+        for (case in cases.cases("normalize_unit")) {
             val text = case.obj["text"]!!.str()
             assertEquals("normalize_unit($text)", case.obj["expected"]!!.str(), Units.normalizeUnit(text))
         }
@@ -19,7 +19,7 @@ class UnitsParityTest {
 
     @Test
     fun isKnownUnitWord() {
-        for (case in cases["is_known_unit_word"]!!.jsonArray) {
+        for (case in cases.cases("is_known_unit_word")) {
             val text = case.obj["text"]!!.str()!!
             assertEquals("is_known_unit_word($text)", case.obj["expected"]!!.jsonPrimitive.boolean,
                 Units.isKnownUnitWord(text))
@@ -28,7 +28,7 @@ class UnitsParityTest {
 
     @Test
     fun toImperial() {
-        for (case in cases["to_imperial"]!!.jsonArray) {
+        for (case in cases.cases("to_imperial")) {
             val amount = case.obj["amount"]!!.str()
             val unit = case.obj["unit"]!!.str()
             val expected = case.obj["expected"]!!.jsonArray

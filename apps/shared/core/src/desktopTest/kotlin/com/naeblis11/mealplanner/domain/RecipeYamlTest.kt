@@ -1,14 +1,14 @@
 package com.naeblis11.mealplanner.domain
 
-import kotlinx.serialization.json.jsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RecipeYamlTest {
     @Test
     fun loadTypesScalarsLikePyYaml() {
-        for (case in ParityFixtures.load("yaml_load.json").jsonArray) {
+        for (case in ParityFixtures.cases("yaml_load.json")) {
             val text = case.obj["text"]!!.str()!!
             if (case.obj.containsKey("error")) {
                 assertThrows(RecipeFormatException::class.java) { RecipeYaml.load(text) }
@@ -20,10 +20,11 @@ class RecipeYamlTest {
 
     @Test
     fun dumpThenLoadGivesTheSameDocument() {
-        val texts = ParityFixtures.load("yaml_load.json").jsonArray
+        val texts = ParityFixtures.cases("yaml_load.json")
             .filter { !it.obj.containsKey("error") }.map { it.obj["text"]!!.str()!! } +
-            ParityFixtures.load("orf.json").jsonArray
+            ParityFixtures.cases("orf.json")
                 .filter { it.obj["error"]?.str() != "*" }.map { it.obj["yaml"]!!.str()!! }
+        assertTrue("the fixtures should have loadable cases", texts.isNotEmpty())
         for (text in texts) {
             val loaded = RecipeYaml.load(text)
             assertEquals("round trip of $text", JsonTree.toJson(loaded), JsonTree.toJson(RecipeYaml.load(RecipeYaml.dump(loaded))))
@@ -50,6 +51,24 @@ class RecipeYamlTest {
     fun invalidNumbersAreRecipeFormatExceptions() {
         assertThrows(RecipeFormatException::class.java) { RecipeYaml.load("x: 0b_") }
         assertThrows(RecipeFormatException::class.java) { RecipeYaml.load("x: 0x_") }
+    }
+
+    @Test
+    fun aBareDateOrDatetimeIsItsOwnText() {
+        // SnakeYAML's timestamp type would show as Java's local-time toString and dump as 2026-01-01T00:00:00Z;
+        // Python's str(date) is "2026-01-01". The scalar's text is kept, so nothing downstream sees a Date.
+        val text = "recipe_name: 2026-01-01\nsteps:\n- step: 2026-01-01 10:30:00\n- step: 2026-01-01T10:30:00.5Z\n"
+        val loaded = RecipeYaml.load(text) as Map<*, *>
+        assertEquals("2026-01-01", loaded["recipe_name"])
+        assertEquals("2026-01-01", Py.str(loaded["recipe_name"]))
+        val steps = (loaded["steps"] as List<*>).map { (it as Map<*, *>)["step"] }
+        assertEquals(listOf("2026-01-01 10:30:00", "2026-01-01T10:30:00.5Z"), steps)
+        assertEquals("2026-01-01 10:30:00", Py.str(steps[0]))
+        // Dumped quoted, since bare it would read as a date again (here and in PyYAML); it reads back as the same text.
+        val dumped = RecipeYaml.dump(loaded)
+        assertEquals("recipe_name: '2026-01-01'\nsteps:\n- step: '2026-01-01 10:30:00'\n- step: '2026-01-01T10:30:00.5Z'\n", dumped)
+        assertEquals(JsonTree.toJson(loaded), JsonTree.toJson(RecipeYaml.load(dumped)))
+        assertEquals("\"2026-01-01\"", JsonTree.toJson(loaded["recipe_name"]).toString())
     }
 
     @Test

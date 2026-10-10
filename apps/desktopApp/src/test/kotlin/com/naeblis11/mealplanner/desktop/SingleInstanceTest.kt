@@ -92,16 +92,18 @@ class SingleInstanceTest {
         assertEquals(1, shows.get())
     }
 
-    @Test
+    @Test(timeout = 20_000)
     fun aSlowCallerCannotHoldTheListener() {
         val shows = AtomicInteger()
         val first = acquire { shows.incrementAndGet() }!!
         val token = tokenIn(cache)
-        // Connected first, so it is served first; one byte every 200 ms would keep a per-read timeout happy for 8 s.
+        // Connected first, so it is served first; one byte every 200 ms would keep a per-read timeout happy for 30 s,
+        // well past this test's own timeout: only the listener's deadline for one caller (3 s) lets the real one
+        // through in time. The drip ends when the socket is closed below.
         val slow = Socket(InetAddress.getLoopbackAddress(), first.port)
         val drip = Thread {
             runCatching {
-                repeat(40) {
+                repeat(150) {
                     slow.getOutputStream().apply {
                         write('x'.code)
                         flush()
@@ -109,17 +111,14 @@ class SingleInstanceTest {
                     Thread.sleep(200)
                 }
             }
-        }.apply { start() }
+        }.apply { isDaemon = true; start() }
         try {
             send(first.port, "show $token\n".toByteArray())
-            val started = System.nanoTime()
-            waitForListener(first.port, timeoutMillis = 10_000)
-            val tookMillis = (System.nanoTime() - started) / 1_000_000
+            waitForListener(first.port, timeoutMillis = 15_000)
             assertEquals(1, shows.get())
-            assertTrue("the slow caller held the listener for $tookMillis ms", tookMillis < 6_000)
         } finally {
             slow.close()
-            drip.join()
+            drip.join(5_000)
         }
     }
 

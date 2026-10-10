@@ -114,10 +114,15 @@ class ExtensionImportTest {
             JsonReply.error(400, ExtensionImport.ADDRESS_TOO_LONG),
             importer(inbox).receive(payload("source_url" to "https://www.example.com/soup?" + "a".repeat(9000))),
         )
+        assertEquals(
+            JsonReply.error(400, ExtensionImport.IMAGE_ADDRESS_TOO_LONG),
+            importer(inbox).receive(payload("image_url" to "https://www.example.com/soup.jpg?" + "a".repeat(9000))),
+        )
         for (field in listOf("yield_text", "author")) {
             assertEquals(field, JsonReply.error(400, ExtensionImport.FIELD_TOO_LONG), importer(inbox).receive(payload(field to "a".repeat(2001))))
         }
         assertEquals("That page's address is too long. Remove the part after ? and send it again.", ExtensionImport.ADDRESS_TOO_LONG)
+        assertEquals("That page's photo has an address that is too long to import.", ExtensionImport.IMAGE_ADDRESS_TOO_LONG)
         assertEquals("That recipe has a field that is too long to import.", ExtensionImport.FIELD_TOO_LONG)
         assertEquals(0, inbox.waiting.value)
         assertEquals(0, stagings)

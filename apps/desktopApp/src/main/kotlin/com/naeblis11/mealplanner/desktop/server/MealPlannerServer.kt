@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 
 /**
  * The built-in server (P4-R1) on [port]:
@@ -18,9 +19,12 @@ import kotlinx.coroutines.launch
  *   on 127.0.0.1 only, as if no token were set up. The token is kept; a rebind follows the yield.
  * - A port already taken (the old python app.py) is logged once, shown in [status], and tried again every
  *   [retryMillis] until it is free. The rest of the app carries on meanwhile.
+ * - A start that ran out of time (ServerStartTimeoutException: CIO never said it had bound) is logged once, shown as
+ *   FAILED, and tried again every [retryMillis] too; any other failure is FAILED for good.
  * - A rebind whose stop fails leaves the old listener running: [status] still says where it listens, and the stop and
  *   the new bind are tried again every [retryMillis] until the stop works.
  * - Never logs the token: only whether one is set up.
+ * [beforeRetryLock] is a test seam: run by each retry tick after its delay, before it takes the lock.
  */
 class MealPlannerServer(
     private val token: ApiToken,
@@ -31,6 +35,7 @@ class MealPlannerServer(
     private val retryMillis: Long = RETRY_MILLIS,
     private val log: (String) -> Unit = { System.err.println(it) },
     private val lanAllowed: () -> Boolean = { true },
+    private val beforeRetryLock: () -> Unit = {},
 ) : AppServer {
     private val lock = Any()
     private val _status = MutableStateFlow(ServerStatus(ServerState.STARTING, port, tokenConfigured = token.configured))
@@ -39,6 +44,11 @@ class MealPlannerServer(
     private var retry: Job? = null
     private var stopped = false
     private var saidInUse = false
+    private var saidSlow = false
+
+    // The last bind failed in a way worth another try (a port in use, a start that ran out of time): what the retry
+    // loop goes by, since the status alone can't tell a FAILED worth retrying from one for good.
+    private var retryWanted = false
 
     // The old listener outlived a stop: binding beside it can only fail, so the retry loop stops it first.
     private var stuck = false
@@ -120,9 +130,11 @@ class MealPlannerServer(
         try {
             engine.start(host, port) { routes.install(this) }
             boundOnLan = lan
+            retryWanted = false
             _status.value = ServerStatus(ServerState.LISTENING, port, onLan = lan, tokenConfigured = configured)
             if (saidInUse) log("Meal Planner: port $port is free again.")
             saidInUse = false
+            saidSlow = false
             saidStuck = false
             val where = when {
                 lan -> "on the home network (an Alexa token is set up)"
@@ -131,42 +143,57 @@ class MealPlannerServer(
             }
             log("Meal Planner: listening on port $port, $where.")
         } catch (e: PortInUseException) {
+            retryWanted = true
             _status.value = ServerStatus(ServerState.PORT_IN_USE, port, tokenConfigured = configured)
             if (!saidInUse) {
                 log("Meal Planner: port $port is in use, so the Chrome extension and Alexa can't reach the app. Is another program using it? Trying again every ${retryMillis / 1000} s.")
             }
             saidInUse = true
             scheduleRetryLocked()
+        } catch (e: ServerStartTimeoutException) {
+            // Not known to be held, but not listening either: said once, and tried again as a port in use is.
+            retryWanted = true
+            _status.value = ServerStatus(ServerState.FAILED, port, tokenConfigured = configured)
+            if (!saidSlow) log("Meal Planner: the server took too long to start on port $port. Trying again every ${retryMillis / 1000} s.")
+            saidSlow = true
+            scheduleRetryLocked()
         } catch (e: Exception) {
+            retryWanted = false
             _status.value = ServerStatus(ServerState.FAILED, port, tokenConfigured = configured)
             log("Meal Planner: the server couldn't start: $e")
         }
     }
 
     // Under the lock. One loop at a time; it ends once the old listener has stopped and the port is free, the server is
-    // stopped, or a rebind took over (it cancels the loop, and starts its own if it needs one).
+    // stopped, or a rebind took over (it cancels the loop, and starts its own if it needs one). A tick that had already
+    // left its delay when the rebind cancelled it (cancellation is only seen at a suspension) can still be waiting for
+    // the lock, so each tick checks under the lock that it is still the current loop before it stops or binds anything:
+    // otherwise a stale tick could bind beside the rebind's own loop, or turn its LISTENING into FAILED for a moment.
     private fun scheduleRetryLocked() {
         if (retry?.isActive == true) return
         val where = scope ?: return
         retry = where.launch {
+            val me = coroutineContext[Job]
             while (true) {
                 delay(retryMillis)
+                beforeRetryLock()
                 val again = synchronized(lock) {
                     when {
+                        retry !== me -> false
                         stopped -> false
                         stuck -> {
                             if (stopEngineLocked("stopping the server to listen again failed")) {
                                 stuck = false
                                 bindLocked()
-                                _status.value.state == ServerState.PORT_IN_USE
+                                retryWanted
                             } else {
                                 true
                             }
                         }
-                        _status.value.state != ServerState.PORT_IN_USE -> false
+                        !retryWanted -> false
                         else -> {
                             bindLocked()
-                            _status.value.state == ServerState.PORT_IN_USE
+                            retryWanted
                         }
                     }
                 }

@@ -306,7 +306,7 @@ const val SERVER_PANEL = "Chrome extension and Alexa"
 const val SERVER_STARTING = "Starting..."
 const val SERVER_STOPPED = "Stopped."
 const val SERVER_FAILED =
-    "Meal Planner couldn't start its server, so the Chrome extension and Alexa won't reach it. The log in Documents\\Meal Planner\\.cache says why."
+    "Meal Planner couldn't start its server, so the Chrome extension and Alexa won't reach it. The log in %LOCALAPPDATA%\\Meal Planner\\.cache says why."
 const val ALEXA_ON = "Alexa: a voice token is set up, so Home Assistant can add to your lists and plan meals."
 const val ALEXA_OFF = "Alexa: not set up. Create a token, then put it in Home Assistant."
 const val TOKEN_ONCE = "Put this line in Home Assistant's secrets.yaml. It is only shown now."

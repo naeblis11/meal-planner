@@ -4,7 +4,10 @@ import java.util.regex.Pattern
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.AbstractConstruct
 import org.yaml.snakeyaml.constructor.SafeConstructor
+import org.yaml.snakeyaml.nodes.Node
+import org.yaml.snakeyaml.nodes.ScalarNode
 import org.yaml.snakeyaml.nodes.Tag
 import org.yaml.snakeyaml.representer.Representer
 import org.yaml.snakeyaml.resolver.Resolver
@@ -84,7 +87,22 @@ object RecipeYaml {
             // Defence in depth; exceedsNodeLimit is what actually bounds the expansion.
             maxAliasesForCollections = 20
         }
-        return Yaml(SafeConstructor(loader), Representer(dumper), dumper, loader, PyYamlResolver())
+        return Yaml(TextTimestampConstructor(loader), Representer(dumper), dumper, loader, PyYamlResolver())
+    }
+
+    /**
+     * SafeConstructor, except that a bare date or datetime (`2026-01-01`, `2026-01-01 10:30:00`) stays the
+     * scalar's own text. SnakeYAML would make it a java.util.Date, which nothing downstream expects: Py.str
+     * printed Java's local-time form where Python's str(date) is "2026-01-01", and a dump wrote it back as
+     * `2026-01-01T00:00:00Z`. As text, a recipe or step written as a date reads and shows as written, and
+     * dumps quoted (`'2026-01-01'`), which reads back as the same text here and in PyYAML.
+     */
+    private class TextTimestampConstructor(options: LoaderOptions) : SafeConstructor(options) {
+        init {
+            yamlConstructors[Tag.TIMESTAMP] = object : AbstractConstruct() {
+                override fun construct(node: Node): Any = (node as ScalarNode).value
+            }
+        }
     }
 
     /** PyYAML's implicit resolvers (yaml/resolver.py), in PyYAML's order. */

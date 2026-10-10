@@ -189,6 +189,18 @@ class ExtensionRoutesTest {
     }
 
     @Test
+    fun anotherBrowsersExtensionIsRefused() = testApplication {
+        // Only Chrome's extension scheme is the extension; Firefox's moz-extension:// (any add-on there) isn't.
+        serve("127.0.0.1")
+        for (origin in listOf("moz-extension://3b0a1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", "safari-web-extension://ABCDEF", "chrome-extension-evil://x", "chrome://extensions")) {
+            val response = send(PAYLOAD, origin = origin)
+            assertEquals(origin, HttpStatusCode.Forbidden, response.status)
+            assertEquals("""{"ok":false,"error":"$NOT_EXTENSION"}""", response.bodyAsText())
+        }
+        assertEquals(0, inbox.waiting.value)
+    }
+
+    @Test
     fun theChromeExtensionsOriginIsAccepted() = testApplication {
         serve("127.0.0.1")
         val response = send(PAYLOAD, origin = "chrome-extension://abcdefghijklmnopabcdefghijklmnop")

@@ -9,7 +9,8 @@ object Amounts {
     /** "2", "1/2", "1 1/2", "1.5" -> exact value; null for anything else. */
     fun parseAmount(text: String?): Fraction? {
         if (text == null) return null
-        val trimmed = text.trim()
+        // str.strip(): Python's whitespace set, which has NEL (U+0085) where Kotlin's trim() does not.
+        val trimmed = Py.strip(text)
         if (trimmed.isEmpty()) return null
         val parts = trimmed.split(WHITESPACE)
         return when {

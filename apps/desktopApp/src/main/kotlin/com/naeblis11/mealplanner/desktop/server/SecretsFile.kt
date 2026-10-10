@@ -32,17 +32,24 @@ class SecretsFile(val file: File) {
      * line is added at the end. Written to a temporary file in the same folder and moved over the old one, so a crash
      * leaves the old file or the new one, never half of one. Makes the folder when needed; throws IOException when it
      * can't write.
+     *
+     * One put at a time across the process ([WRITE_LOCK]), and each with a temporary file of its own: a token being
+     * created while Settings saves the Google client pair (two puts) would otherwise read the file before the other's
+     * move, write the one `.env.tmp` both used and move the other's content over its own, leaving the token in memory
+     * out of the file.
      */
     fun put(key: String, value: String) {
-        val folder = file.absoluteFile.parentFile
-        folder.mkdirs()
-        val kept = if (file.isFile) Py.splitLines(text()).filterNot { keyOf(it) == key } else emptyList()
-        val temp = File(folder, "${file.name}.tmp")
-        try {
-            temp.writeText((kept + "$key=$value").joinToString("\n", postfix = "\n"), Charsets.UTF_8)
-            Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } finally {
-            temp.delete()
+        synchronized(WRITE_LOCK) {
+            val folder = file.absoluteFile.parentFile
+            folder.mkdirs()
+            val kept = if (file.isFile) Py.splitLines(text()).filterNot { keyOf(it) == key } else emptyList()
+            val temp = Files.createTempFile(folder.toPath(), TEMP_PREFIX, TEMP_SUFFIX).toFile()
+            try {
+                temp.writeText((kept + "$key=$value").joinToString("\n", postfix = "\n"), Charsets.UTF_8)
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            } finally {
+                temp.delete()
+            }
         }
     }
 
@@ -59,6 +66,14 @@ class SecretsFile(val file: File) {
         const val FILE_NAME = ".env"
         const val HOME_ENV = "MEAL_PLANNER_HOME"
         const val APP_NAME = "Meal Planner"
+
+        /** A put's temporary file is `.env.<random>.tmp` beside the file; the one name it had before let two puts collide. */
+        const val TEMP_PREFIX = ".env."
+        const val TEMP_SUFFIX = ".tmp"
+
+        // Process-wide: the app has one secrets file, and a second SecretsFile over the same path (the Google client's
+        // and the token's are built separately in Main) must queue behind it too.
+        private val WRITE_LOCK = Any()
 
         /**
          * paths.env_path() on Windows, without its fallback to the folder's name before the rename. Tests pass [env] and
