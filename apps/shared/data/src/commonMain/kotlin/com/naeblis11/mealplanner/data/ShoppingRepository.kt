@@ -71,6 +71,32 @@ class ShoppingRepository(
                 ingredients = dao.ingredientLines(meal.recipeId).map { Line(it.name, it.amount, it.unit) },
             )
         }
+        mergeLocked(meals)
+        return planned.size
+    }
+
+    /**
+     * Owner, 2026-10-09: "Add to shopping list" on a recipe's page. Its ingredients go on the list exactly as one
+     * planned meal's would with "Add this week": scaled to [servings] (null: as written), merged into rows already
+     * there, and what the pantry has on hand marked, not bought. Returns false when the recipe is gone.
+     */
+    suspend fun addRecipe(recipeId: Long, servings: String?): Boolean = writeLock.withLock {
+        withContext(dispatcher) {
+            db.inTransaction {
+                if (dao.recipeExists(recipeId) == 0) return@inTransaction false
+                val meal = ShoppingMerge.PlannedMeal(
+                    servings = servings,
+                    yieldAmount = firstYieldAmount(dao.recipeYields(recipeId)),
+                    ingredients = dao.ingredientLines(recipeId).map { Line(it.name, it.amount, it.unit) },
+                )
+                mergeLocked(listOf(meal))
+                true
+            }
+        }
+    }
+
+    // The week's (or one recipe's) ingredients merged into the list, as shopping_list.add_week does.
+    private suspend fun mergeLocked(meals: List<ShoppingMerge.PlannedMeal>) {
         val existing = dao.allInIdOrder().map { it.toListRow() }
         // Only what is on hand: a crossed-out pantry item has run out, so it needs buying.
         val pantry = dao.onHandPantry().map { PantryRule(it.name, it.exactMatch) }
@@ -85,7 +111,6 @@ class ShoppingRepository(
                 dao.update(row.toEntity(id))
             }
         }
-        return planned.size
     }
 
     /** Puts one named item on the list by hand (shopping_list.add_item). The name must not be blank. */

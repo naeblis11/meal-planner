@@ -2,7 +2,9 @@ package com.naeblis11.mealplanner.recipes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.naeblis11.mealplanner.data.AddStatus
 import com.naeblis11.mealplanner.data.MealPlanRepository
+import com.naeblis11.mealplanner.data.ShoppingRepository
 import com.naeblis11.mealplanner.data.PantryRepository
 import com.naeblis11.mealplanner.data.RecipeDetail
 import com.naeblis11.mealplanner.data.RecipeRepository
@@ -47,6 +49,8 @@ class RecipeDetailViewModel(
     /** P5-R7: the meal plan, for Assign to calendar; null leaves it out. */
     private val plans: MealPlanRepository? = null,
     private val clock: () -> LocalDate = LocalDate::now,
+    /** Owner, 2026-10-09: the shopping list, for "Add to shopping list" and each ingredient's "+ List"; null leaves both out. */
+    private val shopping: ShoppingRepository? = null,
 ) : ViewModel() {
     private val requestedServings = MutableStateFlow<String?>(null)
     private val _message = MutableStateFlow<String?>(null)
@@ -150,6 +154,52 @@ class RecipeDetailViewModel(
                 throw e
             } catch (e: Exception) {
                 _message.value = "That couldn't be added to your pantry."
+            }
+        }
+    }
+
+    /** Whether this page can add to the shopping list (the buttons show only then). */
+    val canShop: Boolean get() = shopping != null
+
+    /**
+     * "Add to shopping list": every ingredient, scaled to the servings the page shows, merged into the list as "Add
+     * this week" merges a planned meal; what the pantry has is marked on the list, not bought.
+     */
+    fun addRecipeToShoppingList() {
+        val repo = shopping ?: return
+        val servings = requestedServings.value
+        viewModelScope.launch {
+            _message.value = try {
+                if (repo.addRecipe(id, servings)) {
+                    val name = view.value?.name
+                    if (name == null) ADDED_RECIPE_TO_LIST else "Added the ingredients for $name to your shopping list."
+                } else {
+                    SHOPPING_RECIPE_GONE
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                SHOPPING_ADD_FAILED
+            }
+        }
+    }
+
+    /** "+ List" on one ingredient: that ingredient at the amount the page shows, in the shopping list's own words. */
+    fun addIngredientToShoppingList(ingredient: IngredientView) {
+        val repo = shopping ?: return
+        val name = ingredient.name.trim()
+        if (name.isEmpty()) return
+        viewModelScope.launch {
+            _message.value = try {
+                when (repo.addItem(name, ingredient.amount, ingredient.unit).status) {
+                    AddStatus.ADDED -> "Added '$name' to your shopping list."
+                    AddStatus.MERGED -> "Added more '$name' to the one already on your list."
+                    AddStatus.DUPLICATE -> "'$name' is already on your shopping list."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                SHOPPING_ADD_FAILED
             }
         }
     }
@@ -274,6 +324,15 @@ class RecipeDetailViewModel(
         const val ASSIGN_FAILED = "The meal could not be saved."
     }
 }
+
+/** What "Add to shopping list" says when the page has no name to put in it yet. */
+const val ADDED_RECIPE_TO_LIST = "Added this recipe's ingredients to your shopping list."
+
+/** "Add to shopping list" on a recipe deleted meanwhile. */
+const val SHOPPING_RECIPE_GONE = "This recipe is no longer in your library."
+
+/** Either shopping-list button, when the list couldn't be written. */
+const val SHOPPING_ADD_FAILED = "That couldn't be added to your shopping list."
 
 /** What Assign to calendar says: the slot and day, and the meal it replaced. */
 fun plannedMessage(slot: String, date: LocalDate, replaced: String?): String =

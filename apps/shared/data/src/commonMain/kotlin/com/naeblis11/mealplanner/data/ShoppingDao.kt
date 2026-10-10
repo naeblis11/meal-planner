@@ -54,6 +54,13 @@ interface ShoppingDao {
     @Query("SELECT name, amount, unit FROM recipe_ingredient WHERE recipe_id = :recipeId ORDER BY order_num")
     suspend fun ingredientLines(recipeId: Long): List<IngredientLineRow>
 
+    /** A recipe's yields, for scaling it onto the list from its own page; null when the recipe is gone. */
+    @Query("SELECT yields_json FROM recipe WHERE id = :recipeId")
+    suspend fun recipeYields(recipeId: Long): String?
+
+    @Query("SELECT COUNT(*) FROM recipe WHERE id = :recipeId")
+    suspend fun recipeExists(recipeId: Long): Int
+
     /** Only what is on hand: a crossed-out item has run out and needs buying. */
     @Query("SELECT name, exact_match FROM pantry_item WHERE active = 1")
     suspend fun onHandPantry(): List<PantryRuleRow>

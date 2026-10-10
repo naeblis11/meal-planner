@@ -16,6 +16,8 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.data.missingFileMessage
+import com.naeblis11.mealplanner.recipes.ADD_TO_LIST
+import com.naeblis11.mealplanner.recipes.ADD_TO_SHOPPING_LIST
 import com.naeblis11.mealplanner.recipes.ASSIGN_SERVINGS_LABEL
 import com.naeblis11.mealplanner.recipes.ASSIGN_TO_CALENDAR
 import com.naeblis11.mealplanner.recipes.planningNote
@@ -183,6 +185,22 @@ class RecipePageParityTest {
     private companion object {
         // A list row: its 48 dp minimum (owner, 2026-10-09: compact rows, stars only show the rating).
         const val ROW_HEIGHT = 48f
+    }
+
+    @Test
+    fun theRecipePageAddsTheRecipeOrOneIngredientToTheShoppingList() {
+        // Owner, 2026-10-09: both ways onto the shopping list from a recipe's page.
+        openSoup(1000.dp)
+        compose.onNodeWithText(ADD_TO_SHOPPING_LIST).click()
+        compose.waitForText("Added the ingredients for Soup to your shopping list.")
+        val afterRecipe = runBlocking { app.container.database.shoppingDao().allInIdOrder() }
+        assertTrue("the list has Soup's ingredients", afterRecipe.isNotEmpty())
+
+        compose.onAllNodesWithText(ADD_TO_LIST)[0].click()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("to the one already on your list", substring = true).fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodesWithText("is already on your shopping list", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Test

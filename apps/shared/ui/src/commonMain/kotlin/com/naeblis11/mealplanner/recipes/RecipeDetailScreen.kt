@@ -96,6 +96,10 @@ fun RecipeDetailScreen(
     today: LocalDate = LocalDate.now(),
     /** P5-R7: the server's quick category form; null leaves Category out of More. */
     onSetCategory: ((String, String) -> Unit)? = null,
+    /** Owner, 2026-10-09: puts every ingredient on the shopping list at the page's servings; null hides the button. */
+    onAddToShoppingList: (() -> Unit)? = null,
+    /** Owner, 2026-10-09: puts one ingredient on the shopping list (its "+ List"); null hides the buttons. */
+    onAddIngredientToList: ((IngredientView) -> Unit)? = null,
 ) {
     // Read while cooking: keep the screen awake while this page is open.
     KeepScreenOn()
@@ -180,7 +184,9 @@ fun RecipeDetailScreen(
                 }
             }
             if (view.canScale) item(key = "scaler") { ServingsScaler(view.servings ?: "", onScale) }
-            if (onAssign != null) item(key = "plan") { PlanThisRecipe(view) { assigning = true } }
+            if (onAssign != null || onAddToShoppingList != null) {
+                item(key = "plan") { PlanThisRecipe(view, onAssign?.let { { assigning = true } }, onAddToShoppingList) }
+            }
             item(key = "ingredients-label") { SectionLabel("Ingredients") }
             var lastSection: String? = null
             for ((index, ingredient) in view.ingredients.withIndex()) {
@@ -189,7 +195,7 @@ fun RecipeDetailScreen(
                     item(key = "section-$index") { Text(heading, style = MaterialTheme.typography.titleMedium, color = MealColors.Muted, modifier = Modifier.padding(top = 12.dp)) }
                 }
                 lastSection = ingredient.section
-                item(key = "ingredient-$index") { IngredientLine(ingredient, onAddToPantry) }
+                item(key = "ingredient-$index") { IngredientLine(ingredient, onAddToPantry, onAddIngredientToList) }
             }
             item(key = "instructions-label") { SectionLabel("Instructions") }
             for (step in view.steps) item(key = "step-${step.number}") { StepLine(step) }
@@ -244,7 +250,7 @@ private fun ServingsScaler(current: String, onScale: (String) -> Unit) {
 }
 
 @Composable
-private fun IngredientLine(ingredient: IngredientView, onAddToPantry: ((String) -> Unit)?) {
+private fun IngredientLine(ingredient: IngredientView, onAddToPantry: ((String) -> Unit)?, onAddToList: ((IngredientView) -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 6.dp)) {
         Column(Modifier.weight(1f)) {
             Text(listOf(ingredient.amount, ingredient.unit, ingredient.name).filter { it.isNotBlank() }.joinToString(" "), style = MaterialTheme.typography.bodyLarge)
@@ -268,8 +274,17 @@ private fun IngredientLine(ingredient: IngredientView, onAddToPantry: ((String) 
                 modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Add ${ingredient.name} to your pantry" },
             ) { Text("+ Pantry") }
         }
+        if (onAddToList != null && ingredient.name.isNotBlank()) {
+            TextButton(
+                onClick = { onAddToList(ingredient) },
+                modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Add ${ingredient.name} to your shopping list" },
+            ) { Text(ADD_TO_LIST) }
+        }
     }
 }
+
+/** An ingredient's one-tap add to the shopping list. */
+const val ADD_TO_LIST = "+ List"
 
 /** The recipe page's mark on an ingredient the pantry covers. */
 const val IN_PANTRY = "\u2713 In pantry"
@@ -296,12 +311,19 @@ fun deleteWarning(plannedMeals: Int): String = when (plannedMeals) {
 
 /** The server's "Plan this recipe": a note when the page is scaled, and the button that opens the assign dialog. */
 @Composable
-private fun PlanThisRecipe(view: RecipeView, onAssign: () -> Unit) {
+private fun PlanThisRecipe(view: RecipeView, onAssign: (() -> Unit)?, onAddToShoppingList: (() -> Unit)?) {
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (view.scaled && view.servings != null) {
             Text(planningNote(view.servings, view.servingsUnit), color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
         }
-        OutlinedButton(onClick = onAssign, shape = RoundedCornerShape(10.dp), modifier = Modifier.heightIn(min = 48.dp)) { Text(ASSIGN_TO_CALENDAR) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (onAssign != null) {
+                OutlinedButton(onClick = onAssign, shape = RoundedCornerShape(10.dp), modifier = Modifier.heightIn(min = 48.dp)) { Text(ASSIGN_TO_CALENDAR) }
+            }
+            if (onAddToShoppingList != null) {
+                OutlinedButton(onClick = onAddToShoppingList, shape = RoundedCornerShape(10.dp), modifier = Modifier.heightIn(min = 48.dp)) { Text(ADD_TO_SHOPPING_LIST) }
+            }
+        }
     }
 }
 
@@ -388,6 +410,9 @@ private fun SuggestionRow(options: List<String>, onPick: (String) -> Unit) {
 private val DAY_SAVER = Saver<LocalDate, Long>(save = { it.toEpochDay() }, restore = { LocalDate.ofEpochDay(it) })
 
 const val ASSIGN_TO_CALENDAR = "Assign to calendar"
+
+/** The recipe page's button that puts every ingredient on the shopping list. */
+const val ADD_TO_SHOPPING_LIST = "Add to shopping list"
 const val ASSIGN_SERVINGS_LABEL = "Servings (blank: as written)"
 
 /** The server's note above Assign when the page is scaled. */

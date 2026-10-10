@@ -64,7 +64,19 @@ class MealPlanWideTest {
         assertEquals(monday.top, sunday.top)
         assertTrue(sunday.left > monday.left)
         compose.onAllNodesWithText("Add recipe").assertCountEquals(20)
-        compose.onAllNodesWithText("Today").assertCountEquals(1)
+        compose.onAllNodesWithText("Oct 7 \u00b7 Today").assertCountEquals(1)
+    }
+
+    @Test
+    fun todayIsMarkedWithoutPushingItsMealsDown() {
+        // Owner, 2026-10-09: today (Wednesday) says so on its date line, so its meals line up with every other day's.
+        show(900.dp, wide = true)
+        val tuesday = compose.onNodeWithContentDescription("Add recipe for Breakfast on Tuesday, Oct 6").getBoundsInRoot()
+        val today = compose.onNodeWithContentDescription("Add recipe for Breakfast on Wednesday, Oct 7").getBoundsInRoot()
+        assertEquals(tuesday.top.value, today.top.value, 0.5f)
+        val tuesdayDinner = compose.onNodeWithContentDescription("Add recipe for Dinner on Tuesday, Oct 6").getBoundsInRoot()
+        val todayDinner = compose.onNodeWithContentDescription("Remove Dinner on Wednesday, Oct 7").getBoundsInRoot()
+        assertTrue("today's dinner starts with Tuesday's", todayDinner.top >= tuesdayDinner.top)
     }
 
     @Test
@@ -80,6 +92,23 @@ class MealPlanWideTest {
         show(900.dp, wide = true)
         compose.onNodeWithContentDescription("Add recipe for Lunch on Tuesday, Oct 6").click()
         assertEquals(LocalDate.of(2026, 10, 6) to "Lunch", assigned)
+    }
+
+    @Test
+    fun aDayOfThreeMealsWithPhotosIsShort() {
+        // Owner, 2026-10-09: three planned meals fit without scrolling. Each card's photo is a small square beside the
+        // name, not a picture across the column, and Change and Remove sit side by side where they fit.
+        val full = WeekViews.build(
+            LocalDate.of(2026, 10, 5),
+            listOf("Breakfast", "Lunch", "Dinner").mapIndexed { i, slot -> PlannedMealRow("2026-10-07", slot, 10L + i, "4", "Soup $i", "soup$i.jpg") },
+            today = LocalDate.of(2026, 10, 7),
+        )
+        show(1280.dp, wide = true, shown = full)
+        val top = compose.onNodeWithContentDescription("Change Breakfast on Wednesday, Oct 7").getBoundsInRoot()
+        val bottom = compose.onNodeWithContentDescription("Remove Dinner on Wednesday, Oct 7").getBoundsInRoot()
+        val change = compose.onNodeWithContentDescription("Change Dinner on Wednesday, Oct 7").getBoundsInRoot()
+        assertEquals("side by side", change.top.value, bottom.top.value, 0.5f)
+        assertTrue("three meals span ${bottom.bottom - top.top}", bottom.bottom - top.top < 400.dp)
     }
 
     @Test

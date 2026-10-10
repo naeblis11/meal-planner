@@ -80,6 +80,33 @@ class ShoppingRepositoryTest {
     }
 
     @Test
+    fun addingARecipeFromItsPageScalesItAndMergesIntoTheList() = runTest {
+        // Owner, 2026-10-09: "Add to shopping list" on a recipe works as one planned meal does with "Add this week".
+        val id = pancakes()
+        shopping.addItem("Flour", "1", "cup")
+        PantryRepository(db, Dispatchers.Unconfined).stock("Salt")
+
+        assertTrue(shopping.addRecipe(id, "8")) // doubled
+
+        assertEquals(
+            listOf(
+                listOf("Flour", "5", "cups", "Dry Goods & Pasta", "false", "false"), // 1 already there + 4
+                listOf("Salt", "2", "tsp", "Spices & Baking", "true", "false"), // on hand: marked, not bought
+            ),
+            rows(),
+        )
+    }
+
+    @Test
+    fun addingARecipeAsWrittenAndAGoneOne() = runTest {
+        val id = pancakes()
+        assertTrue(shopping.addRecipe(id, null))
+        assertEquals(listOf("2", "1"), db.shoppingDao().allInIdOrder().map { it.amount })
+        assertFalse(shopping.addRecipe(id + 999, null))
+        assertEquals(2, db.shoppingDao().allInIdOrder().size)
+    }
+
+    @Test
     fun addingTheWeekAgainAddsMoreAndUnchecksTheRow() = runTest {
         plans.assign(monday, "Dinner", pancakes(), null)
         shopping.addWeek(monday)

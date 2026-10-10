@@ -5,9 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -215,25 +217,30 @@ private fun SlotCard(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics { contentDescription = "Add recipe for $where" },
                 ) { Text("Add recipe") }
             } else if (compact) {
-                // A grid column is narrow: the photo above the name, the actions stacked.
+                // A grid column is narrow, and a day of three meals should fit without scrolling (owner, 2026-10-09):
+                // the name across the card, then a small photo beside the servings, then the actions side by side.
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth().clickable { onOpenRecipe(meal.recipeId) }.padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { onOpenRecipe(meal.recipeId) }.padding(start = 8.dp, top = 8.dp, end = 8.dp),
                 ) {
-                    if (meal.imageFilename != null) {
-                        PhotoImage(
-                            thumbnail(meal.imageFilename),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(8.dp)),
-                        )
-                    }
                     Text(
                         meal.recipeName,
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    meal.servings?.let { Text("for $it", color = MealColors.Muted, style = MaterialTheme.typography.bodySmall) }
+                    if (meal.imageFilename != null || meal.servings != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (meal.imageFilename != null) {
+                                PhotoImage(
+                                    thumbnail(meal.imageFilename),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(GRID_PHOTO).clip(RoundedCornerShape(6.dp)),
+                                )
+                            }
+                            meal.servings?.let { Text("for $it", color = MealColors.Muted, style = MaterialTheme.typography.bodySmall) }
+                        }
+                    }
                 }
                 SlotActions(where, { onAssign(day.date, slot.slot) }, { onRemove(day.date, slot.slot) }, stacked = true)
             } else {
@@ -254,22 +261,36 @@ private fun SlotCard(
     }
 }
 
-/** A planned meal's Change and Remove: side by side on the phone, stacked (and a little shorter) in a grid column. */
+/**
+ * A planned meal's Change and Remove: side by side on the phone; in a grid column ([stacked]) a little shorter, side
+ * by side where the column is wide enough and one under the other where it isn't.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SlotActions(where: String, onChange: () -> Unit, onRemove: () -> Unit, stacked: Boolean) {
-    val minHeight = if (stacked) 40.dp else 48.dp
+    val minHeight = if (stacked) 36.dp else 48.dp
+    // Tighter and a little smaller in a grid column, so both fit side by side even in a 1024 dp window's columns.
+    val padding = if (stacked) PaddingValues(horizontal = 6.dp) else ButtonDefaults.TextButtonContentPadding
+    val label: @Composable (String) -> Unit = { text ->
+        if (stacked) Text(text, style = MaterialTheme.typography.labelMedium) else Text(text)
+    }
     val buttons: @Composable () -> Unit = {
         TextButton(
             onClick = onChange,
+            contentPadding = padding,
             modifier = Modifier.heightIn(min = minHeight).semantics { contentDescription = "Change $where" },
-        ) { Text("Change") }
+        ) { label("Change") }
         TextButton(
             onClick = onRemove,
+            contentPadding = padding,
             modifier = Modifier.heightIn(min = minHeight).semantics { contentDescription = "Remove $where" },
-        ) { Text("Remove") }
+        ) { label("Remove") }
     }
-    if (stacked) Column(Modifier.padding(horizontal = 4.dp)) { buttons() } else Row(Modifier.padding(horizontal = 4.dp)) { buttons() }
+    if (stacked) FlowRow(Modifier.padding(horizontal = 2.dp)) { buttons() } else Row(Modifier.padding(horizontal = 4.dp)) { buttons() }
 }
+
+// A planned meal's photo in a grid column: small, beside the servings under the name.
+private val GRID_PHOTO = 28.dp
 
 /**
  * The wide Calendar (the server's `.week-grid`): the week's controls in two rows, then seven equal columns, one per
@@ -318,7 +339,14 @@ private fun WeekGrid(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(MealSpacing.Row), modifier = Modifier.padding(top = MealSpacing.Row)) {
             for (day in week.days) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(MealSpacing.Row)) {
+                // Today is a tinted column, not an extra line, so every day's heading and meals stay in line (owner,
+                // 2026-10-09). Every column has the same inner padding, so the tint changes nothing's size.
+                Column(
+                    Modifier.weight(1f)
+                        .background(if (day.isToday) MealColors.AccentTint else Color.Transparent, RoundedCornerShape(10.dp))
+                        .padding(TODAY_INSET),
+                    verticalArrangement = Arrangement.spacedBy(MealSpacing.Row),
+                ) {
                     DayHeading(day)
                     for (slot in day.slots) SlotCard(day, slot, onOpenRecipe, onAssign, onRemove, thumbnail, compact = true)
                 }
@@ -327,7 +355,10 @@ private fun WeekGrid(
     }
 }
 
-/** A grid column's heading: the weekday (accent on today) above its date, as on the server's grid. */
+/**
+ * A grid column's heading: the weekday (accent on today) above its date, as on the server's grid. Today says so on
+ * the date line ("Oct 9, Today"), so its heading is the same two lines as every other day's.
+ */
 @Composable
 private fun DayHeading(day: DayView) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -336,10 +367,18 @@ private fun DayHeading(day: DayView) {
             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
             color = if (day.isToday) MealColors.Accent else MealColors.Ink,
         )
-        Text("${Week.month(day.date)} ${day.date.dayOfMonth}", style = MaterialTheme.typography.bodySmall, color = MealColors.Muted)
-        if (day.isToday) Pill("Today")
+        val date = "${Week.month(day.date)} ${day.date.dayOfMonth}"
+        Text(
+            if (day.isToday) "$date \u00b7 Today" else date,
+            style = MaterialTheme.typography.bodySmall.let { if (day.isToday) it.copy(fontWeight = FontWeight.Bold) else it },
+            color = if (day.isToday) MealColors.Accent else MealColors.Muted,
+            maxLines = 1,
+        )
     }
 }
+
+// Each grid column's inner padding; today's tint fills it.
+private val TODAY_INSET = 4.dp
 
 /** DESIGN.md's meal-slot tints: the header's background and its ink. */
 fun slotColors(slot: String): Pair<Color, Color> = when (slot) {

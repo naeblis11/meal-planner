@@ -69,7 +69,7 @@ fun listPaneWidth(windowWidth: Dp): Dp = if (windowWidth >= ROOMY_WINDOW) LIST_P
 fun NavGraphBuilder.recipeDestinations(nav: NavController, container: AppContainer) {
     composable(Routes.RECIPE, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
         val id = entry.arguments!!.read { getLong("id") }
-        val vm: RecipeDetailViewModel = viewModel { RecipeDetailViewModel(id, container.recipes, container.imagesDir, pantry = container.pantry, plans = container.plans) }
+        val vm: RecipeDetailViewModel = viewModel { RecipeDetailViewModel(id, container.recipes, container.imagesDir, pantry = container.pantry, plans = container.plans, shopping = container.shopping) }
         val photoVersion by vm.photoVersion.collectAsStateWithLifecycle()
         val photoGuard = rememberLaunchGuard()
         val takePhoto = rememberTakePhoto(
@@ -106,6 +106,8 @@ fun NavGraphBuilder.recipeDestinations(nav: NavController, container: AppContain
             onAssign = vm::assign,
             today = vm.today(),
             onSetCategory = vm::setCategory,
+            onAddToShoppingList = if (vm.canShop) vm::addRecipeToShoppingList else null,
+            onAddIngredientToList = if (vm.canShop) vm::addIngredientToShoppingList else null,
         )
     }
     composable(Routes.EDIT, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->

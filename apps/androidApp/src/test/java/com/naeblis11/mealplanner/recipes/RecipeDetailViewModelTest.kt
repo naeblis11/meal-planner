@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.naeblis11.mealplanner.MainDispatcherRule
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.data.ShoppingRepository
 import com.naeblis11.mealplanner.domain.RecipeYaml
 import com.naeblis11.mealplanner.domain.ServingsInput
 import com.naeblis11.mealplanner.domain.YamlMap
@@ -88,6 +89,33 @@ class RecipeDetailViewModelTest {
         vm.delete()
         vm.deleted.first { it }
         assertEquals(null, repo.doc(id))
+    }
+
+    @Test
+    fun theRecipeAndOneIngredientGoOnTheShoppingListAtThePagesServings() = runTest {
+        // Owner, 2026-10-09: "Add to shopping list" and each ingredient's "+ List".
+        val shopping = ShoppingRepository(db, Dispatchers.Unconfined)
+        val vm = RecipeDetailViewModel(
+            id, repo, Files.createTempDirectory("images").toFile(), Dispatchers.Unconfined, Dispatchers.Unconfined,
+            shopping = shopping,
+        ).also { created += it }
+        assertTrue(vm.canShop)
+        vm.scaleTo("8") // doubled
+        val page = vm.view.first { it?.servings == "8" }!!
+
+        vm.addRecipeToShoppingList()
+        assertEquals("Added the ingredients for Soup to your shopping list.", vm.message.first { it != null })
+        assertEquals(listOf("Stock" to "4"), db.shoppingDao().allInIdOrder().map { it.name to it.amount })
+        vm.messageShown()
+
+        vm.addIngredientToShoppingList(page.ingredients.single())
+        assertEquals("Added more 'Stock' to the one already on your list.", vm.message.first { it != null })
+        assertEquals(listOf("Stock" to "8"), db.shoppingDao().allInIdOrder().map { it.name to it.amount })
+    }
+
+    @Test
+    fun withoutAShoppingListThePageOffersNoShoppingButtons() = runTest {
+        assertFalse(newVm().canShop)
     }
 
     @Test
