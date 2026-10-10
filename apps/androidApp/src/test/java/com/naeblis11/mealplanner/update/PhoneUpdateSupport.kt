@@ -73,8 +73,8 @@ internal class PhoneReleases(keys: KeyPair, holdList: Boolean = false) : AutoClo
     val apk = ByteArray(50_000) { (it % 241).toByte() }
     private val list = ReleaseManifest(
         TAG,
-        DesktopRelease("1.0.1", "MealPlanner-1.0.1.msi", 10, "b".repeat(64)),
-        AndroidRelease("1.0.1", 2, APK, apk.size.toLong(), Sha256.of(apk)),
+        DesktopRelease(VERSION, "MealPlanner-$VERSION.msi", 10, "b".repeat(64)),
+        AndroidRelease(VERSION, VERSION_CODE, APK, apk.size.toLong(), Sha256.of(apk)),
     ).toJson().encodeToByteArray()
     private val signature = ReleaseSignature.sign(list, keys.private).encodeToByteArray()
 
@@ -125,8 +125,12 @@ internal class PhoneReleases(keys: KeyPair, holdList: Boolean = false) : AutoClo
     }
 
     companion object {
-        const val TAG = "release-2"
-        const val APK = "MealPlanner-1.0.1.apk"
+        // Far above any real version, so raising the app's own versionCode in apps/gradle.properties (as each release
+        // does) never makes this release "not newer" and the tests quietly offer nothing.
+        const val VERSION_CODE = 999_999L
+        const val VERSION = "99.0.0" // the Windows half must stay an MSI version (major at most 255)
+        const val TAG = "release-999999"
+        const val APK = "MealPlanner-$VERSION.apk"
 
         /** The name Updates gives the verified download in cache/updates. */
         const val CACHED = Updates.FILE_PREFIX + APK

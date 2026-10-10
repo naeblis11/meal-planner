@@ -119,7 +119,7 @@ class AndroidUpdatesTest {
         val updates = fake.updates(context, keys)
         runBlocking {
             updates.check(manual = false)
-            assertEquals("1.0.1", updates.state.value.offer?.version)
+            assertEquals(PhoneReleases.VERSION, updates.state.value.offer?.version)
             updates.installOffer()
         }
         val waiting = updates.state.value
@@ -191,6 +191,6 @@ class AndroidUpdatesTest {
         assertEquals(UpdatePhase.CHECKING, updates.state.value.phase)
         fake.release.countDown()
         val done = runBlocking { withTimeout(10_000) { updates.state.first { it.phase == UpdatePhase.IDLE && it.offer != null } } }
-        assertEquals("1.0.1", done.offer?.version)
+        assertEquals(PhoneReleases.VERSION, done.offer?.version)
     }
 }
