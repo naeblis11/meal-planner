@@ -1,13 +1,11 @@
-# Local app database - rebuilt from recipes/*.yaml via sync
+# Local databases and backup zips never belong in the repo
 *.zip
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
-.import_staging.json
-.correction_staging.json
 
-# Secrets: session key + password hash (see .env.example)
+# Secrets (the desktop app's %LOCALAPPDATA%\Meal Planner\.env), should one ever be copied here
 .env
 
 __pycache__/
@@ -33,7 +31,7 @@ google-calendar-key.json
 apps/google-client.properties
 google-client.json
 
-# Python virtual environment (install.ps1 and pi/install.sh create it here)
+# Python virtual environment for the remaining Python tests and tools
 .venv/
 
 # Kotlin apps (apps/): build output, IDE state, machine-local SDK path,

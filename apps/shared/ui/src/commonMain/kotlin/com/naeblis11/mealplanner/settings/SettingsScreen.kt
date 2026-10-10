@@ -128,7 +128,14 @@ fun SettingsScreen(
                 }
             }
             Panel("Backup") {
-                Text("A zip of every recipe and photo. To move them to the Pi, unzip it into an empty Meal Planner data folder there and rescan.")
+                // Moving recipes to the PC is the phone's sentence; the PC (which has the server panel) only says what it is.
+                Text(
+                    if (server == null) {
+                        "A zip of every recipe and photo. To move them to the PC, close Meal Planner there and unzip it into Documents\\Meal Planner."
+                    } else {
+                        "A zip of every recipe and photo, to keep somewhere safe or to load onto the phone."
+                    },
+                )
                 when (backup) {
                     BackupState.Working -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator()
@@ -461,9 +468,8 @@ const val REVOKE_ACCESS = "Revoke access at Google"
 const val REVOKE_CONFIRM = "Revoke access"
 const val KEEP_ACCESS = "Keep access"
 const val REVOKE_WARNING =
-    "Google will stop accepting Meal Planner's sign-in for this OAuth client. If the old Meal Planner server, or the " +
-        "Raspberry Pi, sends to Google Calendar with the same client, its calendar link stops working too. Sign out on its " +
-        "own only forgets the sign-in on this PC."
+    "Google will stop accepting Meal Planner's sign-in for this OAuth client. Anything else that sends to Google " +
+        "Calendar with the same client stops working too. Sign out on its own only forgets the sign-in on this PC."
 const val GOOGLE_SIGNING_OUT = "Signing out..."
 
 /** The OAuth client in use, shown read-only. */

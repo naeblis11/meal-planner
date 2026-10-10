@@ -11,4 +11,4 @@ data class ServerStatus(val state: ServerState, val port: Int, val onLan: Boolea
 
 /** The one-line notice in the window, the tray and Settings while the port is taken (P4-R1). */
 fun portInUseNotice(port: Int): String =
-    "Port $port is in use; the Chrome extension and Alexa won't reach Meal Planner. Is the old Meal Planner server still running?"
+    "Port $port is in use; the Chrome extension and Alexa won't reach Meal Planner. Is another program using it?"

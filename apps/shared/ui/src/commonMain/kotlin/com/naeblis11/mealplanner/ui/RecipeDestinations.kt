@@ -198,7 +198,8 @@ private fun RecipeListPane(
     openLocked: Boolean = false,
     showSettings: Boolean = true,
 ) {
-    val vm: RecipeListViewModel = viewModel { RecipeListViewModel(container.recipes) }
+    val vm: RecipeListViewModel = viewModel { RecipeListViewModel(container.recipes, container.settings) }
+    val collapsed by vm.collapsed.collectAsStateWithLifecycle()
     val groups by vm.groups.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
     val books by vm.books.collectAsStateWithLifecycle()
@@ -230,6 +231,10 @@ private fun RecipeListPane(
         selectedId = selectedId,
         openLocked = openLocked,
         showSettings = showSettings,
+        collapsed = collapsed,
+        onToggle = vm::toggle,
+        onCollapseAll = vm::collapseAll,
+        onExpandAll = vm::expandAll,
     )
 }
 

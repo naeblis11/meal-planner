@@ -216,6 +216,7 @@ class DesktopApp(
         files = FolderFileStore(recipesDir, moveToTrash, writer = libraryAccess::writeFile, onBlocked = ::libraryRefused),
         folderStatus = { folder },
         onLibraryBlocked = ::libraryRefused,
+        settingsFactory = { settings },
     )
 
     /** This PC as other Meal Planner PCs see it (plan 6): its instance id and its household, kept in app_meta. */

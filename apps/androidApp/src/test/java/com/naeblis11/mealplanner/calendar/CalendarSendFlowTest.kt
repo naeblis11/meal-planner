@@ -44,9 +44,10 @@ class CalendarSendFlowTest {
     @After
     fun tearDown() = container.database.close()
 
-    // Screens load and sends run on real IO threads, which waitForIdle does not wait for.
+    // Screens load and sends run on real IO threads, which waitForIdle does not wait for. 10 s, as NavigationTest's:
+    // under the whole suite's load the first send's real IO has taken more than 5 s.
     private fun await(text: String) =
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun setUpACalendarThenSendTheWeekTwice() {

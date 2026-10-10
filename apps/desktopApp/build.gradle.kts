@@ -94,7 +94,7 @@ if (previewName != null && !Regex("[A-Za-z0-9-]{1,32}").matches(previewName)) {
 }
 val previewPort = providers.gradleProperty("mealplanner.port").orNull ?: "5055"
 if (previewPort.toIntOrNull()?.takeIf { it in 1024..65535 && it != 5000 } == null) {
-    throw GradleException("mealplanner.port must be a port from 1024 to 65535 other than 5000, which the installed app or the old server may hold.")
+    throw GradleException("mealplanner.port must be a port from 1024 to 65535 other than 5000, which the installed app may hold.")
 }
 val previewDir = if (previewName == null) "preview-data" else "preview-$previewName"
 // P6-PF7: a preview looks for other Meal Planner PCs only when asked, with "-Pmealplanner.peers=on". Its household is
@@ -148,7 +148,7 @@ compose.desktop {
                 // Compose has no shortcut prompt: the desktop shortcut is always made, and the user may delete it.
                 shortcut = true
                 upgradeUuid = msiUpgradeUuid
-                // Made once from the repo's icon.png with Pillow (requirements.txt), from the worktree root:
+                // Made once from the repo's icon.png with Pillow (requirements-dev.txt), from the worktree root:
                 // python -c "from PIL import Image; Image.open('icon.png').convert('RGBA').save('apps/desktopApp/packaging/meal-planner.ico', sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])"
                 iconFile.set(project.file("packaging/meal-planner.ico"))
             }

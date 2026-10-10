@@ -207,4 +207,4 @@ Rounded throughout, and rounder than the old world: 16px on cards (was 10px), 10
 - **Don't** introduce a second accent for ordinary UI — forest green is the only action/link color outside the meal-plan grid.
 - **Don't** bring back the old world's condensed uppercase type, punched-hole card detail, or 7-color day-prep code — that identity is retired, not layered underneath this one.
 - **Don't** add a heavier shadow to imply more hierarchy — the resting shadow is for cards, the pop shadow is for overlays only, and neither stacks.
-- **Don't** redeclare the root tokens per surface; every page reuses the shared `:root` custom properties in `static/style.css`.
+- **Don't** redeclare the tokens per surface; every screen reuses the apps' shared theme, which mirrors the tokens above (the desktop's `DesignTokensTest` checks it against this file).

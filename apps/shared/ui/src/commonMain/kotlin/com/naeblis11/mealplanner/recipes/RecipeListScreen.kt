@@ -43,6 +43,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -87,6 +91,11 @@ fun RecipeListScreen(
     openLocked: Boolean = false,
     /** False on the wide layout, where Settings is on the rail and the list is narrow. */
     showSettings: Boolean = true,
+    /** Owner, 2026-10-10: the collapsed headings (RecipeListViewModel.categoryKey / subcategoryKey); ignored while searching. */
+    collapsed: Set<String> = emptySet(),
+    onToggle: (String) -> Unit = {},
+    onCollapseAll: (List<String>) -> Unit = {},
+    onExpandAll: () -> Unit = {},
 ) {
     // The list's stars only show a rating (owner, 2026-10-09); it is changed on the recipe page. The snackbar is for
     // Open recipe folder.
@@ -144,7 +153,18 @@ fun RecipeListScreen(
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
-                if (books.isNotEmpty()) BookFilter(books, book, onBookChange)
+                // Owner, 2026-10-10: the cookbook filter and Collapse all / Expand all share a line.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { if (books.isNotEmpty()) BookFilter(books, book, onBookChange) }
+                    val categories = groups.orEmpty().map { it.category }
+                    if (categories.isNotEmpty() && query.isBlank()) {
+                        val allCollapsed = categories.all { RecipeListViewModel.categoryKey(it) in collapsed }
+                        TextButton(
+                            onClick = { if (allCollapsed) onExpandAll() else onCollapseAll(categories) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text(if (allCollapsed) EXPAND_ALL else COLLAPSE_ALL) }
+                    }
+                }
             }
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().weight(1f).testTag(RECIPE_LIST_TAG),
@@ -159,16 +179,29 @@ fun RecipeListScreen(
                             modifier = Modifier.padding(vertical = 24.dp),
                         )
                     }
-                    else -> for (group in groups) {
-                        item(key = "c:${group.category}") {
-                            Text(group.category, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp))
-                        }
-                        items(group.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
-                        for (sub in group.subcategories) {
-                            item(key = "s:${group.category}/${sub.subcategory}") {
-                                Text(sub.subcategory, style = MaterialTheme.typography.titleMedium, color = MealColors.Muted, modifier = Modifier.padding(top = 8.dp, bottom = 0.dp))
+                    else -> {
+                        // A search shows every match: nothing it finds hides under a collapsed heading.
+                        val folded = if (query.isBlank()) collapsed else emptySet()
+                        for (group in groups) {
+                            val categoryKey = RecipeListViewModel.categoryKey(group.category)
+                            val count = group.recipes.size + group.subcategories.sumOf { it.recipes.size }
+                            item(key = "c:${group.category}") {
+                                Heading(group.category, count, categoryKey !in folded, MaterialTheme.typography.titleLarge, MealColors.Ink, top = 14.dp) {
+                                    onToggle(categoryKey)
+                                }
                             }
-                            items(sub.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
+                            if (categoryKey in folded) continue
+                            items(group.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
+                            for (sub in group.subcategories) {
+                                val subKey = RecipeListViewModel.subcategoryKey(group.category, sub.subcategory)
+                                item(key = "s:${group.category}/${sub.subcategory}") {
+                                    Heading(sub.subcategory, sub.recipes.size, subKey !in folded, MaterialTheme.typography.titleMedium, MealColors.Muted, top = 8.dp) {
+                                        onToggle(subKey)
+                                    }
+                                }
+                                if (subKey in folded) continue
+                                items(sub.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
+                            }
                         }
                     }
                 }
@@ -176,6 +209,36 @@ fun RecipeListScreen(
         }
     }
 }
+
+/**
+ * A category or subcategory heading that folds its recipes away (owner, 2026-10-10): an arrow, the name and how many
+ * recipes it holds. The whole line is the button, at least 48 dp tall.
+ */
+@Composable
+private fun Heading(name: String, count: Int, open: Boolean, style: TextStyle, color: Color, top: Dp, onToggle: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = top)
+            .clickable(onClickLabel = if (open) "Collapse $name" else "Expand $name", role = Role.Button, onClick = onToggle)
+            .heightIn(min = 48.dp)
+            .semantics { stateDescription = if (open) "Expanded" else "Collapsed" },
+    ) {
+        Text(if (open) OPEN_ARROW else CLOSED_ARROW, style = style, color = MealColors.Muted)
+        Text(name, style = style, color = color, modifier = Modifier.weight(1f, fill = false))
+        Text("($count)", style = MaterialTheme.typography.bodyMedium, color = MealColors.Muted)
+    }
+}
+
+/** The heading arrows: pointing down while open, right while collapsed. */
+private const val OPEN_ARROW = "\u25BE"
+private const val CLOSED_ARROW = "\u25B8"
+
+/** The list's button that folds every category, and the one that opens them all again. */
+const val COLLAPSE_ALL = "Collapse all"
+const val EXPAND_ALL = "Expand all"
 
 /**
  * One recipe: a small photo, the name (two lines at most), its cookbook mark, and its rating as small stars that only

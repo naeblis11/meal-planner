@@ -31,8 +31,12 @@ class AppContainer(
     folderStatus: (() -> RecipeFolderStatus)? = null,
     /** The desktop's notice that Windows refuses the library (P7-R10b); nothing on Android. */
     private val onLibraryBlocked: () -> Unit = {},
+    /** Small screen preferences (the recipe list's collapsed categories); in memory when a platform gives none. */
+    settingsFactory: () -> SettingsStore = { MemorySettings() },
 ) {
     val database: AppDatabase by lazy(databaseFactory)
+
+    val settings: SettingsStore by lazy(settingsFactory)
 
     val recipes: RecipeRepository by lazy { RecipeRepository(database, imagesDir, files = files, onLibraryBlocked = onLibraryBlocked) }
 

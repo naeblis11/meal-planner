@@ -133,7 +133,7 @@ class MealPlannerServer(
         } catch (e: PortInUseException) {
             _status.value = ServerStatus(ServerState.PORT_IN_USE, port, tokenConfigured = configured)
             if (!saidInUse) {
-                log("Meal Planner: port $port is in use, so the Chrome extension and Alexa can't reach the app. Is the old Meal Planner server still running? Trying again every ${retryMillis / 1000} s.")
+                log("Meal Planner: port $port is in use, so the Chrome extension and Alexa can't reach the app. Is another program using it? Trying again every ${retryMillis / 1000} s.")
             }
             saidInUse = true
             scheduleRetryLocked()

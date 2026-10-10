@@ -20,10 +20,9 @@
   <label for="origin">App address</label>
   <input id="origin" type="url" placeholder="http://127.0.0.1:5000" spellcheck="false">
   <p class="hint">
-    The address you open the app at in this browser: <code>http://127.0.0.1:5000</code> when it runs on this
-    PC, something like <code>http://meal-planner.local:5000</code> for a Raspberry Pi on the home network, or the
-    <code>https://…ts.net</code> name when reached through Tailscale. Chrome will ask once to allow the extension
-    to talk to that address.
+    The Meal Planner app on this PC answers at <code>http://127.0.0.1:5000</code>, the default; it accepts
+    recipes only from a browser on the same PC. A developer's preview answers at
+    <code>http://127.0.0.1:5055</code>. Chrome will ask once to allow the extension to talk to another address.
   </p>
   <button id="save">Save</button>
   <div id="message" class="message"></div>

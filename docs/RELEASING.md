@@ -58,15 +58,19 @@ every PC and phone. From then on they trust the new key.
    - `mealplanner.androidVersionName`: what people see on the phone (`1.0.1`, `1.1.0`, ...).
    - `mealplanner.desktopVersion`: the Windows version, `MAJOR.MINOR.BUILD`. Raise it when the
      Windows app changed: Windows installs an MSI only over an older version.
-2. Commit on `master`.
+2. Commit on `master` and push it.
 3. **Export to the public repository, review it and push public master** (`tools/export_public.py`)
-   before the next step. The release's tag is created on public master, and the script shows
-   `Tag lands on public master <sha>` before it asks, so that must be the code you mean to ship.
+   before the next step. If anyone committed to public directly, bring those commits into the
+   private repo first (`git format-patch` there, `git am` here), or the export removes them. A clean
+   export writes `EXPORTED_FROM` with the private commit it came from; the release's tag is created
+   on public master, and the script refuses unless that file on public master is exactly the commit
+   it is building.
 4. From the repository folder, in a Windows PowerShell console window:
 
        .\tools\release.ps1
 
-   It checks `master`, that nothing is uncommitted, the release key, the packaging JDK, that
+   It checks `master`, that nothing is uncommitted, pulls `master` (fast-forward only), checks that
+   public master's `EXPORTED_FROM` names this commit, then the release key, the packaging JDK, that
    `apps\keystore.properties` and `apps\google-client.properties` exist (it never reads them; it
    refuses without either, because releases carry the built-in Google client), `gh`'s sign-in, and
    that the release's tag isn't on GitHub yet. It runs the Kotlin tests, builds the MSI (read back
@@ -80,6 +84,17 @@ every PC and phone. From then on they trust the new key.
 The script never pushes code; step 3 is yours.
 
 `-SkipTests` skips step 4's tests when you have just run them on the same commit.
+
+### The short routine (with Claude)
+
+Say "bump the version and release". Claude does steps 1 to 3: raises the versions, runs the test
+sets, commits and pushes `master`, ports any commits made directly on public, exports into its own
+clone of the public repository, checks the scan and pushes public master. It never runs either
+script or touches the release key. Then you run, in a Windows PowerShell console window:
+
+    .\tools\release.ps1 -SkipTests
+
+and type the release key's password and `y` (on the same line as the question).
 
 ## What people see
 

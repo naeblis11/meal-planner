@@ -2,7 +2,7 @@
 
 A standalone Android version of Meal Planner: recipe library, meal calendar, pantry and pantry-aware shopping list, on the phone, with no server, PC or account. It can put the week's meals on a calendar on the phone (your Google calendar, for example). Its permissions are for that calendar sending and for updating itself: it goes online only to check GitHub for a newer Meal Planner and, when you choose, to download it. It carries none of the integrations (Home Assistant, Alexa, voice, the Chrome extension).
 
-A library moves between the phone and the Pi or PC version as a zip of recipe files (see [Back up and move a library](#back-up-and-move-a-library)).
+A library moves between the phone and the Windows app as a zip of recipe files (see [Back up and move a library](#back-up-and-move-a-library)).
 
 ## Install
 
@@ -49,8 +49,8 @@ If the Calendar tab says to choose a calendar first, tap **Open Settings** and s
 
 **Import** (the Recipes screen's **Import**, or **Settings** -> **Import recipes**) takes a recipe file (`.yaml`, `.yml`), a Meal Master file (`.mmf`) or a zip. You review everything before anything is saved: a recipe with the same name as one you have is skipped unless you rename it, and one that is the same recipe (same `recipe_uuid`) is offered as an update.
 
-- **Phone to Pi or PC:** the backup zip has the Pi's own layout (`recipes/` and `recipe-images/`). Unzip it into the Meal Planner data folder there, then use **Rescan recipes/ folder** on the recipe list.
-- **Pi or PC to phone:** zip the data folder's `recipes` folder (with `recipe-images` beside it if you want the photos), copy the zip to the phone and import it.
+- **Phone to PC:** the backup zip has the Windows app's library layout (`recipes/` and `recipe-images/`). With Meal Planner closed on the PC, unzip it into `Documents\Meal Planner`; the app indexes the files when it starts (see [WINDOWS.md](WINDOWS.md), "Bringing in recipe files").
+- **PC to phone:** zip the library's `recipes` folder (with `recipe-images` beside it if you want the photos), copy the zip to the phone and import it.
 - **Old phone to new phone:** Android's phone-to-phone transfer does not carry the library (the app keeps its database out of transfers so calendar links can't point at the wrong events). Export a backup on the old phone and import it on the new one.
 
 ## Build from source

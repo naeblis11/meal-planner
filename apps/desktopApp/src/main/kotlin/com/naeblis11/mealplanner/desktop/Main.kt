@@ -219,7 +219,7 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
     // Ktor would add its own shutdown hook (up to 5 s) at the server's first start, racing closeOnExit's bounded close at
     // sign-out; that close already stops the server first.
     System.setProperty(KtorEngine.SHUTDOWN_HOOK_PROPERTY, "false")
-    // The Alexa token, read once from the Python server's secrets file (P4-R6), which is in the app data folder; the
+    // The Alexa token, read once from the secrets file (P4-R6), which is in the app data folder; the
     // preview keeps its own in its data folder. Never logged.
     val secrets = SecretsFile(SecretsFile.forApp(appDataDir))
     val token = ApiToken(secrets)

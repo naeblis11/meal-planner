@@ -7,13 +7,13 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * The secrets file the Python server keeps (paths.env_path: `MEAL_PLANNER_HOME\.env`, else
- * `%LOCALAPPDATA%\Meal Planner\.env`), in set_password.read_env's KEY=VALUE format. The desktop reads and writes only
- * MEAL_PLANNER_API_TOKEN (P4-R6); the password hash, session key and Home Assistant lines are left as they are.
+ * The secrets file (`MEAL_PLANNER_HOME\.env`, else `%LOCALAPPDATA%\Meal Planner\.env`, where the retired Python
+ * server kept its own), in KEY=VALUE format. The desktop reads and writes only its own keys (MEAL_PLANNER_API_TOKEN,
+ * P4-R6, and the Google client pair); any other line, such as an old password hash or session key, is left as it is.
  */
 class SecretsFile(val file: File) {
     /**
-     * set_password.read_env: blank lines, comments and lines without "=" are skipped, keys and values trimmed, and the
+     * As the Python server read it: blank lines, comments and lines without "=" are skipped, keys and values trimmed, and the
      * last of a repeated key wins. A missing file reads as empty.
      */
     fun read(): Map<String, String> {
@@ -71,7 +71,7 @@ class SecretsFile(val file: File) {
         }
 
         /**
-         * The installed app's secrets file ([installed], the Python server's); the preview and the tests, started with
+         * The installed app's secrets file ([installed]); the preview and the tests, started with
          * mealplanner.dataDir, keep theirs in [dataDir], so a token made there never replaces the household's.
          */
         fun forApp(

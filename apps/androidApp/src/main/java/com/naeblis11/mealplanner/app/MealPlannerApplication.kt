@@ -23,8 +23,12 @@ fun AppContainer(context: Context, gatewayOverride: CalendarGateway? = null): Ap
         cacheDir = appContext.cacheDir,
         gatewayFactory = { gatewayOverride ?: AndroidCalendarGateway(appContext) },
         choiceFactory = { CalendarChoice(appContext.getSharedPreferences(CalendarChoice.FILE, Context.MODE_PRIVATE)) },
+        settingsFactory = { SharedPreferencesStore(appContext.getSharedPreferences(SCREEN_PREFS, Context.MODE_PRIVATE)) },
     )
 }
+
+/** The phone's small screen preferences (the recipe list's collapsed categories). */
+private const val SCREEN_PREFS = "screen"
 
 class MealPlannerApplication : Application() {
     val container: AppContainer by lazy { AppContainer(this) }

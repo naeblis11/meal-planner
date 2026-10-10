@@ -1,9 +1,9 @@
 # Windows desktop app
 
 Status: **preview**. The desktop app runs the same screens as the Android app, laid out for a PC
-window, and lives in the system tray. Its recipe library is a folder of Open Recipe Format files,
-as the Python server's was. While it runs it answers the Chrome extension and Alexa (through Home
-Assistant) on port 5000, as the Python server did, and sends the week's meals to a Google calendar.
+window, and lives in the system tray. Its recipe library is a folder of Open Recipe Format files.
+While it runs it answers the Chrome extension and Alexa (through Home Assistant) on port 5000, and
+sends the week's meals to a Google calendar.
 It installs for your Windows account from an MSI (below). It does not yet sync phones; that arrives
 in phase 2 (docs/superpowers/specs/2026-10-04-cross-platform-apps-design.md).
 
@@ -163,7 +163,7 @@ Google sign-in, where Windows' Controlled folder access never stops it. Settings
 | Settings | the registry, under `HKEY_CURRENT_USER\Software\JavaSoft\Prefs\com\naeblis11\mealplanner` |
 | Start with Windows | `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`, value `Meal Planner` (the installed app only) |
 | The installed program (replaced by an update, removed by uninstalling) | `%LOCALAPPDATA%\Meal-Planner\` |
-| The Alexa voice token (`MEAL_PLANNER_API_TOKEN`), shared with the Python server; Settings can create it | `%LOCALAPPDATA%\Meal Planner\.env` (or `MEAL_PLANNER_HOME\.env`); `:desktopApp:run` keeps its own in `apps\desktopApp\build\preview-data\.env` |
+| The Alexa voice token (`MEAL_PLANNER_API_TOKEN`); Settings can create it, and a line edited in by hand works too | `%LOCALAPPDATA%\Meal Planner\.env` (or `MEAL_PLANNER_HOME\.env`); `:desktopApp:run` keeps its own in `apps\desktopApp\build\preview-data\.env` |
 | A Google OAuth client used instead of the built-in one (`MEAL_PLANNER_GCAL_CLIENT_ID`, `MEAL_PLANNER_GCAL_CLIENT_SECRET`): edited in by hand on a build with a built-in client (restart the app), or written by Settings' **Choose the client file** on a build without one; most PCs have none here | the same `.env` |
 | The Google sign-in (a refresh token), sealed with Windows DPAPI so only your Windows account on this PC can read it | `google-token.dat` beside that `.env` |
 | A downloaded update: the MSI, checked against the signed release list before it starts; deleted a day later | `%LOCALAPPDATA%\Meal Planner\updates\` |
@@ -267,8 +267,8 @@ switch is greyed out.
 
 ## Wide and narrow windows
 
-At 840 dp wide and 480 dp high and up (a maximised window on most PCs) the app is laid out like the
-old server pages (DESIGN.md): a rail down the left (Recipes, Calendar, Pantry, Shopping, Settings);
+At 840 dp wide and 480 dp high and up (a maximised window on most PCs) the app is laid out as
+DESIGN.md describes: a rail down the left (Recipes, Calendar, Pantry, Shopping, Settings);
 Recipes as a list beside the open recipe, which you also edit there; the Calendar as the whole week
 in seven columns of breakfast, lunch and dinner; the shopping list's aisles in two or three
 columns; and the pantry in two. A narrower or shorter window gets the phone layout, with the tabs
@@ -278,7 +278,7 @@ even on their side.
 
 ## Recipe page and editors
 
-These are shared with the Android app, as on the old server pages:
+These are shared with the Android app:
 - **Recipe page.** An ingredient already in your pantry shows **In pantry**; any other shows
   **+ Pantry**, which adds it to the pantry in one click. **Assign to calendar** plans the recipe at
   the servings the page is scaled to. **More > Category** edits the category in place. On the recipe
@@ -300,55 +300,27 @@ has the same `recipe_uuid` as another file. For a duplicate, **Assign new ID** g
 here: an ingredient with no amount ("salt and pepper") is normal, and one the app can't read
 (`a pinch`) is kept as written and highlighted in **Edit** and in an import's review.
 
-## Moving your recipes from the Pi
+## Bringing in recipe files
 
-The app brings nothing over from the Python server by itself: it never reads the server's
-`mealplanner.db`. Only the recipes are in use on the Pi, and they move by copying their files once.
-With Meal Planner closed (**Quit** in the tray), copy the Pi's `~/meal-planner/recipes/*.yaml` into
-`Documents\Meal Planner\recipes\` and, if you want the photos, `~/meal-planner/recipe-images/` into
-`Documents\Meal Planner\recipe-images\`. Then start Meal Planner: it indexes the files it finds. In
-PowerShell, with your Pi's user name and address in place of `<user>` and `<pi-address>`:
+Recipes you already have as Open Recipe Format files move by copying them. With Meal Planner closed
+(**Quit** in the tray), copy the `.yaml` files into `Documents\Meal Planner\recipes\` and, if you
+have their photos, those into `Documents\Meal Planner\recipe-images\`. Then start Meal Planner: it
+indexes the files it finds. A file whose name is already in the folder replaces that recipe, so copy
+into an empty folder or check the names first. If Meal Planner has never run on this PC, this
+PowerShell line makes the two folders first (it changes nothing when they are there);
+`GetFolderPath('MyDocuments')` finds your Documents folder even when it is redirected into OneDrive:
 
     New-Item -ItemType Directory -Force "$([Environment]::GetFolderPath('MyDocuments'))\Meal Planner\recipes", "$([Environment]::GetFolderPath('MyDocuments'))\Meal Planner\recipe-images" | Out-Null
-    scp "<user>@<pi-address>:meal-planner/recipes/*.yaml" "$([Environment]::GetFolderPath('MyDocuments'))\Meal Planner\recipes"
-    scp "<user>@<pi-address>:meal-planner/recipe-images/*" "$([Environment]::GetFolderPath('MyDocuments'))\Meal Planner\recipe-images"
 
-The first line makes the two folders if Meal Planner has never run on this PC (it changes nothing
-when they are there). `GetFolderPath('MyDocuments')` finds your Documents folder even when it is
-redirected into OneDrive. Leave out the last line if you don't want the photos.
-
-If this PC already ran the Python server and its recipes are already in `Documents\Meal Planner\recipes`,
-the folder the app uses, skip the copy, because `scp` would overwrite the files of the same name with
-the Pi's copies. A Python install from before the app's rename kept its recipes in a folder of the
-older name beside that one, which the app doesn't read. To find it, look in `Documents` for a Meal
-Planner folder with an older name than `Meal Planner`; copy its `recipes` folder (and
-`recipe-images` for the photos) from there instead, or from the Pi as above.
-
-Everything else starts fresh on the PC: the meal calendar, the pantry and the shopping list are
-empty, and the Google sign-in is made again here. The Alexa token is kept when it is already in
-`%LOCALAPPDATA%\Meal Planner\.env`, as on a PC that ran the Python server: it keeps working, and
-Home Assistant needs only its addresses changed (see **Alexa** below). A token kept only in the
-folder from before the app's rename, beside that one (look in `%LOCALAPPDATA%` for a Meal Planner
-folder with an older name), isn't read, so make one, as on a PC that never
-had one: **Create a token** in Settings, then paste its line into Home Assistant's `secrets.yaml`.
-For Google Calendar, open Settings, choose **Sign in with Google** under "Google Calendar", then
-choose the calendar to send to (see **Google Calendar** below). A build made without the Google
-client asks for the client file first.
-
-Don't run the old Python server on this PC beside the app, on the same folder or on port 5000.
-
-On a PC that has only the folders of the older name, the old server's `paths.py` uses them only
-while `Documents\Meal Planner` and `%LOCALAPPDATA%\Meal Planner` don't exist. Once Meal Planner makes
-either one (its first run makes both), the old server prefers the new folder and no
-longer finds what it kept in the old one. Nothing is lost: the older-named folders are left as they
-were. To go back to the old server, copy or rename the older-named folder back to `Meal Planner` by
-hand.
+Only the recipe files come over: the meal calendar, the pantry and the shopping list start empty,
+and the Google sign-in is made here (see **Google Calendar** below). A single file, or a Meal Master
+(`.mmf`) file, can also come in through the app's own import, which shows a review first.
 
 ## Chrome extension and Alexa
 
-While it runs, the app answers on port 5000 with the same requests and replies as the Python
-server. The Chrome extension needs no change. Home Assistant needs only its three addresses
-pointed at this PC (see **Alexa** below).
+While it runs, the app answers on port 5000 with the requests and replies the Chrome extension
+and Home Assistant expect. Home Assistant needs only its three addresses pointed at this PC (see
+**Alexa** below).
 
 **Chrome extension.** Its address stays `http://127.0.0.1:5000`, the extension's default; if you
 changed it in the extension's options, set it back. Send a recipe and Meal Planner comes forward
@@ -386,13 +358,8 @@ recipe that is too big or too long is refused with a message the extension shows
   steps.".
 
 **Alexa.** Home Assistant calls `/api/voice/shopping-list`, `/api/voice/pantry` and
-`/api/voice/meal` with the token in its `secrets.yaml`. Coming from the Python server on this PC
-the token needs nothing: the app reads the same one from `%LOCALAPPDATA%\Meal Planner\.env`. The
-token must be 16 characters or more (the one `set_api_token.py` makes is 64); a shorter one is
-ignored, the app says so in its log, and Alexa is treated as not set up. A token in the file with
-quotes around it (`MEAL_PLANNER_API_TOKEN="..."`) is read without them.
-
-Otherwise open Settings and choose **Create a token** under "Chrome extension and Alexa". It shows
+`/api/voice/meal` with the token in its `secrets.yaml`. The token is the app's own: open Settings
+and choose **Create a token** under "Chrome extension and Alexa". It shows
 a line, `meal_planner_auth: "Bearer ..."`, once, with a **Copy** button that copies the whole line:
 put it in Home Assistant's `secrets.yaml` and restart Home Assistant. Choose **Done** when you have
 it; Done also clears the clipboard if it still holds the line. Leaving Settings while the line is
@@ -402,10 +369,14 @@ back. Once it is gone you can't see it again: choose **Make a new token** instea
 token in use, so Home Assistant stops working until you paste the new line into its `secrets.yaml`
 and restart it; Settings says so beside the button.
 
+Settings keeps the token as `MEAL_PLANNER_API_TOKEN` in `%LOCALAPPDATA%\Meal Planner\.env`, and a
+line edited in there by hand works too (restart the app). It must be 16 characters or more
+(Settings makes 64); a shorter one is ignored, the app says so in its log, and Alexa is treated as
+not set up. A token with quotes around it (`MEAL_PLANNER_API_TOKEN="..."`) is read without them.
+
 Home Assistant's three `rest_command` URLs in `alexa/home-assistant.yaml` must point at this PC:
 its `.local` name (`http://<pc-name>.local:5000/...`) or its LAN address, with port 5000. The
-shipped file names `meal-planner.local`, the Raspberry Pi's name, so change the host in all three
-unless you still use the frozen Pi. Nothing else in Home Assistant changes: the secret, the intents
+shipped file names `your-pc-name.local`, a placeholder, so change the host in all three. Nothing else in Home Assistant changes: the secret, the intents
 and the payloads stay as they are. `alexa/SETUP.md` walks through it.
 
 The app listens on the home network only while a token is set up (Settings then says "Listening on
@@ -414,13 +385,12 @@ listens on the network, Windows may ask whether to allow Meal Planner: allow it 
 only (see "The firewall prompt" above). If you edit the `.env` by hand, restart the app.
 
 **Port 5000 in use.** Before it listens, the app checks port 5000 on every interface. If anything
-holds it, the old Python server most likely, whether on `0.0.0.0` or on `127.0.0.1` only, the
-window shows "Port 5000 is in use; the Chrome extension and Alexa won't reach Meal Planner. Is the
-old Meal Planner server still running?", the tray says so once, and Settings shows it too.
-Everything else works. Stop the old server (close its window, or stop its service): the app tries
-the port again every minute and takes it on its own. To see what holds the port, run
-`netstat -ano | findstr :5000` in PowerShell and look up the last number in Task Manager's Details
-tab (the PID column). Don't run both: stop the old server.
+holds it, whether on `0.0.0.0` or on `127.0.0.1` only, the window shows "Port 5000 is in use; the
+Chrome extension and Alexa won't reach Meal Planner. Is another program using it?", the tray says
+so once, and Settings shows it too.
+Everything else works. To see what holds the port, run `netstat -ano | findstr :5000` in PowerShell
+and look up the last number in Task Manager's Details tab (the PID column), then stop that program:
+the app tries the port again every minute and takes it on its own.
 
 ## Google Calendar
 
@@ -435,7 +405,7 @@ updated in place, not added a second time.
 The sign-in is kept on this PC only, sealed with Windows' own encryption in `google-token.dat`
 beside the `.env` in `%LOCALAPPDATA%\Meal Planner\`. **Sign out** forgets it here without telling
 Google, and forgets the chosen calendar too (the next account may not have it); **Revoke access at Google**, after asking, also tells Google to stop honouring it, which
-stops calendar sending from the Python server or the Pi too if they use the same Google client. Your
+stops calendar sending from any other copy that uses the same Google client. Your
 browser gets Google's answer on a one-time address on this PC (127.0.0.1), so nothing is opened to
 the network; if no browser opens, Settings shows the address to open by hand. Meal Planner asks only
 to write events and to list your calendars.
@@ -537,7 +507,7 @@ both its library and its app data, with its own settings, never your Documents f
     $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\apps\gradlew.bat -p apps :desktopApp:run
 
 The preview's server listens on port 5055, not 5000 (the `mealplanner.port` Java property, which
-`run` sets), so it never takes the port of the app or the old server you may have running. To try
+`run` sets), so it never takes the port of the installed app you may have running. To try
 the Chrome extension against the preview, set the extension's address to `http://127.0.0.1:5055`
 in its options, and back to `http://127.0.0.1:5000` afterwards.
 

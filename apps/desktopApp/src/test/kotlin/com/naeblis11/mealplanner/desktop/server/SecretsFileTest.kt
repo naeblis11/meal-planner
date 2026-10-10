@@ -7,7 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** P4-R6: the Python server's secrets file (paths.env_path, set_password.read_env), never the real LOCALAPPDATA in tests. */
+/** P4-R6: the secrets file (the retired Python server's place and format), never the real LOCALAPPDATA in tests. */
 class SecretsFileTest {
     private val dir: File = Files.createTempDirectory("mp-secrets").toFile()
 

@@ -1,6 +1,6 @@
 # Setting up the "chef" Alexa skill
 
-The app side (step 1) happens in Meal Planner's Settings on the PC that runs it. The old Python server's installer (`install.ps1` / `configure.py`) did it for that server; the frozen Raspberry Pi is covered at the end of step 1. This page is the manual route and the reference.
+The app side (step 1) happens in Meal Planner's Settings on the PC that runs it (the Windows desktop app). This page is the whole route and the reference.
 
 Voice control for the Meal Planner: "Alexa, ask my chef to add milk to the
 cart", "…add olive oil to the pantry", "…plan tacos for dinner on Thursday".
@@ -26,14 +26,7 @@ PC that Home Assistant can reach over the LAN.
 Home Assistant calls Meal Planner on the PC that runs it (the Windows
 desktop app), on port 5000.
 
-- **Already set up for the old Python server on this PC?** Nothing to do
-  here: the desktop app reads the same token from
-  `%LOCALAPPDATA%\Meal Planner\.env`, so the line already in Home
-  Assistant's `secrets.yaml` keeps working. (A token must be 16
-  characters or more; the one `set_api_token.py` makes is 64. A shorter
-  one is ignored, and the app's log says so without showing it. Quotes
-  around the value in the file are fine.)
-- **Otherwise:** open Meal Planner on the PC, go to **Settings**, and
+- Open Meal Planner on the PC, go to **Settings**, and
   under "Chrome extension and Alexa" choose **Create a token**. It shows
   a `meal_planner_auth: "Bearer ..."` line once, with **Copy**; you'll
   paste it into Home Assistant in step 3. Choose **Done** when you have
@@ -41,13 +34,19 @@ desktop app), on port 5000.
   token** (it takes the place of Create once a token exists). That
   replaces the token in use, so Home Assistant stops working until you
   paste the new line into its `secrets.yaml` and restart it.
+- **A token you already have** keeps working: the app reads
+  `MEAL_PLANNER_API_TOKEN` from `%LOCALAPPDATA%\Meal Planner\.env`, the
+  file Settings writes, and a line edited in by hand works too. It must
+  be 16 characters or more (Settings makes 64); a shorter one is
+  ignored, and the app's log says so without showing it. Quotes around
+  the value in the file are fine.
 
 With a token set up, the app listens on the home network by itself; no
 `MEAL_PLANNER_HOST` setting is needed. Settings then says "Listening on
 port 5000 on your home network". The first time, Windows may ask whether
 to allow Meal Planner: allow it on private networks only. If Settings
-says "Port 5000 is in use" instead, the old Python server is still
-running: stop it, and the app takes the port within a minute (see
+says "Port 5000 is in use" instead, another program holds the port:
+stop it, and the app takes the port within a minute (see
 `docs/WINDOWS.md`).
 
 Home Assistant reaches the PC by its mDNS name, `<pc-name>.local` (the
@@ -65,12 +64,6 @@ the token):
 
 You should get `{"ok":true,"speech":"Added test item to your shopping list, under Uncategorized."}`.
 Remove the test item from the list in the app afterwards.
-
-**The frozen Raspberry Pi instead:** the Pi on the `pi` branch serves
-the same three addresses at `http://meal-planner.local:5000`. There, as
-before, run `python set_api_token.py`, set `MEAL_PLANNER_HOST=0.0.0.0` in
-its `.env`, restart it, and keep `meal-planner.local` in the URLs of
-step 3 (see `docs/RASPBERRY-PI.md` on the `pi` branch).
 
 ## 2. Create the skill in the Alexa Developer Console
 
@@ -129,10 +122,10 @@ step 3 (see `docs/RASPBERRY-PI.md` on the `pi` branch).
      Assistant 2024.8 or newer; on an older install rename every step's
      `action:` to `service:`.
 3. Point the three `rest_command` URLs at the PC that runs Meal Planner.
-   They ship as `http://meal-planner.local:5000/...`, the Raspberry Pi's
-   name: change the host in all three to `<pc-name>.local` (or the PC's
-   LAN address from step 1), keeping port 5000 and the path. Nothing else
-   in the file changes. On the frozen Pi, leave them as they are.
+   They ship as `http://your-pc-name.local:5000/...`, a placeholder:
+   change the host in all three to `<pc-name>.local` (or the PC's LAN
+   address from step 1), keeping port 5000 and the path. Nothing else in
+   the file changes.
 4. Developer tools → **Check configuration**, then **Restart**.
 5. Sanity-check HA → PC before involving Alexa: Developer tools →
    **Actions** (called Services on older HA), pick
@@ -193,10 +186,10 @@ Two ways around it:
 
 | Alexa says | Likely cause |
 |---|---|
-| "I couldn't reach the meal planner." | Two hops can say this. Most often it's Home Assistant's own fallback: the PC is off, the app isn't running, no token is set up in Meal Planner's Settings (without one it listens on the PC only), Windows' firewall blocked it, the address in the YAML is wrong (it must name the PC, not the Pi's `meal-planner.local`), or the app took longer than 5 seconds to answer — check Meal Planner's log (`Documents\Meal Planner\.cache\meal-planner.log`) and Home Assistant → Settings → System → Logs, and re-run the curl check from step 1 from the HA machine if you can. The hosted skill says the same sentence when *it* can't reach Home Assistant at all (Nabu Casa remote access off, HA down, `BASE_URL` wrong, HA answered with an error status such as 401 for a bad token, or no answer within 6 seconds); in that case the Test tab's JSON shows the request never got a proper answer from HA, and HA's log shows at most an invalid-authentication warning (a bad token is logged by HA). |
+| "I couldn't reach the meal planner." | Two hops can say this. Most often it's Home Assistant's own fallback: the PC is off, the app isn't running, no token is set up in Meal Planner's Settings (without one it listens on the PC only), Windows' firewall blocked it, the address in the YAML is wrong (it must name the PC, not the `your-pc-name.local` placeholder), or the app took longer than 5 seconds to answer — check Meal Planner's log (`Documents\Meal Planner\.cache\meal-planner.log`) and Home Assistant → Settings → System → Logs, and re-run the curl check from step 1 from the HA machine if you can. The hosted skill says the same sentence when *it* can't reach Home Assistant at all (Nabu Casa remote access off, HA down, `BASE_URL` wrong, HA answered with an error status such as 401 for a bad token, or no answer within 6 seconds); in that case the Test tab's JSON shows the request never got a proper answer from HA, and HA's log shows at most an invalid-authentication warning (a bad token is logged by HA). |
 | Nothing from the skill — the item appears in your **Amazon** cart or Alexa's own shopping list | Alexa's built-in shopping feature took the sentence. Use "tell my chef we need …" / "…add … to the grocery list", or open the skill first ("Alexa, open my chef"); see *Phrasing on a real Echo* above. |
-| "The meal planner refused the request. Check the token in Home Assistant." | The app got the request and rejected it: the `meal_planner_auth` secret in `secrets.yaml` doesn't match the token on the PC. Paste the line from step 1 again. If you no longer have it, choose **Make a new token** in Meal Planner's Settings and paste the new line into `secrets.yaml` (on the frozen Pi: `python set_api_token.py`, then restart it). |
-| "The meal planner's voice API isn't set up yet." | The app got the request, but no token is set up in it. Choose **Create a token** in Meal Planner's Settings (step 1). Without a token the PC app listens on the PC only, so from Home Assistant you would more often hear "I couldn't reach the meal planner." (On the frozen Pi: run `python set_api_token.py` and restart the app.) |
+| "The meal planner refused the request. Check the token in Home Assistant." | The app got the request and rejected it: the `meal_planner_auth` secret in `secrets.yaml` doesn't match the token on the PC. Paste the line from step 1 again. If you no longer have it, choose **Make a new token** in Meal Planner's Settings and paste the new line into `secrets.yaml`. |
+| "The meal planner's voice API isn't set up yet." | The app got the request, but no token is set up in it. Choose **Create a token** in Meal Planner's Settings (step 1). Without a token the PC app listens on the PC only, so from Home Assistant you would more often hear "I couldn't reach the meal planner." |
 | "I didn't catch what to add." | Alexa sent an empty item — usually a mis-hear. Say it again with the item name at the end of the sentence. |
 | "I couldn't find a recipe like …" / "I found A and B. Which one?" | Say more of the recipe's name as it appears in the app. |
 | "I need a specific day, like Thursday." | You said "this weekend" or "next month"; the calendar plans single days. |

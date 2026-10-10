@@ -9,9 +9,8 @@
 #
 # The three URLs below must point at the PC running Meal Planner (the Windows
 # desktop app), port 5000, by its mDNS name: <pc-name>.local. They ship as
-# meal-planner.local, the Raspberry Pi's name; keep that only if you still use
-# the frozen Pi (where the token comes from python set_api_token.py). Change the
-# host in all three; nothing else in this file changes. Use the .local name, not
+# your-pc-name.local, a placeholder: change the host in all three to your PC's
+# name; nothing else in this file changes. Use the .local name, not
 # the bare hostname: Home Assistant OS does not resolve a bare hostname. If the
 # name ever stops resolving, use the PC's LAN address instead and give it a DHCP
 # reservation so the address doesn't change.
@@ -127,7 +126,7 @@ intent_script:
 
 rest_command:
   chef_shopping_add:
-    url: "http://meal-planner.local:5000/api/voice/shopping-list"
+    url: "http://your-pc-name.local:5000/api/voice/shopping-list"
     method: POST
     headers:
       Authorization: !secret meal_planner_auth
@@ -137,7 +136,7 @@ rest_command:
       {"item": {{ item | string | tojson }}, "quantity": {{ quantity | string | tojson }},
        "unit": {{ unit | string | tojson }}, "aisle": {{ aisle | string | tojson }}}
   chef_pantry_add:
-    url: "http://meal-planner.local:5000/api/voice/pantry"
+    url: "http://your-pc-name.local:5000/api/voice/pantry"
     method: POST
     headers:
       Authorization: !secret meal_planner_auth
@@ -146,7 +145,7 @@ rest_command:
     payload: >-
       {"item": {{ item | string | tojson }}, "aisle": {{ aisle | string | tojson }}}
   chef_meal_add:
-    url: "http://meal-planner.local:5000/api/voice/meal"
+    url: "http://your-pc-name.local:5000/api/voice/meal"
     method: POST
     headers:
       Authorization: !secret meal_planner_auth

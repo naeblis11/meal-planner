@@ -6,12 +6,32 @@ from pathlib import Path
 
 import yaml
 
-import grocery_categories
-import meal_calendar
-import voice
-
-ALEXA_DIR = Path(__file__).parent.parent / "alexa"
+ROOT = Path(__file__).parent.parent
+ALEXA_DIR = ROOT / "alexa"
+DOMAIN_DIR = ROOT / "apps" / "shared" / "core" / "src" / "commonMain" / "kotlin" / "com" / "naeblis11" / "mealplanner" / "domain"
 CUSTOM_INTENTS = {"AddShoppingItemIntent", "AddPantryItemIntent", "AddMealIntent"}
+
+
+def kotlin_string_list(file_name: str, name: str) -> list[str]:
+    """The strings of `val <name>: List<String> = listOf(...)` in the apps' shared domain code,
+    which is what the app that answers Alexa uses."""
+    source = (DOMAIN_DIR / file_name).read_text(encoding="utf-8")
+    match = re.search(r"val " + name + r": List<String> = listOf\((.*?)\)", source, re.DOTALL)
+    if match is None:
+        raise AssertionError(f"{name} not found in {file_name}")
+    values = re.findall(r'"([^"]*)"', match.group(1))
+    if not values:
+        raise AssertionError(f"{name} in {file_name} has no strings")
+    return values
+
+
+def lambda_unreachable() -> str:
+    """The hosted forwarder's own "can't reach it" sentence, which Home Assistant's fallback repeats."""
+    tree = ast.parse((ALEXA_DIR / "lambda_function.py").read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", None) == "UNREACHABLE":
+            return ast.literal_eval(node.value)
+    raise AssertionError("UNREACHABLE not found in lambda_function.py")
 
 
 def load_model() -> dict:
@@ -37,12 +57,16 @@ class TestInteractionModel(unittest.TestCase):
         # The Alexa values are spoken-safe ("and" instead of "&"), so
         # compare through the same folding.
         values = [v["name"]["value"] for v in slot_type(load_model(), "GroceryAisle")["values"]]
-        expected = [v.replace(" & ", " and ") for v in grocery_categories.AISLE_ORDER] + ["skip"]
+        aisles = kotlin_string_list("GroceryCategories.kt", "AISLE_ORDER")
+        self.assertEqual(len(aisles), 12, aisles)
+        expected = [v.replace(" & ", " and ") for v in aisles] + ["skip"]
         self.assertEqual(values, expected)
 
     def test_meal_type_values_are_the_calendar_slots(self):
         values = [v["name"]["value"] for v in slot_type(load_model(), "MealSlot")["values"]]
-        self.assertEqual(values, list(meal_calendar.SLOTS))
+        slots = kotlin_string_list("Week.kt", "SLOTS")
+        self.assertEqual(slots, ["Breakfast", "Lunch", "Dinner"])
+        self.assertEqual(values, slots)
 
     def test_quantity_and_aisle_are_elicited_and_dialog_is_delegated(self):
         model = load_model()
@@ -143,7 +167,7 @@ class TestHomeAssistantYaml(unittest.TestCase):
             stop = intent["action"][-1]
             self.assertEqual(stop["response_variable"], "result")
             fallback = intent["action"][-2]["variables"]["result"]["speech"]
-            self.assertIn(voice.SPEECH_UNREACHABLE, fallback)
+            self.assertIn(lambda_unreachable(), fallback)
 
     def test_intent_model_slots_match_data_keys_and_payload_keys(self):
         model = load_model()

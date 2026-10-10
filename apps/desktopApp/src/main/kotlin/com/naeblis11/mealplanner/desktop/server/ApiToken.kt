@@ -3,8 +3,8 @@ package com.naeblis11.mealplanner.desktop.server
 import java.security.SecureRandom
 
 /**
- * The Alexa voice token (MEAL_PLANNER_API_TOKEN): read once from the secrets file at startup, as the Python server
- * did, or made by Settings' Create a token. Never logged; [toString] says only whether one is set up.
+ * The Alexa voice token (MEAL_PLANNER_API_TOKEN): read once from the secrets file at startup (a hand-edited one
+ * works too), or made by Settings' Create a token. Never logged; [toString] says only whether one is set up.
  */
 class ApiToken(
     private val secrets: SecretsFile,

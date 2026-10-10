@@ -97,10 +97,28 @@ class ReleaseScriptText(unittest.TestCase):
         self.assertIn("$answer -ne 'y' -and $answer -ne 'Y'", script)
         self.assertNotIn("git push", script)
         # Where the tag lands is shown, read-only, before the question; the notes name the private commit.
-        landing = script.index('Write-Host "  Tag lands on public master $publicMaster"')
+        landing = script.index('Write-Host "  Tag lands on public master $publicMaster (exported from this commit)"')
         self.assertLess(script.index("@('api', \"repos/$repo/commits/master\", '--jq', '.sha')"), landing)
         self.assertLess(landing, ask)
         self.assertIn("Built from ' + $commit", script)
+
+    def test_release_pulls_and_refuses_a_public_repo_not_exported_from_this_commit(self):
+        # Owner, 2026-10-10: 1.0.4 was tagged on 1.0.3's public code. The script pulls master (fast-forward only),
+        # then refuses unless public master's EXPORTED_FROM (tools/export_public.py) is this exact commit, all
+        # before anything is built, and pins the tag to that checked public commit.
+        script = text(ROOT / "tools" / "release.ps1")
+        build = script.index("':desktopApp:packageMsi'")
+        pull = script.index("Invoke-Native 'git' @('pull', '--ff-only')")
+        marker = script.index("contents/EXPORTED_FROM?ref=$publicMaster")
+        refuse = script.index("if ($exportedFrom -ne $commit) {")
+        self.assertLess(pull, marker)
+        self.assertLess(marker, refuse)
+        self.assertLess(refuse, build)
+        self.assertLess(script.index("$commit = $out[0].Trim()"), refuse)
+        self.assertIn("'--target', $publicMaster", script)
+        self.assertNotIn("'--target', 'master'", script)
+        export = text(ROOT / "tools" / "export_public.py")
+        self.assertIn('MARKER = "EXPORTED_FROM"', export)
 
     def test_no_program_is_called_outside_the_helpers(self):
         # A line that starts with the program is a call; '$tool = ...' only names it.

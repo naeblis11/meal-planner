@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.naeblis11.mealplanner.MainDispatcherRule
+import com.naeblis11.mealplanner.app.MemorySettings
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.RecipeRepository
 import com.naeblis11.mealplanner.domain.RecipeYaml
@@ -50,6 +51,37 @@ class RecipeListViewModelTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun doc(yaml: String) = RecipeYaml.load(yaml) as YamlMap
+
+    @Test
+    fun collapsedHeadingsAreKeptAcrossARestart() {
+        // Owner, 2026-10-10: what is collapsed is the same after the app restarts (a new model on the same settings).
+        val settings = MemorySettings()
+        val vm = RecipeListViewModel(repo, settings).also { created += it }
+        val desserts = RecipeListViewModel.categoryKey("Desserts")
+        val beef = RecipeListViewModel.subcategoryKey("Main Dishes", "Beef")
+        vm.toggle(desserts)
+        vm.toggle(beef)
+        assertEquals(setOf(desserts, beef), vm.collapsed.value)
+
+        val restarted = RecipeListViewModel(repo, settings).also { created += it }
+        assertEquals(setOf(desserts, beef), restarted.collapsed.value)
+
+        restarted.toggle(desserts)
+        assertEquals(setOf(beef), RecipeListViewModel(repo, settings).also { created += it }.collapsed.value)
+    }
+
+    @Test
+    fun collapseAllFoldsEveryCategoryAndExpandAllOpensEverything() {
+        val vm = newVm()
+        vm.toggle(RecipeListViewModel.subcategoryKey("Main Dishes", "Beef"))
+        vm.collapseAll(listOf("Desserts", "Main Dishes"))
+        assertEquals(
+            setOf("c:Desserts", "c:Main Dishes", RecipeListViewModel.subcategoryKey("Main Dishes", "Beef")),
+            vm.collapsed.value,
+        )
+        vm.expandAll()
+        assertEquals(emptySet<String>(), vm.collapsed.value)
+    }
 
     @Test
     fun groupsTheLibraryAndFiltersBySearch() = runTest {
