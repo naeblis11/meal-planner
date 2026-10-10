@@ -1,0 +1,151 @@
+import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+// AGP 9 compiles Kotlin itself (built-in Kotlin), so there is no separate
+// org.jetbrains.kotlin.android plugin; only the Compose compiler plugin.
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+}
+
+// Golden cases shared with the Python app (see tests/parity_support.py).
+val parityDir = rootProject.file("../tests/fixtures/parity")
+
+// Release signing. apps/keystore.properties (git-ignored, never exported) names a
+// keystore kept outside the repo; docs/ANDROID.md has the command that makes both.
+// Debug builds and unit tests never need it; a release package without it stops
+// with this message instead of producing an unsigned APK.
+val keystorePropsFile: File = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.isFile) keystorePropsFile.reader(Charsets.UTF_8).use { load(it) }
+}
+val releaseSigningProblem: String? = when {
+    !keystorePropsFile.isFile -> "apps/keystore.properties is missing."
+    listOf("storeFile", "storePassword", "keyAlias", "keyPassword").any { keystoreProps.getProperty(it).isNullOrBlank() } ->
+        "apps/keystore.properties needs storeFile, storePassword, keyAlias and keyPassword."
+    !file(keystoreProps.getProperty("storeFile")).isFile -> "The keystore that apps/keystore.properties names does not exist."
+    else -> null
+}
+
+// Plan 8: the Android app's version, in one place (apps/gradle.properties) beside the desktop's, where the release
+// tool reads it for latest.json (ReleaseVersionsTest, AppVersionTest). versionCode goes up by one every release.
+val androidVersionCode: Int = providers.gradleProperty("mealplanner.androidVersionCode").get().toIntOrNull()
+    ?.takeIf { it in 1..2_100_000_000 }
+    ?: throw GradleException("mealplanner.androidVersionCode must be a whole number from 1 to 2100000000.")
+val androidVersionName: String = providers.gradleProperty("mealplanner.androidVersionName").get()
+if (!Regex("[0-9A-Za-z][0-9A-Za-z.+-]{0,31}").matches(androidVersionName)) {
+    throw GradleException("mealplanner.androidVersionName must be 1 to 32 letters, digits, dots, dashes or pluses, starting with a letter or digit.")
+}
+
+android {
+    namespace = "com.naeblis11.mealplanner"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "com.naeblis11.mealplanner"
+        minSdk = 26
+        targetSdk = 35
+        // Plan 8: both from apps/gradle.properties (above).
+        versionCode = androidVersionCode
+        versionName = androidVersionName
+    }
+
+    signingConfigs {
+        if (releaseSigningProblem == null) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            // A development build installs beside the released app instead of clashing with its signature.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            isMinifyEnabled = false
+            if (releaseSigningProblem == null) signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.systemProperty("parityDir", parityDir.absolutePath)
+            it.systemProperty("compatOut", layout.buildDirectory.dir("compat").get().asFile.absolutePath)
+            it.inputs.dir(parityDir)
+            it.systemProperty("schemaDir", rootProject.file("shared/data/schemas").absolutePath)
+            it.inputs.dir(rootProject.file("shared/data/schemas"))
+            // AppVersionTest and AndroidUpdatesTest: the APK's version is apps/gradle.properties' (plan 8).
+            it.systemProperty("gradleProperties", rootProject.file("gradle.properties").absolutePath)
+            it.inputs.file(rootProject.file("gradle.properties"))
+            // AndroidUpdatesTest reads AndroidUpdates.kt to pin that its key, hosts and addresses aren't configurable.
+            it.systemProperty("androidMainDir", file("src/main").absolutePath)
+        }
+    }
+}
+
+val checkReleaseSigning = tasks.register("checkReleaseSigning") {
+    description = "Stops a release package early when apps/keystore.properties is missing or incomplete."
+    val problem = releaseSigningProblem
+    doLast {
+        if (problem != null) {
+            throw GradleException(
+                "$problem Release builds are signed with your own keystore: see docs/ANDROID.md, " +
+                    "\"Building a signed release\". Debug builds need none of this.",
+            )
+        }
+    }
+}
+
+// Only packaging a release needs the keystore: assembleDebug and testDebugUnitTest do not (AGP 9 here defines no release unit-test task).
+tasks.configureEach {
+    if (name == "packageRelease" || name == "bundleRelease") dependsOn(checkReleaseSigning)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
+dependencies {
+    implementation(project(":shared:core"))
+    implementation(project(":shared:data"))
+    implementation(project(":shared:ui"))
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.room.runtime)
+    // Keeps the phone on androidx navigation 2.10.2, the version it shipped with;
+    // JetBrains navigation 2.9.2 alone would resolve 2.9.x.
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.exifinterface)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.kotlinx.coroutines.test)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+}

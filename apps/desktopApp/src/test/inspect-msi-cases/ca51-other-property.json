@@ -1,0 +1,14 @@
+{
+  "_source": "the plan 7 re-review: a type 51 action may set only the ARP property its jpackage JpSetARP* action sets (main.wxs); here one sets MSIFASTINSTALL",
+  "_expect": "the custom action caFast sets the property MSIFASTINSTALL, which isn't",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"],
+                   ["caFast", 51, "MSIFASTINSTALL", "7"]],
+  "SummaryInformation": [[15, 10]]
+}

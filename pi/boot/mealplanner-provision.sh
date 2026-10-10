@@ -23,7 +23,7 @@ die()  { printf '\nFAILED: %s\n' "$*"; printf 'Fix it, then: sudo systemctl star
 
 # ---- settings -------------------------------------------------------------
 HOUSEHOLD_PASSWORD=""; TAILSCALE_AUTH_KEY=""
-REPO_URL="https://github.com/naeblis11/meal-planner.git"; REPO_BRANCH="master"
+REPO_URL="https://github.com/naeblis11/meal-planner.git"; REPO_BRANCH="pi"
 # shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF"
 
@@ -55,7 +55,7 @@ apt-get install -y -qq git python3 python3-venv python3-pip libjpeg62-turbo avah
 
 say "Fetching the app into $APP_DIR"
 if [ -d "$APP_DIR/.git" ]; then
-  sudo -u "$RUN_USER" git -C "$APP_DIR" fetch --depth 1 origin "$REPO_BRANCH" \
+  sudo -u "$RUN_USER" git -C "$APP_DIR" fetch --depth 1 origin "+refs/heads/$REPO_BRANCH:refs/remotes/origin/$REPO_BRANCH" \
     && sudo -u "$RUN_USER" git -C "$APP_DIR" reset --hard "origin/$REPO_BRANCH" || die "git update failed"
 else
   sudo -u "$RUN_USER" git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR" || die "git clone failed"

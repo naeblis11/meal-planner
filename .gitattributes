@@ -9,6 +9,6 @@ pi/boot/*.conf text eol=lf
 pi/Dockerfile.* text eol=lf
 
 # Gradle wrapper scripts run as-is on each platform.
-android/gradlew text eol=lf
-android/gradlew.bat text eol=crlf
+apps/gradlew text eol=lf
+apps/gradlew.bat text eol=crlf
 *.jar binary

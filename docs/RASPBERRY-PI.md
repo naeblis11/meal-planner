@@ -1,17 +1,23 @@
 # Running the Meal Planner on a Raspberry Pi
 
+> **The Pi version is frozen.** It lives on the `pi` branch (tag `pi-v1.0`) and keeps
+> working as it does today, including the Home Assistant to-do sync and remote access.
+> It gets no new features. `master` is now the Windows/Android/iOS apps
+> (docs/superpowers/specs/2026-10-04-cross-platform-apps-design.md). `./pi/update.sh`
+> only ever pulls the `pi` branch.
+
 The installer (`install.ps1` / `configure.py`) does the app-side steps below for you; this page is the manual route and the reference.
 
-The Pi and the Windows PC run the **same code** — one repository, no
-separate version. The only differences are where per-machine files
-live and how the app is kept running:
+The Pi runs the frozen `pi` branch of the same Flask server the Windows PC
+runs (same repository, no separate fork of the code). The only differences
+are where per-machine files live and how the app is kept running:
 
 | | Windows PC | Raspberry Pi |
 |---|---|---|
 | Secrets (`.env`) | `%LOCALAPPDATA%\Meal Planner\.env` | `~/.config/meal-planner/.env` |
 | Recipes, database, photos | `Documents\Meal Planner\` | `~/meal-planner/` |
 | Starting the app | `python app.py` in a terminal | systemd service — starts at boot, restarts itself |
-| Updating | `git pull`, restart `app.py` | `./pi/update.sh` |
+| Updating | `git pull` on the `pi` branch, restart `app.py` | `./pi/update.sh` |
 
 Run it on one or the other, not both at once: each has its own recipe
 library, and the Home Assistant mirror expects one app.
@@ -150,7 +156,7 @@ the Pi:
 On the Pi, as your normal user (not root):
 
     sudo apt install -y git
-    git clone https://github.com/naeblis11/meal-planner.git Meal_Planner
+    git clone --branch pi https://github.com/naeblis11/meal-planner.git Meal_Planner
     cd Meal_Planner
     ./pi/install.sh
 

@@ -1,0 +1,108 @@
+package com.naeblis11.mealplanner.desktop
+
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.naeblis11.mealplanner.data.PlannedMealRow
+import com.naeblis11.mealplanner.plan.MealPlanScreen
+import com.naeblis11.mealplanner.plan.WeekView
+import com.naeblis11.mealplanner.plan.WeekViews
+import java.time.LocalDate
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+
+/** P3-R4: wide, the whole week as seven columns of three meals; narrow, the phone's list of days. */
+class MealPlanWideTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    private val week = WeekViews.build(
+        LocalDate.of(2026, 10, 5),
+        listOf(PlannedMealRow("2026-10-07", "Dinner", 4, "6", "Soup", null)),
+        today = LocalDate.of(2026, 10, 7),
+    )
+    private var removed: Pair<LocalDate, String>? = null
+
+    private var assigned: Pair<LocalDate, String>? = null
+
+    private fun show(width: Dp, wide: Boolean, shown: WeekView = week) = compose.showAt(width) {
+        MealPlanScreen(
+            week = shown,
+            message = null,
+            error = null,
+            adding = false,
+            sending = false,
+            sendProblem = null,
+            onMessageShown = {},
+            onPrevious = {},
+            onNext = {},
+            onThisWeek = {},
+            onAddToShoppingList = {},
+            onSend = {},
+            onOpenSettings = {},
+            onOpenAppSettings = {},
+            onOpenRecipe = {},
+            onAssign = { date, slot -> assigned = date to slot },
+            onRemove = { date, slot -> removed = date to slot },
+            wide = wide,
+        )
+    }
+
+    @Test
+    fun aWideWindowShowsTheWholeWeekInSevenColumns() {
+        show(900.dp, wide = true)
+        val monday = compose.onNodeWithText("Monday").getBoundsInRoot()
+        val sunday = compose.onNodeWithText("Sunday").getBoundsInRoot()
+        assertEquals(monday.top, sunday.top)
+        assertTrue(sunday.left > monday.left)
+        compose.onAllNodesWithText("Add recipe").assertCountEquals(20)
+        compose.onAllNodesWithText("Today").assertCountEquals(1)
+    }
+
+    @Test
+    fun aPlannedMealInTheGridCanBeRemoved() {
+        show(900.dp, wide = true)
+        compose.onNodeWithText("Soup").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Remove Dinner on Wednesday, Oct 7").click()
+        assertEquals(LocalDate.of(2026, 10, 7) to "Dinner", removed)
+    }
+
+    @Test
+    fun anEmptySlotInTheGridAssignsItsOwnDateAndSlot() {
+        show(900.dp, wide = true)
+        compose.onNodeWithContentDescription("Add recipe for Lunch on Tuesday, Oct 6").click()
+        assertEquals(LocalDate.of(2026, 10, 6) to "Lunch", assigned)
+    }
+
+    @Test
+    fun aLongRecipeNameInAColumnStopsAtThreeLines() {
+        val long = "Slow roasted pork shoulder with caramelised onions, apples and a very long list of spices"
+        val longWeek = WeekViews.build(
+            LocalDate.of(2026, 10, 5),
+            listOf(PlannedMealRow("2026-10-07", "Dinner", 4, "6", long, null)),
+            today = LocalDate.of(2026, 10, 7),
+        )
+        show(900.dp, wide = true, shown = longWeek)
+        // titleSmall is 20sp tall per line at density 1: three lines at most, not the five or six the name needs.
+        // The unmerged node is the Text itself, not the clickable cell around it.
+        val bounds = compose.onNodeWithText(long, useUnmergedTree = true).getBoundsInRoot()
+        val height = bounds.bottom - bounds.top
+        assertTrue("name is $height tall", height <= 64.dp)
+    }
+
+    @Test
+    fun aNarrowWindowKeepsTheListOfDays() {
+        show(400.dp, wide = false)
+        compose.onNodeWithText("Monday, Oct 5").assertIsDisplayed()
+        compose.onAllNodesWithText("Sunday, Oct 11").assertCountEquals(0)
+        compose.onAllNodesWithText("Sunday").assertCountEquals(0)
+    }
+}

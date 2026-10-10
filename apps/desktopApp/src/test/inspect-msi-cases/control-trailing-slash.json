@@ -1,0 +1,9 @@
+{
+  "_source": "the plan 7 Task 2 review's crafted case control-trailing-slash (Registry rows widened to Root, Key, Name, Value)",
+  "_expect": "the custom action caT sets the folder INSTALLDIR to",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"], ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"] ],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."], ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"], ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "Meal Planner"], ["DesktopFolder", "TARGETDIR", "."] ],
+  "Shortcut": [["scMenu", "dirMenu", "Meal Planner"], ["scDesktop", "DesktopFolder", "Meal Planner"]],
+  "Registry": [["regInstallDir", "1", "Software\\Meal Planner\\Meal Planner\\1.0.0", "INSTALLDIR_COPY", "[INSTALLDIR]"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"] , ["caT", 51, "INSTALLDIR", "[LocalAppDataFolder]meal planner\\\\"]]
+  }

@@ -1,0 +1,15 @@
+{
+  "_source": "the plan 7 re-review: an Upgrade row for another product's upgrade code would let RemoveExistingProducts uninstall that product; only this app's own upgrade code may appear (rows are UpgradeCode, ActionProperty)",
+  "_expect": "the Upgrade table finds the upgrade code {11111111-2222-3333-4444-555555555555}",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"]],
+  "Upgrade": [["{D96C85B6-DAAF-4386-A1F2-CD677885477B}", "JP_UPGRADABLE_FOUND"],
+              ["{11111111-2222-3333-4444-555555555555}", "OTHER_FOUND"]],
+  "SummaryInformation": [[15, 10]]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Meal Planner on a Raspberry Pi (Raspberry Pi OS / Debian).
 #
-#   git clone https://github.com/naeblis11/meal-planner.git Meal_Planner
+#   git clone --branch pi https://github.com/naeblis11/meal-planner.git Meal_Planner
 #   cd Meal_Planner
 #   ./pi/install.sh
 #

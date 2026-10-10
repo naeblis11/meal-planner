@@ -1,0 +1,54 @@
+package com.naeblis11.mealplanner.domain
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class FractionTest {
+    @Test
+    fun keepsLowestTermsWithAPositiveDenominator() {
+        assertEquals("5/2", Fraction.of(10, 4).toString())
+        assertEquals("-1/2", Fraction.of(1, -2).toString())
+        assertEquals("0/1", Fraction.of(0, 7).toString())
+    }
+
+    @Test
+    fun arithmeticIsExact() {
+        assertEquals(Fraction.of(5, 6), Fraction.of(1, 2) + Fraction.of(1, 3))
+        assertEquals(Fraction.of(1, 6), Fraction.of(1, 2) * Fraction.of(1, 3))
+        assertEquals(Fraction.of(3, 2), Fraction.of(1, 2) / Fraction.of(1, 3))
+        assertTrue(Fraction.of(1, 3) < Fraction.of(1, 2))
+    }
+
+    @Test
+    fun parseFollowsPythonsFractionConstructor() {
+        assertEquals(Fraction.of(5, 2), Fraction.parse("10/4"))
+        assertEquals(Fraction.of(1, 8), Fraction.parse("0.125"))
+        assertEquals(Fraction.of(100), Fraction.parse("1e2"))
+        assertNull(Fraction.parse("1/0"))
+        assertNull(Fraction.parse("abc"))
+        assertNull(Fraction.parse("."))
+    }
+
+    // Python 3.13: int() refuses more than 4300 digits, so Fraction() raises ValueError and parse_amount gives None.
+    // Fraction("1" * 4300) and Fraction("." + "1" * 4300) parse; "1" * 4301, "1/" + "1" * 4301 and "0." + "1" * 4301 do not.
+    @Test
+    fun aDigitRunPastPythonsIntLimitIsUnparseable() {
+        assertEquals(4300, Fraction.parse("1".repeat(4300))!!.numerator.toString().length)
+        assertEquals(4300, Fraction.parse("." + "1".repeat(4300))!!.numerator.toString().length)
+        assertNull(Fraction.parse("1".repeat(4301)))
+        assertNull(Fraction.parse("1".repeat(5000)))
+        assertNull(Fraction.parse("1/" + "1".repeat(4301)))
+        assertNull(Fraction.parse("0." + "1".repeat(4301)))
+        assertNull(Fraction.parse("1e" + "0".repeat(4301)))
+    }
+
+    @Test
+    fun anAmountWithAHugeDigitRunIsUnparseable() {
+        assertNull(Amounts.parseAmount("1".repeat(5000)))
+        assertNull(Amounts.parseAmount("1 1/" + "1".repeat(5000)))
+        assertNull(Py.parseInt("1".repeat(5000)))
+        assertEquals(4300, Py.parseInt("1".repeat(4300))!!.toString().length)
+    }
+}

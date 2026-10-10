@@ -13,7 +13,7 @@ A self-hosted recipe library, weekly meal calendar, pantry, and pantry-aware sho
 - **Shopping list on your phone, anywhere (optional)** — the list is mirrored into a Home Assistant to-do list, so in the store you tick things off in the HA companion app (over your Home Assistant remote connection) and the ticks show up at home; add or delete items there too. See [ha/SETUP-SHOPPING.md](ha/SETUP-SHOPPING.md).
 - **Voice control (optional)** — an Alexa skill ("Alexa, ask my chef to add milk to the cart / add olive oil to the pantry / plan tacos for dinner on Thursday") bridged through your home's Home Assistant. See [alexa/SETUP.md](alexa/SETUP.md).
 - **Recipe photos** — attach a photo to a recipe (uploaded manually or pulled in automatically by the Chrome extension).
-- **Android app (optional)** — a standalone version for one phone (recipes, calendar, pantry, shopping list) with no server and no internet permission; it can put the week's meals on your Google calendar, and moves libraries to and from this app as a backup zip. See [docs/ANDROID.md](docs/ANDROID.md).
+- **Android app (optional)** — a standalone version for one phone (recipes, calendar, pantry, shopping list) with no server, going online only to check GitHub for its own updates; it can put the week's meals on your Google calendar, and moves libraries to and from this app as a backup zip. See [docs/ANDROID.md](docs/ANDROID.md).
 
 ## Install
 
@@ -45,7 +45,7 @@ At the end it prints (and for a Pi, saves to your Desktop) what's left to do, su
 
 **Changing settings later:** run `configure.py` again — on Windows `.venv\Scripts\python configure.py` in the app folder; on a Pi, `ssh <user>@<pi-name>.local`, then `cd Meal_Planner && .venv/bin/python configure.py`.
 
-**Linux without Windows:** `git clone https://github.com/naeblis11/meal-planner.git Meal_Planner && cd Meal_Planner && ./pi/install.sh` asks the same questions on the Pi itself. [docs/RASPBERRY-PI.md](docs/RASPBERRY-PI.md) has the details.
+**Linux without Windows:** `git clone --branch pi https://github.com/naeblis11/meal-planner.git Meal_Planner && cd Meal_Planner && ./pi/install.sh` asks the same questions on the Pi itself. [docs/RASPBERRY-PI.md](docs/RASPBERRY-PI.md) has the details.
 
 ### Where your data lives
 
@@ -76,9 +76,11 @@ The installer fetches what it can. This is the full list of tools the installer,
 | **Git** (optional) | Cloning/updating the project and keeping your recipes under version control | [git-scm.com](https://git-scm.com/) or `winget install Git.Git` |
 | **Node.js 20+ (LTS)** (developers) | Running the extension's JavaScript unit tests only — *not* needed to run the app or use the extension | [nodejs.org](https://nodejs.org/) or `winget install OpenJS.NodeJS.LTS`; open a new terminal afterwards |
 | **Docker** (developers) | Only the Raspberry Pi provisioning test (`pi/Dockerfile.provision-test`, `pi/test-in-docker.ps1`) | [docker.com](https://www.docker.com/products/docker-desktop/) |
-| **Android Studio** (developers, Android app only) | Building, testing and signing the Android app in `android/` (its `keytool` makes the release keystore). It bundles the JDK the build needs (JDK 17 or newer; the current bundle is JDK 25). On first sync, Android Studio (or the Gradle build) downloads **Android SDK Platform 37**, which the build targets; install it from SDK Manager if prompted. The app itself needs nothing on a PC | [developer.android.com/studio](https://developer.android.com/studio) or `winget install Google.AndroidStudio` |
+| **Android Studio** (developers, Kotlin apps only) | Building, testing and signing the Android app in `apps/androidApp` (its `keytool` makes the release keystore). It bundles the JDK the build needs (JDK 17 or newer; the current bundle is JDK 25); that same JDK (`jbr`) also builds, tests and runs the Windows desktop app in `apps/desktopApp`; only building its installer needs the full JDK below. On first sync, Android Studio (or the Gradle build) downloads **Android SDK Platform 37**, which the build targets; install it from SDK Manager if prompted. The app itself needs nothing on a PC | [developer.android.com/studio](https://developer.android.com/studio) or `winget install Google.AndroidStudio` |
+| **JmDNS** 3.6.3 (bundled in the Windows desktop app) | Finding other Meal Planner PCs on the home network (mDNS, UDP port 5353), so only one household's PC sends to Google Calendar and answers Alexa | Nothing to install: Gradle fetches it (`org.jmdns:jmdns`, Apache License 2.0) |
+| **A full JDK 25 with jpackage** (developers, building the Windows installer only) | Making the desktop app's MSI (`:desktopApp:packageMsi`) and the app image its smoke check runs (`apps/desktopApp/smoke-packaged.ps1`); Android Studio's JDK has no `jpackage` | `winget install --id EclipseAdoptium.Temurin.25.JDK -e` (Eclipse Temurin 25), then point `MEAL_PLANNER_PACKAGING_JDK` at its folder; see [docs/WINDOWS.md](docs/WINDOWS.md), "Build the installer". The build downloads WiX 3.11.2 itself, so there is nothing else to install |
 | **Android phone, 8.0 or newer** (optional) | Running the Android app | Download the APK from this repository's Releases page; see [docs/ANDROID.md](docs/ANDROID.md) |
-| **GitHub CLI** (maintainers, optional) | Publishing an Android release (`gh release create`) | [cli.github.com](https://cli.github.com/) or `winget install GitHub.cli` |
+| **GitHub CLI** (maintainers, optional) | Publishing a release of the Windows and Android apps: `tools/release.ps1` runs `gh release create` (see [docs/RELEASING.md](docs/RELEASING.md)) | [cli.github.com](https://cli.github.com/) or `winget install GitHub.cli` |
 
 Check what you have with:
 
@@ -109,10 +111,10 @@ The Chrome extension's JSON-LD extraction logic (requires Node.js — see [Requi
 node --test "chrome-extension/**/*.test.js"
 ```
 
-The Android app's logic tests (requires Android Studio — see [Requirements](#requirements)); the one-liner points `JAVA_HOME` at Android Studio's bundled JDK:
+The Kotlin apps' tests, shared, desktop and Android (requires Android Studio — see [Requirements](#requirements)); the one-liner points `JAVA_HOME` at Android Studio's bundled JDK:
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\android\gradlew.bat -p android testDebugUnitTest
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\apps\gradlew.bat -p apps :shared:core:desktopTest :shared:data:desktopTest :desktopApp:test :androidApp:testDebugUnitTest :releaseTool:test
 ```
 
 ## Project structure
@@ -143,7 +145,7 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\android\gradle
 | `chrome-extension/` | The companion recipe-import Chrome extension |
 | `tests/` | Unit and route tests |
 | `tests/parity_support.py`, `tests/fixtures/parity/` | Golden cases that both the Python and Android tests check; regenerate with `python -m tests.parity_support` |
-| `android/` | The standalone Android app (Kotlin + Compose); its `domain` package ports the amount, unit, aisle and shopping-list logic, and `calendar/` sends the week to a phone calendar. Building, releasing and using it: [docs/ANDROID.md](docs/ANDROID.md) |
+| `apps/` | The Kotlin apps (Compose Multiplatform): `shared/core` (the `domain` package, which ports the amount, unit, aisle and shopping-list logic), `shared/data` (Room, repositories, backup, calendar rules, photos), `shared/ui` (screens and ViewModels behind the `ui/Platform.kt` expect/actual seam), `androidApp` (the standalone Android app; [docs/ANDROID.md](docs/ANDROID.md)) and `desktopApp` (the Windows desktop preview; [docs/WINDOWS.md](docs/WINDOWS.md)) |
 
 ## License
 

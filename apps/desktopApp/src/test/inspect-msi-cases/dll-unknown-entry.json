@@ -1,0 +1,15 @@
+{
+  "_source": "ruling P7-FW1: a DLL action (type 1) can do anything, so only the exact (Action, Binary, entry point) triples jpackage's MSI has pass; here jpackage's own JpCaDll with an entry point its templates never call",
+  "_expect": "the custom action caDll runs JpCaDll's DeleteFolders",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"],
+                   ["JpFindRelatedProducts", 1, "JpCaDll", "FindRelatedProductsEx"],
+                   ["caDll", 1, "JpCaDll", "DeleteFolders"]],
+  "SummaryInformation": [[15, 10]]
+}

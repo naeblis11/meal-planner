@@ -1,0 +1,14 @@
+{
+  "_source": "the plan 7 final review: a table the inspector doesn't read (here MsiEmbeddedChainer, which runs a program during the install) used to pass unseen; only allowlisted tables pass",
+  "_expect": "the MSI has the table MsiEmbeddedChainer, which isn't on the allowlist",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"]],
+  "MsiEmbeddedChainer": [["chainer", "", "cleanup.exe", "", 2]],
+  "SummaryInformation": [[15, 10]]
+}

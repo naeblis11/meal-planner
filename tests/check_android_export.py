@@ -2,7 +2,7 @@
 parses the recipes that went into it (apart from the recipe_uuid the phone
 assigns). Run after the Android unit tests:
 
-    python -m tests.check_android_export android/app/build/compat/export.zip
+    python -m tests.check_android_export apps/androidApp/build/compat/export.zip
 """
 import json
 import sys

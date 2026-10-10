@@ -13,7 +13,7 @@ RUN git config --global --add safe.directory '*' \
     && chmod +x /repo/pi/*.sh /repo/pi/boot/*.sh \
     && git init -q /repo-origin && cp -a /repo/. /repo-origin/ \
     && rm -rf /repo-origin/.venv \
-    && git -C /repo-origin symbolic-ref HEAD refs/heads/master \
+    && git -C /repo-origin symbolic-ref HEAD refs/heads/pi \
     && git -C /repo-origin add -A \
     && git -C /repo-origin -c user.email=t@t -c user.name=t commit -qm test \
     && chown -R pi:pi /repo-origin

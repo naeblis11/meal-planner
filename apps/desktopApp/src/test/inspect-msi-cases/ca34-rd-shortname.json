@@ -1,0 +1,14 @@
+{
+  "_source": "the plan 7 final review: a type 34 action (an exe run from a folder) that deletes the secrets folder through its short name, which no text check recognizes; exe, script and nested-install actions are rejected by type",
+  "_expect": "the custom action caRd has the type 34",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["INSTALLDIR", "LocalAppDataFolder", "MEAL-P~1|Meal-Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"],
+                   ["caRd", 34, "TARGETDIR", "cmd /c rd /s /q \"[%LOCALAPPDATA%]\\MEALPL~1\""]],
+  "SummaryInformation": [[15, 10]]
+}

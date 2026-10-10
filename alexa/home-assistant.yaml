@@ -5,14 +5,16 @@
 # (homeassistant: packages: ...) or paste the top-level keys below into
 # configuration.yaml. Then add to secrets.yaml:
 #
-#   meal_planner_auth: "Bearer <token printed by python set_api_token.py>"
+#   meal_planner_auth: "Bearer <token from Meal Planner's Settings, Create a token>"
 #
-# The three URLs below point at the machine running the app by its mDNS
-# name -- meal-planner.local here; change all three if yours is called something
-# else. Use the .local name, not the bare hostname: Home Assistant OS does
-# not resolve a bare hostname. If the name ever stops resolving, use the
-# machine's LAN address instead and give it a DHCP reservation so the
-# address doesn't change.
+# The three URLs below must point at the PC running Meal Planner (the Windows
+# desktop app), port 5000, by its mDNS name: <pc-name>.local. They ship as
+# meal-planner.local, the Raspberry Pi's name; keep that only if you still use
+# the frozen Pi (where the token comes from python set_api_token.py). Change the
+# host in all three; nothing else in this file changes. Use the .local name, not
+# the bare hostname: Home Assistant OS does not resolve a bare hostname. If the
+# name ever stops resolving, use the PC's LAN address instead and give it a DHCP
+# reservation so the address doesn't change.
 #
 # How it works: the Alexa-hosted skill code (lambda_function.py) posts
 # each finished intent to /api/alexa on this HA, adding the long-lived

@@ -1,6 +1,6 @@
 # Meal Planner for Android
 
-A standalone Android version of Meal Planner: recipe library, meal calendar, pantry and pantry-aware shopping list, on the phone, with no server, PC or account. It can put the week's meals on a calendar on the phone (your Google calendar, for example). Its only permissions are for that calendar sending; it has no internet permission. It carries none of the integrations (Home Assistant, Alexa, voice, the Chrome extension).
+A standalone Android version of Meal Planner: recipe library, meal calendar, pantry and pantry-aware shopping list, on the phone, with no server, PC or account. It can put the week's meals on a calendar on the phone (your Google calendar, for example). Its permissions are for that calendar sending and for updating itself: it goes online only to check GitHub for a newer Meal Planner and, when you choose, to download it. It carries none of the integrations (Home Assistant, Alexa, voice, the Chrome extension).
 
 A library moves between the phone and the Pi or PC version as a zip of recipe files (see [Back up and move a library](#back-up-and-move-a-library)).
 
@@ -12,7 +12,9 @@ Android 8.0 or newer.
 2. Open the downloaded file. Android asks whether your browser (or file app) may install unknown apps: allow it for that app, install, and turn the setting off again afterwards if you like.
 3. Open **Meal Planner**.
 
-**Updating:** download the newer APK and install it over the old one; your library, meal plan, pantry and shopping list stay.
+**Updating:** Meal Planner looks for a newer version on GitHub when you open it, at most once a day. When there is one, a notice says so: tap **See update** (or **Settings** -> **Updates**), then **Install**. The first time, Android asks you to allow Meal Planner to install unknown apps: tap **Open settings**, turn on **Allow from this source**, go back, and tap **Install** again. Android then shows its own install screen. If you leave the app while the update is downloading, it waits: come back and tap **Install** again. Your library, meal plan, pantry and shopping list stay. **Check for updates automatically** (on by default; off, it never looks when you open the app) and **Check for updates** are in **Settings** -> **Updates**. A download that doesn't match the signed release list is deleted and nothing is installed, and Android itself refuses an update not signed with the same key as the app you have.
+
+Meal Planner 1.0.0 has no update check: install the next version by hand once, by downloading its APK from the Releases page as above. A debug build never checks.
 
 **If the phone already has an earlier Meal Planner build** (a debug build from before version 1.0.0, which has the same package name `com.naeblis11.mealplanner`), the release cannot install over it, because the two are signed with different keys. Move your recipes across:
 
@@ -56,21 +58,21 @@ If the Calendar tab says to choose a calendar first, tap **Open Settings** and s
 You need Android Studio (see the README's Requirements). From the repository folder in PowerShell:
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\android\gradlew.bat -p android testDebugUnitTest assembleDebug
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\apps\gradlew.bat -p apps :shared:core:desktopTest :androidApp:testDebugUnitTest :androidApp:assembleDebug
 ```
 
-The APK is `android\app\build\outputs\apk\debug\app-debug.apk`. A debug build installs as **Meal Planner debug** (`com.naeblis11.mealplanner.debug`), beside the released app, with its own separate library.
+The APK is `apps\androidApp\build\outputs\apk\debug\androidApp-debug.apk`. A debug build installs as **Meal Planner debug** (`com.naeblis11.mealplanner.debug`), beside the released app, with its own separate library.
 
 ## Building a signed release
 
-Releases are signed with your own keystore, which lives outside the repository in `%LOCALAPPDATA%\Meal Planner\android-release.jks`. Its path and passwords go in `android\keystore.properties`, which git ignores (`android\keystore.properties.example` shows the format). The public export refuses to copy either.
+Releases are signed with your own keystore, which lives outside the repository in `%LOCALAPPDATA%\Meal Planner\android-release.jks`. Its path and passwords go in `apps\keystore.properties`, which git ignores (`apps\keystore.properties.example` shows the format). The public export refuses to copy either.
 
-Run this once, in Windows PowerShell, from the repository folder. It makes the keystore if there isn't one yet, then writes `android\keystore.properties` from a password you type. The password is never written on a command line or in this document.
+Run this once, in Windows PowerShell, from the repository folder. It makes the keystore if there isn't one yet, then writes `apps\keystore.properties` from a password you type. The password is never written on a command line or in this document.
 
 When `keytool` asks, choose a keystore password (at least 6 characters) and type it again to confirm. It asks no name questions: the certificate is named "Meal Planner", because whatever is in it can be read by anyone who downloads the app, for every version. (It does not ask for a separate key password: the key uses the same one.) Then type the same password once more at the script's own prompt, "Type the keystore password again".
 
 ```powershell
-if (-not (Test-Path "android\gradlew.bat")) { Write-Warning "Run this from the Meal Planner repository folder." } else {
+if (-not (Test-Path "apps\gradlew.bat")) { Write-Warning "Run this from the Meal Planner repository folder." } else {
 $keytool = "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
 $dir = Join-Path $env:LOCALAPPDATA "Meal Planner"
 $jks = Join-Path $dir "android-release.jks"
@@ -89,44 +91,36 @@ if (Test-Path $jks) {
     ("keyPassword=" + ($plain -replace '\\', '\\'))
   )
   $text = ($lines -join "`n") + "`n"
-  [System.IO.File]::WriteAllText((Join-Path (Get-Location) "android\keystore.properties"), $text, (New-Object System.Text.UTF8Encoding $false))
+  [System.IO.File]::WriteAllText((Join-Path (Get-Location) "apps\keystore.properties"), $text, (New-Object System.Text.UTF8Encoding $false))
   $plain = $null
-  git check-ignore -q android/keystore.properties
-  if ($LASTEXITCODE -ne 0) { Write-Warning "android\keystore.properties is not ignored by git: do not commit it" } else { Write-Host "Done: android\keystore.properties written." }
+  git check-ignore -q apps/keystore.properties
+  if ($LASTEXITCODE -ne 0) { Write-Warning "apps\keystore.properties is not ignored by git: do not commit it" } else { Write-Host "Done: apps\keystore.properties written." }
 }
 }
 ```
 
 The file uses forward slashes in `storeFile` and doubles any backslash in the password (Java reads a backslash in a `.properties` file as an escape), and it is written without a byte-order mark.
 
-If the password you typed at the script's prompt does not match the keystore's, `assembleRelease` fails with "keystore password was incorrect". Run the block again: it skips `keytool` when the `.jks` already exists and just rewrites `android\keystore.properties`.
+If the password you typed at the script's prompt does not match the keystore's, `assembleRelease` fails with "keystore password was incorrect". Run the block again: it skips `keytool` when the `.jks` already exists and just rewrites `apps\keystore.properties`.
 
 **Back up the keystore file (`android-release.jks`) and its password somewhere safe** (a password manager is a good place). Every update must be signed with the same key: if you lose either, nobody can install a new version over the old one; they have to uninstall first, losing their meal plan, pantry and shopping list.
 
 Then build the release:
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\android\gradlew.bat -p android assembleRelease
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; .\apps\gradlew.bat -p apps assembleRelease
 ```
 
-The signed APK is `android\app\build\outputs\apk\release\app-release.apk`. Without a complete `android\keystore.properties` the release build stops with a message that points here; debug builds never need it.
+The signed APK is `apps\androidApp\build\outputs\apk\release\androidApp-release.apk`. Without a complete `apps\keystore.properties` the release build stops with a message that points here; debug builds never need it.
 
 ## Releasing a new version
 
-1. In `android/app/build.gradle.kts`, raise `versionCode` by one and set `versionName` to the new version (`1.0.1`, `1.1.0`, ...). The first release is `versionCode = 1`, `versionName = "1.0.0"`.
-2. Commit, run the tests, and build the release as above.
-3. Export the public copy and push it (`tools/export_public.py`).
-4. Create a GitHub Release tagged `android-v<versionName>` on the public repository (the prefix keeps these tags apart from the Pi app's), with the APK renamed `meal-planner-<versionName>.apk` attached. You run this yourself, with the [GitHub CLI](https://cli.github.com/) signed in; for 1.0.0, from the repository folder in PowerShell:
-
-```powershell
-Copy-Item android\app\build\outputs\apk\release\app-release.apk "$env:TEMP\meal-planner-1.0.0.apk"
-gh release create android-v1.0.0 "$env:TEMP\meal-planner-1.0.0.apk" --repo naeblis11/meal-planner --target master --title "Meal Planner for Android 1.0.0" --notes "The first Android release. Install and setup: docs/ANDROID.md."
-```
-
-For a later version, change the three places that say `1.0.0` (and the notes).
+The version is in `apps/gradle.properties`: raise `mealplanner.androidVersionCode` by one for every release and set `mealplanner.androidVersionName` (`1.0.1`, `1.1.0`, ...). One release carries both the Android and the Windows app, with the signed `latest.json` the apps check against; `tools/release.ps1` builds, signs and (after asking) publishes it. See [RELEASING.md](RELEASING.md).
 
 ## Privacy
 
-- No internet permission, no analytics, no accounts.
-- The only permissions are reading and writing calendars, asked for when you set up calendar sending, and used only to write the meal events.
+- No analytics, no accounts.
+- Internet: only to ask GitHub (github.com and its download hosts, over https) whether there is a newer Meal Planner, at most once a day when the app opens and when you tap **Check for updates**, and to download it when you tap **Install**. It sends nothing about you.
+- Installing apps: only to hand a downloaded update, once checked against the signed release list, to Android's own installer, when you tap **Install**.
+- Reading and writing calendars, asked for when you set up calendar sending, and used only to write the meal events.
 - Everything lives in the app's private storage on the phone and in the backups you export. Android's own cloud backup of the app is turned off.

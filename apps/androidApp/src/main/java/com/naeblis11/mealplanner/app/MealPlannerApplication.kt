@@ -1,0 +1,82 @@
+package com.naeblis11.mealplanner.app
+
+import android.app.Application
+import android.content.Context
+import com.naeblis11.mealplanner.calendar.AndroidCalendarGateway
+import com.naeblis11.mealplanner.calendar.CalendarChoice
+import com.naeblis11.mealplanner.calendar.CalendarGateway
+import com.naeblis11.mealplanner.data.AppDatabase
+import com.naeblis11.mealplanner.data.open
+import com.naeblis11.mealplanner.update.AndroidUpdates
+import com.naeblis11.mealplanner.update.DeferredUpdates
+import com.naeblis11.mealplanner.update.Updates
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+
+/** The phone's container. [gatewayOverride] lets full-app tests use a fake calendar. */
+fun AppContainer(context: Context, gatewayOverride: CalendarGateway? = null): AppContainer {
+    val appContext = context.applicationContext
+    return AppContainer(
+        databaseFactory = { AppDatabase.open(appContext) },
+        imagesDir = File(appContext.filesDir, "images"),
+        cacheDir = appContext.cacheDir,
+        gatewayFactory = { gatewayOverride ?: AndroidCalendarGateway(appContext) },
+        choiceFactory = { CalendarChoice(appContext.getSharedPreferences(CalendarChoice.FILE, Context.MODE_PRIVATE)) },
+    )
+}
+
+class MealPlannerApplication : Application() {
+    val container: AppContainer by lazy { AppContainer(this) }
+
+    /**
+     * Whether one of the app's activities is resumed: the update's installer starts only then (P8-PF11). Each resume
+     * also refreshes Android's "install unknown apps" answer, so the banner goes once the user comes back having allowed
+     * it (only once the update check exists: a resume never creates it).
+     */
+    val foreground = ForegroundActivities(onResumed = { if (updatesHolder.isInitialized()) updates.recheckPermission() })
+
+    /** How the update check is made; full-app tests swap in one on a fake server before anything uses it. */
+    internal var updatesFactory: () -> Updates = { AndroidUpdates.create(this, foreground::any) }
+
+    private val updatesHolder = lazy { updatesFactory() }
+
+    /**
+     * Plan 8: the update check, one per process; only the release build checks (AndroidUpdates.isRelease). Making it
+     * reads files and settings, so the app makes it off the main thread, through [updateControls].
+     */
+    val updates: Updates by updatesHolder
+
+    /**
+     * What the screens use (P8-F1): ready at once on the main thread, while [updates] is made on a background thread
+     * (DeferredUpdates). The same one Updates for the whole process.
+     */
+    val updateControls: DeferredUpdates by lazy { DeferredUpdates(build = { updates }) }
+
+    private val launchCheckStarted = AtomicBoolean(false)
+
+    /** How many launch checks this process started (at most one); for the tests. */
+    internal val launchChecks = AtomicInteger()
+
+    /**
+     * The launch check, once per process, whichever activity is created first, a fresh start or one Android restores
+     * after it ended the process (which brings a saved state but is still a launch). Updates decides whether a day has
+     * passed, and prunes old downloads first. It starts once Updates is made, off the main thread.
+     */
+    fun startLaunchCheckOnce() {
+        if (launchCheckStarted.compareAndSet(false, true)) {
+            launchChecks.incrementAndGet()
+            updateControls.onBuilt { it.startLaunchCheck() }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        registerActivityLifecycleCallbacks(foreground)
+    }
+}
+
+fun Context.appContainer(): AppContainer = (applicationContext as MealPlannerApplication).container
+
+/** The screens' update check (DeferredUpdates): never makes Updates on the calling thread. */
+fun Context.appUpdates(): DeferredUpdates = (applicationContext as MealPlannerApplication).updateControls

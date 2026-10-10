@@ -9,6 +9,13 @@ marked *free* so nobody shows as busy. Each event's description carries
 the servings, the ingredient list with amounts, and a link back to the
 recipe.
 
+**On the Windows desktop app** the button works the same way, signed in as you, and does not use
+service accounts: see "Google Calendar" in [WINDOWS.md](WINDOWS.md). It starts its own sign-in and
+event records and takes nothing over from this server, so don't send the same week from both to one
+calendar: each meal would land on it twice. Its Sign out doesn't revoke access; only a
+confirmed "Revoke access at Google" does. Its events have no link back to a recipe. An event deleted
+by hand comes back the next time its meal changes, under the same id.
+
 ## It only ever writes
 
 This is not a sync, on purpose. The calendar belongs to the family: they

@@ -1,0 +1,14 @@
+{
+  "_source": "ruling P7-R2b: the install folder is %LOCALAPPDATA%\\Meal-Planner, one level (jpackage adds RemoveFile rows only for INSTALLDIR, so a two-level per-user folder fails WiX's ICE64); the old %LOCALAPPDATA%\\Programs\\Meal Planner is no longer expected",
+  "_expect": "INSTALLDIR is LocalAppDataFolder\\Programs\\Meal Planner, not",
+  "Property": [["ProductName", "Meal Planner"], ["Manufacturer", "Meal Planner"], ["ProductVersion", "1.0.0"],
+               ["UpgradeCode", "{D96C85B6-DAAF-4386-A1F2-CD677885477B}"]],
+  "Directory": [["TARGETDIR", "", "SourceDir"], ["LocalAppDataFolder", "TARGETDIR", "."],
+                ["dirPrograms", "LocalAppDataFolder", "PROGRA~1|Programs"], ["INSTALLDIR", "dirPrograms", "MEALPL~1|Meal Planner"],
+                ["ProgramMenuFolder", "TARGETDIR", "."], ["dirMenu", "ProgramMenuFolder", "MEALPL~1|Meal Planner"],
+                ["DesktopFolder", "TARGETDIR", "."]],
+  "Shortcut": [["scMenu", "dirMenu", "MEALPL~1|Meal Planner"], ["scDesktop", "DesktopFolder", "MEALPL~1|Meal Planner"]],
+  "CustomAction": [["JpSetARPINSTALLLOCATION", 51, "ARPINSTALLLOCATION", "[INSTALLDIR]"]],
+  "RemoveFile": [["rmInstallDir", "INSTALLDIR", ""], ["rmPrograms", "dirPrograms", ""]],
+  "SummaryInformation": [[15, 10]]
+}

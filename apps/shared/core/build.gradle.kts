@@ -1,0 +1,40 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
+}
+
+// Golden cases shared with the Python app (see tests/parity_support.py).
+val parityDir = rootProject.file("../tests/fixtures/parity")
+
+kotlin {
+    jvm("desktop") {
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    }
+    android {
+        namespace = "com.naeblis11.mealplanner.core"
+        compileSdk = 37
+        minSdk = 26
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    }
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.snakeyaml)
+            implementation(libs.kotlinx.serialization.json)
+        }
+        getByName("desktopTest").dependencies {
+            implementation(libs.junit)
+        }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    systemProperty("parityDir", parityDir.absolutePath)
+    // SourceHygieneTest walks every module's sources under apps/.
+    systemProperty("srcDir", rootProject.projectDir.absolutePath)
+    inputs.dir(parityDir)
+    // SourceHygieneTest scans all of apps/ through the srcDir property, which Gradle can't
+    // track as an input, so an up-to-date check would skip it after edits elsewhere: always run.
+    outputs.upToDateWhen { false }
+}

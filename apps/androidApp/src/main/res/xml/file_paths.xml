@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the app's FileProvider may share: the camera's capture, and (plan 8) a verified update for the package
+     installer. Nothing else in the app's storage. -->
+<paths>
+    <cache-path name="camera" path="camera/" />
+    <cache-path name="updates" path="updates/" />
+</paths>
