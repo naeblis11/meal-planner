@@ -25,9 +25,6 @@ data class RecipeFileProblem(
         /** Another file already has this recipe_uuid: not indexed until one of them gets a new ID. */
         DUPLICATE_ID,
 
-        /** Information only: an amount couldn't be read. The recipe is indexed, the amount kept as written. */
-        AMOUNT,
-
         /**
          * The recipe folder itself: it is missing or can't be read, so nothing is indexed or removed until it is
          * back; or (with missingFiles) many of its files went at once, and they are kept in the app until they are

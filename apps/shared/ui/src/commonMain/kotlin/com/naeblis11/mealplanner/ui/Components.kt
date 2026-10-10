@@ -31,6 +31,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -157,13 +158,19 @@ fun Pill(text: String) {
 
 /** "Needs your attention" message in the danger tint; a screen reader announces it when it appears or changes. */
 @Composable
-fun AttentionBanner(text: String, modifier: Modifier = Modifier) {
+fun AttentionBanner(text: String, modifier: Modifier = Modifier, action: String? = null) {
     Surface(
         color = MealColors.DangerTint,
         shape = RoundedCornerShape(10.dp),
         modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
     ) {
-        Text(text, color = MealColors.DangerHover, modifier = Modifier.padding(12.dp))
+        // [action] says the banner opens something ("Show them"), so it never reads as a warning with no way to act.
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text, color = MealColors.DangerHover, modifier = Modifier.weight(1f))
+            if (action != null) {
+                Text(action, color = MealColors.Accent, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp))
+            }
+        }
     }
 }
 

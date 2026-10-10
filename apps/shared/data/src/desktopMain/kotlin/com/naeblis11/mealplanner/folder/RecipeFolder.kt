@@ -6,7 +6,6 @@ import com.naeblis11.mealplanner.data.RecipeFileRow
 import com.naeblis11.mealplanner.data.RecipeRepository
 import com.naeblis11.mealplanner.data.inTransaction
 import com.naeblis11.mealplanner.domain.Orf
-import com.naeblis11.mealplanner.domain.OrfEditing
 import com.naeblis11.mealplanner.domain.Py
 import com.naeblis11.mealplanner.domain.RecipeFormatException
 import com.naeblis11.mealplanner.domain.RecipeYaml
@@ -60,9 +59,6 @@ class RecipeFolder(
 
     private val _problems = MutableStateFlow<List<RecipeFileProblem>>(emptyList())
     override val problems: StateFlow<List<RecipeFileProblem>> = _problems.asStateFlow()
-
-    // Unreadable amounts by file hash, so an unchanged file keeps its notes without being parsed again.
-    private val amountNotes = HashMap<String, List<String>>()
 
     // R1: index rows whose file is gone, by row id, with when a sync first missed it. Read and replaced only under
     // recipes.exclusive (by syncLocked), and only once a sync's transaction has committed.
@@ -214,14 +210,10 @@ class RecipeFolder(
                 continue
             }
             when (read) {
-                is Unchanged -> {
-                    unchanged++
-                    problems += amountProblems(name, read.hash) { decode(read.bytes) }
-                }
-                is Parsed -> {
-                    problems += amountProblems(name, read.hash) { read.raw }
-                    pending += read
-                }
+                // Amounts aren't checked here: an ingredient with no amount ("salt and pepper") is normal, and the
+                // editors and the import review highlight one that can't be read where it can be fixed.
+                is Unchanged -> unchanged++
+                is Parsed -> pending += read
                 is Broken -> Unit
             }
         }
@@ -382,21 +374,6 @@ class RecipeFolder(
             null
         }
         return if (check is Map<*, *> && check["recipe_uuid"] == uuid) patched else null
-    }
-
-    private fun amountProblems(name: String, hash: String, raw: () -> String): List<RecipeFileProblem> =
-        amountNotes.getOrPut(hash) { unreadableAmounts(raw()) }
-            .map { line -> RecipeFileProblem(name, RecipeFileProblem.Kind.AMOUNT, "Amount couldn't be read: $line") }
-
-    // find_unparseable_amount_slots on the file as written: each amount the parser can't read, as its line.
-    private fun unreadableAmounts(raw: String): List<String> {
-        return try {
-            @Suppress("UNCHECKED_CAST")
-            val doc = RecipeYaml.load(raw.removePrefix(BOM)) as? Map<Any?, Any?> ?: return emptyList()
-            OrfEditing.findUnparseableAmountSlots(doc).map { it.ingredientLine }
-        } catch (e: RecipeFormatException) {
-            emptyList()
-        }
     }
 
     // UTF-8 or an error: a file in another encoding is listed, never read as replacement characters.

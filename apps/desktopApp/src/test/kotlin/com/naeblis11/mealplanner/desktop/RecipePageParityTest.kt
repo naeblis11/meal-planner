@@ -136,104 +136,40 @@ class RecipePageParityTest {
     }
 
     @Test
-    fun starsInTheListRateAndTheCurrentOneClears() {
-        compose.showAt(1000.dp) { MealPlannerApp(app.container) }
-        compose.waitForText("Soup")
-        compose.onNodeWithContentDescription("Rate Soup 4 stars").click()
-        compose.waitUntil(5_000) { soupFile.readText().contains("rating: 4") }
-
-        waitForDescription("Clear the rating of Soup")
-        compose.onNodeWithContentDescription("Clear the rating of Soup").click()
-        compose.waitUntil(5_000) { soupFile.readText().contains("rating: None") }
-        waitForDescription("Rate Soup 4 stars")
-    }
-
-    @Test
-    fun whileAnEditHoldsThePaneTheListsStarsOnlyShow() {
-        // P5-PF4: a rating saved under an open edit of the same recipe would stop its Save.
+    fun theListsStarsOnlyShowTheRating() {
+        // Owner, 2026-10-09: the list reports a rating; it is changed on the recipe page.
         runBlocking { app.container.recipes.setRating(id("Stew"), 3) }
-        openSoup(1000.dp)
-        compose.onNodeWithText("Edit").click()
-        compose.waitForText("Edit recipe")
-        compose.onAllNodesWithContentDescription("Rate Stew 2 stars").assertCountEquals(0)
-        compose.onAllNodesWithContentDescription("Rated 3 of 5").assertCountEquals(1)
-        waitForEditorFields()
+        compose.showAt(1000.dp) { MealPlannerApp(app.container) }
+        compose.waitForText("Stew")
+        waitForDescription("Rated 3 of 5")
+        compose.onAllNodesWithContentDescription("Rate Stew 4 stars").assertCountEquals(0)
+        compose.onAllNodesWithContentDescription("Rate Soup 4 stars").assertCountEquals(0)
+        // An unrated recipe shows no stars at all.
+        compose.onAllNodesWithContentDescription("Not rated").assertCountEquals(0)
     }
 
     @Test
-    fun starsInThePhonesListRateToo() {
-        compose.showAt(400.dp) { MealPlannerApp(app.container) }
-        compose.waitForText("Stew")
-        compose.onNodeWithContentDescription("Rate Stew 2 stars").click()
-        compose.waitUntil(5_000) { File(app.recipesDir, "stew.yaml").readText().contains("rating: 2") }
-        waitForDescription("Clear the rating of Stew")
-    }
-
-    @Test
-    fun theListsStarsFitAPhoneOf320dp() {
-        compose.showAt(320.dp) { MealPlannerApp(app.container) }
-        compose.waitForText("Stew")
-        // Five stars of 48 dp each on their own line under the name, inside the list's padding (the search field
-        // spans it), none squeezed below the touch size.
-        val search = compose.onNodeWithText("Search recipes").getBoundsInRoot()
-        for (n in 1..5) {
-            val star = compose.onNodeWithContentDescription("Rate Stew $n star${if (n == 1) "" else "s"}")
-            star.assertWidthIsAtLeast(48.dp)
-            star.assertHeightIsAtLeast(48.dp)
-            val bounds = star.getBoundsInRoot()
-            assertTrue("$bounds inside $search", bounds.left >= search.left && bounds.right <= search.right)
+    fun aListRowIsOneShortLineOnThePhoneAndThePc() {
+        runBlocking { app.container.recipes.setRating(id("Stew"), 3) }
+        for (width in listOf(400.dp, 1000.dp)) {
+            compose.showAt(width) { MealPlannerApp(app.container) }
+            compose.waitForText("Stew")
+            val row = compose.onNode(hasText("Stew")).getBoundsInRoot()
+            // The row's 48 dp minimum: the 36 dp photo, the name and the small stars all fit inside it.
+            assertEquals("at $width", ROW_HEIGHT, (row.bottom - row.top).value, 0.5f)
         }
-        compose.onNodeWithContentDescription("Rate Stew 5 stars").click()
-        compose.waitUntil(5_000) { File(app.recipesDir, "stew.yaml").readText().contains("rating: 5") }
-        waitForDescription("Clear the rating of Stew")
-    }
-
-    @Test
-    fun theStarLineStartsClearOfTheNameAndEndsTheRow() {
-        compose.showAt(400.dp) { MealPlannerApp(app.container) }
-        compose.waitForText("Stew")
-        val row = compose.onNode(hasText("Stew")).getBoundsInRoot()
-        // 10 dp above the 56 dp photo-and-name band, 4 dp under it, and no padding below the 48 dp stars: a thumb
-        // just under the name opens the recipe.
-        for (n in 1..5) {
-            val node = compose.onNodeWithContentDescription("Rate Stew $n star${if (n == 1) "" else "s"}")
-            node.assertWidthIsAtLeast(48.dp)
-            node.assertHeightIsAtLeast(48.dp)
-            val star = node.getBoundsInRoot()
-            assertEquals(70f, (star.top - row.top).value, 0.5f)
-            assertEquals(row.bottom.value, star.bottom.value, 0.5f)
-        }
-        assertEquals(ROW_WITH_STARS, (row.bottom - row.top).value, 0.5f)
     }
 
     @Test
     fun aListRowKeepsItsHeightWhileAnEditHoldsThePane() {
+        runBlocking { app.container.recipes.setRating(id("Stew"), 3) }
         openSoup(1000.dp)
         val before = compose.onNode(hasText("Stew")).getBoundsInRoot()
         compose.onNodeWithText("Edit").click()
         compose.waitForText("Edit recipe")
         val locked = compose.onNode(hasText("Stew")).getBoundsInRoot()
-        // The 48 dp star line is there either way: rating stars before, showing stars while the edit is open.
-        assertEquals(ROW_WITH_STARS, (before.bottom - before.top).value, 0.5f)
-        assertEquals(ROW_WITH_STARS, (locked.bottom - locked.top).value, 0.5f)
-        waitForEditorFields()
-    }
-
-    @Test
-    fun theStarsStayPutAndKeepTheirSizeWhileAnEditHoldsThePane() {
-        runBlocking { app.container.recipes.setRating(id("Stew"), 3) }
-        openSoup(1000.dp)
-        val one = compose.onNodeWithContentDescription("Rate Stew 1 star").getBoundsInRoot()
-        val rowBefore = compose.onNode(hasText("Stew")).getBoundsInRoot()
-        compose.onNodeWithText("Edit").click()
-        compose.waitForText("Edit recipe")
-        val rowLocked = compose.onNode(hasText("Stew")).getBoundsInRoot()
-        // Showing stars sit in the same five 48 dp boxes the rating stars had, so the line keeps its place and size.
-        // The row merges its children, so the stars' own node is in the unmerged tree.
-        val shown = compose.onNodeWithContentDescription("Rated 3 of 5", useUnmergedTree = true).getBoundsInRoot()
-        assertEquals(one.left.value, shown.left.value, 0.5f)
-        assertEquals(5 * 48f, (shown.right - shown.left).value, 0.5f)
-        assertEquals((one.top - rowBefore.top).value, (shown.top - rowLocked.top).value, 0.5f)
+        assertEquals(ROW_HEIGHT, (before.bottom - before.top).value, 0.5f)
+        assertEquals(ROW_HEIGHT, (locked.bottom - locked.top).value, 0.5f)
         waitForEditorFields()
     }
 
@@ -245,17 +181,8 @@ class RecipePageParityTest {
         }
 
     private companion object {
-        // 10 dp above the photo, the 56 dp photo-and-name band, 4 dp, and the 48 dp star line.
-        const val ROW_WITH_STARS = 10f + 56f + 4f + 48f
-    }
-
-    @Test
-    fun aRatingFromTheListThatCantBeSavedSaysWhy() {
-        compose.showAt(1000.dp) { MealPlannerApp(app.container) }
-        compose.waitForText("Soup")
-        assertTrue(soupFile.delete())
-        compose.onNodeWithContentDescription("Rate Soup 4 stars").click()
-        compose.waitForText(missingFileMessage("soup.yaml"))
+        // A list row: its 48 dp minimum (owner, 2026-10-09: compact rows, stars only show the rating).
+        const val ROW_HEIGHT = 48f
     }
 
     @Test

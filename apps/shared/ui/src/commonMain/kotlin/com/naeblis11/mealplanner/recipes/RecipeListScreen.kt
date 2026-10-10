@@ -10,9 +10,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -42,6 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.data.RecipeSummary
 import com.naeblis11.mealplanner.domain.CategoryGroup
@@ -84,20 +87,11 @@ fun RecipeListScreen(
     openLocked: Boolean = false,
     /** False on the wide layout, where Settings is on the rail and the list is narrow. */
     showSettings: Boolean = true,
-    /** P5-R7: the stars rate (the current one clears), as on the server's list; null shows them for rated recipes only. */
-    onRate: ((Long, Int) -> Unit)? = null,
-    /** A message for the snackbar (a rating that couldn't be saved), marked shown as it appears. */
-    message: String? = null,
-    onMessageShown: () -> Unit = {},
 ) {
+    // The list's stars only show a rating (owner, 2026-10-09); it is changed on the recipe page. The snackbar is for
+    // Open recipe folder.
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(message) {
-        if (message != null) {
-            onMessageShown()
-            scope.launch { snackbar.showSnackbar(message) }
-        }
-    }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -121,12 +115,10 @@ fun RecipeListScreen(
             }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-        ) {
-            if (folderMissing || folderMoved || filesMissing || attentionFiles > 0) {
-                item(key = "attention") {
+        // The banner, the search and the cookbook filter stay put; only the recipes below them scroll.
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                if (folderMissing || folderMoved || filesMissing || attentionFiles > 0) {
                     AttentionBanner(
                         when {
                             folderMissing -> FOLDER_MISSING
@@ -137,13 +129,13 @@ fun RecipeListScreen(
                         // Not while a form holds the pane: opening the list from here would leave the form behind.
                         Modifier.padding(top = 8.dp)
                             .clickable(enabled = !openLocked, onClickLabel = "Show the files", role = Role.Button, onClick = onAttention),
+                        // Said on the banner itself: it opens the list of the files, each with what's wrong and its fix.
+                        action = if (openLocked) null else SHOW_THEM,
                     )
                 }
-            }
-            if (openLocked) {
-                item(key = "locked") { Text(EDITING_ELSEWHERE, color = MealColors.Muted, modifier = Modifier.padding(top = 8.dp)) }
-            }
-            item {
+                if (openLocked) {
+                    Text(EDITING_ELSEWHERE, color = MealColors.Muted, modifier = Modifier.padding(top = 8.dp))
+                }
                 OutlinedTextField(
                     value = query,
                     onValueChange = onQueryChange,
@@ -152,27 +144,32 @@ fun RecipeListScreen(
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
+                if (books.isNotEmpty()) BookFilter(books, book, onBookChange)
             }
-            if (books.isNotEmpty()) item(key = "books") { BookFilter(books, book, onBookChange) }
-            when {
-                groups == null -> item { CircularProgressIndicator(Modifier.padding(24.dp)) }
-                groups.isEmpty() -> item {
-                    Text(
-                        if (query.isBlank()) "No recipes yet. Add one, or import a file." else "No recipes match \"$query\".",
-                        color = MealColors.Muted,
-                        modifier = Modifier.padding(vertical = 24.dp),
-                    )
-                }
-                else -> for (group in groups) {
-                    item(key = "c:${group.category}") {
-                        Text(group.category, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f).testTag(RECIPE_LIST_TAG),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+            ) {
+                when {
+                    groups == null -> item { CircularProgressIndicator(Modifier.padding(24.dp)) }
+                    groups.isEmpty() -> item {
+                        Text(
+                            if (query.isBlank()) "No recipes yet. Add one, or import a file." else "No recipes match \"$query\".",
+                            color = MealColors.Muted,
+                            modifier = Modifier.padding(vertical = 24.dp),
+                        )
                     }
-                    items(group.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked, onRate) }
-                    for (sub in group.subcategories) {
-                        item(key = "s:${group.category}/${sub.subcategory}") {
-                            Text(sub.subcategory, style = MaterialTheme.typography.titleMedium, color = MealColors.Muted, modifier = Modifier.padding(top = 12.dp, bottom = 2.dp))
+                    else -> for (group in groups) {
+                        item(key = "c:${group.category}") {
+                            Text(group.category, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp))
                         }
-                        items(sub.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked, onRate) }
+                        items(group.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
+                        for (sub in group.subcategories) {
+                            item(key = "s:${group.category}/${sub.subcategory}") {
+                                Text(sub.subcategory, style = MaterialTheme.typography.titleMedium, color = MealColors.Muted, modifier = Modifier.padding(top = 8.dp, bottom = 0.dp))
+                            }
+                            items(sub.recipes, key = { "r:${it.id}" }) { RecipeRow(it, thumbnail(it), onOpen, it.id == selectedId, !openLocked) }
+                        }
                     }
                 }
             }
@@ -180,66 +177,56 @@ fun RecipeListScreen(
     }
 }
 
+/**
+ * One recipe: a small photo, the name (two lines at most), its cookbook mark, and its rating as small stars that only
+ * show it (owner, 2026-10-09). Rating is done on the recipe page, so nothing in a row but the row itself is tapped,
+ * and the rows stay short enough to show many recipes at once on the phone and the PC alike.
+ */
 @Composable
-private fun RecipeRow(recipe: RecipeSummary, thumbnail: File?, onOpen: (Long) -> Unit, selected: Boolean, enabled: Boolean, onRate: ((Long, Int) -> Unit)?) {
-    // A list whose stars rate has a star line under every row. Not while a form holds the pane, though: a rating
-    // saved under an open edit of the same recipe would stop its Save, so the line then only shows the rating.
-    val starLine = onRate != null
-    val rate = onRate?.takeIf { enabled }
+private fun RecipeRow(recipe: RecipeSummary, thumbnail: File?, onOpen: (Long) -> Unit, selected: Boolean, enabled: Boolean) {
     Column {
-        Column(
-            Modifier
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
                 .fillMaxWidth()
-                // Only the wide layout selects a row; the phone's rows look and read as before.
+                // Only the wide layout selects a row.
                 .then(if (selected) Modifier.background(MealColors.AccentTint, RoundedCornerShape(10.dp)).semantics { this.selected = true } else Modifier)
                 .clickable(enabled = enabled) { onOpen(recipe.id) }
-                // The star line's 48 dp boxes end the row; without one, the row keeps its padding below.
-                .padding(top = 10.dp, bottom = if (starLine) 0.dp else 10.dp),
+                .heightIn(min = ROW_MIN_HEIGHT)
+                .padding(vertical = 4.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PhotoImage(thumbnail, contentDescription = null, modifier = Modifier.size(THUMBNAIL).clip(RoundedCornerShape(10.dp)))
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(recipe.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
-                        recipe.book?.let { Icon(BookIcon, contentDescription = "From $it", tint = MealColors.Accent, modifier = Modifier.size(16.dp)) }
-                    }
-                    if (!starLine && recipe.rating != null) RatingStars(recipe.rating, size = MaterialTheme.typography.bodyMedium.fontSize)
-                }
-            }
-            // The stars get their own line under the name, 4 dp clear of it, so the middle of a row (the photo and
-            // the name) and a tap just under the name still open the recipe. Each star is a 48 dp touch box, as every
-            // control is; the line starts STAR_INDENT in, so five fit on a 320 dp phone.
-            if (starLine) {
-                Box(Modifier.padding(start = STAR_INDENT, top = 4.dp).height(STAR_TOUCH), contentAlignment = Alignment.CenterStart) {
-                    if (rate != null) {
-                        RatingStars(
-                            recipe.rating,
-                            onRate = { stars -> rate(recipe.id, stars) },
-                            size = STAR_SIZE,
-                            subject = recipe.name,
-                            clearsOnCurrent = true,
-                            touch = STAR_TOUCH,
-                        )
-                    } else {
-                        // Same height and the same places, so the list doesn't move as Edit opens or closes.
-                        RatingStars(recipe.rating, size = STAR_SIZE, touch = STAR_TOUCH, boxed = true)
-                    }
-                }
+            PhotoImage(thumbnail, contentDescription = null, modifier = Modifier.size(THUMBNAIL).clip(RoundedCornerShape(6.dp)))
+            Text(
+                recipe.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            recipe.book?.let { Icon(BookIcon, contentDescription = "From $it", tint = MealColors.Accent, modifier = Modifier.size(16.dp)) }
+            // A fixed slot, empty when unrated, so the cookbook marks line up down the list.
+            Box(Modifier.width(STAR_SLOT), contentAlignment = Alignment.CenterEnd) {
+                recipe.rating?.takeIf { it > 0 }?.let { RatingStars(it, size = LIST_STAR_SIZE) }
             }
         }
         HorizontalDivider(color = MealColors.LineSoft)
     }
 }
 
-private val THUMBNAIL = 56.dp
-private val STAR_TOUCH = 48.dp
+private val THUMBNAIL = 36.dp
 
-// The recipe page's size, so a rating reads the same in the list as on the recipe.
-private val STAR_SIZE = 28.sp
+// The row is a tap target as a whole: at least 48 dp tall, as every control is.
+private val ROW_MIN_HEIGHT = 48.dp
 
-// Less than the photo's width: the first star's glyph, centered in its box, then sits just past the photo, and the
-// line (40 + 5 x 48 = 280 dp) fits the 288 dp a 320 dp phone leaves inside the list's 16 dp sides.
-private val STAR_INDENT = 40.dp
+// Small: the stars only report the rating; it is changed on the recipe page.
+private val LIST_STAR_SIZE = 14.sp
+
+// Five 14 sp stars fit in it, with a little room to spare.
+private val STAR_SLOT = 72.dp
+
+/** The recipe list's scrolling part (below the search and filters, which stay put), for tests. */
+const val RECIPE_LIST_TAG = "recipe-list"
 
 /** "All recipes" plus one chip per cookbook in the library; the selected one narrows the list. */
 @Composable
@@ -271,6 +258,9 @@ const val FOLDER_MOVED = "The recipe folder has changed; nothing is removed unti
 
 /** Above the wide list while the detail pane holds an edit form. */
 const val EDITING_ELSEWHERE = "Save or cancel the recipe you're editing to open another."
+
+/** The Recipes banner's visible action: it opens Needs attention, which names each file and how to fix it. */
+const val SHOW_THEM = "Show them"
 
 private fun attentionText(files: Int): String =
     if (files == 1) "1 recipe file needs attention" else "$files recipe files need attention"

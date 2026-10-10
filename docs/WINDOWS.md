@@ -296,9 +296,9 @@ attention**: a banner on the Recipes screen ("2 recipe files need attention") op
 lands there when it isn't valid YAML, lacks `recipe_name`, `ingredients` or `steps`, isn't UTF-8, or
 has the same `recipe_uuid` as another file. For a duplicate, **Assign new ID** gives the file a new
 `recipe_uuid` (one line changed) and both recipes are kept. Everything else is fixed in the file:
-**Open recipe folder** opens it in Explorer, and the app notices the save. An amount the app can't
-read (`a pinch`) is listed too, for information: that recipe is in the library, and the amount is
-kept as written until you fix it in Edit.
+**Open recipe folder** opens it in Explorer, and the app notices the save. Amounts are never listed
+here: an ingredient with no amount ("salt and pepper") is normal, and one the app can't read
+(`a pinch`) is kept as written and highlighted in **Edit** and in an import's review.
 
 ## Moving your recipes from the Pi
 

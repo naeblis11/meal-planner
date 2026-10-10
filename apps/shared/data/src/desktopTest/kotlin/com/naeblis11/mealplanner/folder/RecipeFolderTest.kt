@@ -267,14 +267,22 @@ class RecipeFolderTest {
     }
 
     @Test
-    fun anUnreadableAmountIsListedButTheRecipeIsIndexed() {
+    fun amountsAreNeverListedAsNeedingAttention() {
+        // The Pi's library has "salt and pepper", "oregano" with no amount, which read fine; a constant warning the
+        // owner can't clear helps no one. The recipe editor and the import review highlight an amount they can't read.
         write("soup.yaml", recipe("Soup", "u-soup", amount = "a pinch"))
+        write(
+            "alfredo.yaml",
+            "recipe_uuid: u-alfredo\nrecipe_name: Alfredo\ningredients:\n" +
+                "- garlic powder:\n    amounts:\n    - amount: ''\n      unit: ''\n" +
+                "- heavy whipping cream:\n" +
+                "steps:\n- step: Stir.\n",
+        )
         sync()
-        assertEquals(listOf("Soup"), names())
-        val note = RecipeFileProblem("soup.yaml", RecipeFileProblem.Kind.AMOUNT, "Amount couldn't be read: a pinch tsp Salt")
-        assertEquals(listOf(note), problems())
-        sync() // unchanged now, and still listed
-        assertEquals(listOf(note), problems())
+        assertEquals(listOf("Alfredo", "Soup"), names())
+        assertEquals(emptyList<RecipeFileProblem>(), problems())
+        sync() // unchanged now: still nothing listed
+        assertEquals(emptyList<RecipeFileProblem>(), problems())
     }
 
     @Test

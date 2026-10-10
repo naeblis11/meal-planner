@@ -1,6 +1,7 @@
 package com.naeblis11.mealplanner.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,9 +51,15 @@ const val CHOOSE_A_RECIPE = "Choose a recipe to see it here."
 
 /**
  * The list's width beside the detail pane. P3-R4 asks for about 360 dp; 380 keeps "Open recipe folder" and "Import"
- * beside the list's title without clipping.
+ * beside the list's title without clipping. On a window at least [ROOMY_WINDOW] wide the list takes 480 dp (owner,
+ * 2026-10-09), so most recipe names fit on one line; a smaller wide window keeps 380, leaving the recipe room.
  */
 val LIST_PANE_WIDTH: Dp = 380.dp
+val LIST_PANE_WIDTH_ROOMY: Dp = 480.dp
+val ROOMY_WINDOW: Dp = 1000.dp
+
+/** The list's width on a wide window [windowWidth] across. */
+fun listPaneWidth(windowWidth: Dp): Dp = if (windowWidth >= ROOMY_WINDOW) LIST_PANE_WIDTH_ROOMY else LIST_PANE_WIDTH
 
 /**
  * The recipe page, its Edit form and New recipe. They are pages of MealPlannerApp's NavHost (on a narrow window, and
@@ -133,43 +140,46 @@ internal fun RecipesHome(nav: NavController, container: AppContainer, startImpor
     val paneHasPage = paneRoute != null && paneRoute != PANE_EMPTY
     val editing = paneRoute == Routes.EDIT || paneRoute == Routes.NEW
     val selectedId = if (paneRoute == Routes.RECIPE || paneRoute == Routes.EDIT) paneEntry?.arguments?.read { getLong("id") } else null
-    Row(Modifier.fillMaxSize()) {
-        if (wide) {
-            Box(Modifier.width(LIST_PANE_WIDTH).fillMaxHeight()) {
-                RecipeListPane(
-                    nav,
-                    container,
-                    startImport,
-                    onOpen = { id -> if (!editing && id != selectedId) pane.showOnly(Routes.recipe(id)) },
-                    onNew = { if (!editing) pane.showOnly(Routes.NEW) },
-                    selectedId = selectedId,
-                    openLocked = editing,
-                    showSettings = false,
-                )
-            }
-            VerticalDivider(color = MealColors.Line)
-        } else if (!paneHasPage) {
-            // The phone's list: a recipe opens as a page of the main NavHost.
-            Box(Modifier.weight(1f).fillMaxHeight()) {
-                RecipeListPane(
-                    nav,
-                    container,
-                    startImport,
-                    onOpen = dropUnlessResumedWith { id: Long -> nav.navigate(Routes.recipe(id)) },
-                    onNew = dropUnlessResumed { nav.navigate(Routes.NEW) },
-                )
-            }
-        }
-        // Always composed, so its pages keep their state across a resize; zero wide when narrow and empty.
-        val paneModifier = if (wide || paneHasPage) Modifier.weight(1f).fillMaxHeight() else Modifier.width(0.dp).fillMaxHeight()
-        NavHost(navController = pane, startDestination = PANE_EMPTY, modifier = paneModifier) {
-            composable(PANE_EMPTY) {
-                // Only the wide pane says anything: the narrow one is out of sight (and out of a screen reader's way).
-                if (LocalWideLayout.current) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(CHOOSE_A_RECIPE, color = MealColors.Muted) }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val listWidth = listPaneWidth(maxWidth)
+        Row(Modifier.fillMaxSize()) {
+            if (wide) {
+                Box(Modifier.width(listWidth).fillMaxHeight()) {
+                    RecipeListPane(
+                        nav,
+                        container,
+                        startImport,
+                        onOpen = { id -> if (!editing && id != selectedId) pane.showOnly(Routes.recipe(id)) },
+                        onNew = { if (!editing) pane.showOnly(Routes.NEW) },
+                        selectedId = selectedId,
+                        openLocked = editing,
+                        showSettings = false,
+                    )
+                }
+                VerticalDivider(color = MealColors.Line)
+            } else if (!paneHasPage) {
+                // The phone's list: a recipe opens as a page of the main NavHost.
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    RecipeListPane(
+                        nav,
+                        container,
+                        startImport,
+                        onOpen = dropUnlessResumedWith { id: Long -> nav.navigate(Routes.recipe(id)) },
+                        onNew = dropUnlessResumed { nav.navigate(Routes.NEW) },
+                    )
                 }
             }
-            recipeDestinations(pane, container)
+            // Always composed, so its pages keep their state across a resize; zero wide when narrow and empty.
+            val paneModifier = if (wide || paneHasPage) Modifier.weight(1f).fillMaxHeight() else Modifier.width(0.dp).fillMaxHeight()
+            NavHost(navController = pane, startDestination = PANE_EMPTY, modifier = paneModifier) {
+                composable(PANE_EMPTY) {
+                    // Only the wide pane says anything: the narrow one is out of sight (and out of a screen reader's way).
+                    if (LocalWideLayout.current) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(CHOOSE_A_RECIPE, color = MealColors.Muted) }
+                    }
+                }
+                recipeDestinations(pane, container)
+            }
         }
     }
 }
@@ -191,7 +201,6 @@ private fun RecipeListPane(
     val query by vm.query.collectAsStateWithLifecycle()
     val books by vm.books.collectAsStateWithLifecycle()
     val book by vm.book.collectAsStateWithLifecycle()
-    val listMessage by vm.message.collectAsStateWithLifecycle()
     // The desktop's recipe folder; null on Android, where none of it shows.
     val folder = container.folder
     val problems by (folder?.problems ?: NO_PROBLEMS).collectAsStateWithLifecycle()
@@ -219,9 +228,6 @@ private fun RecipeListPane(
         selectedId = selectedId,
         openLocked = openLocked,
         showSettings = showSettings,
-        onRate = vm::rate,
-        message = listMessage,
-        onMessageShown = vm::messageShown,
     )
 }
 

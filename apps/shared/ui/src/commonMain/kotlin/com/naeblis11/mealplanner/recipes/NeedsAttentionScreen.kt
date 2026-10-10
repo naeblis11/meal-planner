@@ -154,8 +154,7 @@ private fun ProblemRow(
 ) {
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
         Text(if (problem.kind == RecipeFileProblem.Kind.FOLDER) "Recipe folder" else problem.fileName, style = MaterialTheme.typography.titleMedium)
-        // An amount note is information (the recipe is in the library); the rest keep a file out of it.
-        Text(problem.message, color = if (problem.kind == RecipeFileProblem.Kind.AMOUNT) MealColors.Muted else MealColors.DangerHover)
+        Text(problem.message, color = MealColors.DangerHover)
         if (problem.canAssignNewId) {
             TextButton(onClick = { onAssignNewId(problem.fileName) }, enabled = !busy) { Text("Assign new ID") }
         }

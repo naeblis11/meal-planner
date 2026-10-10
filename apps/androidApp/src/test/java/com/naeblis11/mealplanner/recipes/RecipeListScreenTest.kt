@@ -1,10 +1,14 @@
 package com.naeblis11.mealplanner.recipes
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import com.naeblis11.mealplanner.data.RecipeSummary
 import com.naeblis11.mealplanner.domain.CategoryGroup
@@ -66,6 +70,25 @@ class RecipeListScreenTest {
         compose.onNodeWithText("All recipes").assertIsDisplayed()
         compose.onNodeWithText("Flanders Family Cookbook").performClick()
         assertEquals("Flanders Family Cookbook", picked)
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h800dp")
+    fun theSearchAndFiltersStayPutWhileTheListScrolls() {
+        val many = (1..60).map { RecipeSummary(100L + it, "Recipe $it", "Main Dishes", null, null, 3) }
+        compose.setContent {
+            MealPlannerTheme {
+                RecipeListScreen(
+                    listOf(CategoryGroup("Main Dishes", emptyList(), many)), "", {}, {}, {}, {}, {}, { null },
+                    books = listOf("Flanders Family Cookbook"),
+                )
+            }
+        }
+        compose.onNodeWithTag(RECIPE_LIST_TAG).performScrollToNode(hasText("Recipe 60"))
+        compose.onNodeWithText("Recipe 60").assertIsDisplayed()
+        compose.onNodeWithText("Recipe 1").assertIsNotDisplayed()
+        compose.onNodeWithText("Search recipes").assertIsDisplayed()
+        compose.onNodeWithText("All recipes").assertIsDisplayed()
     }
 
     @Test

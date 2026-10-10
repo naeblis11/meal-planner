@@ -140,6 +140,10 @@ class NeedsAttentionTest {
         compose.onNode(
             hasText("1 recipe file needs attention") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button),
         ).assertExists()
+        // It says it can be opened, and opening it names the file with what's wrong and its fix.
+        compose.onNodeWithText("Show them").click()
+        waitForText("b.yaml")
+        compose.onNodeWithText("Assign new ID").assertExists()
     }
 
     @Test
