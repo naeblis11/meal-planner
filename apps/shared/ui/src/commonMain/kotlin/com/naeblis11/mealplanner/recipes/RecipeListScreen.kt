@@ -72,8 +72,11 @@ fun RecipeListScreen(
     onSettings: () -> Unit,
     thumbnail: (RecipeSummary) -> File?,
     books: List<String> = emptyList(),
-    book: String? = null,
-    onBookChange: (String?) -> Unit = {},
+    book: BookFilter = BookFilter.All,
+    onBookChange: (BookFilter) -> Unit = {},
+    /** Owner, 2026-10-10: the fewest stars a recipe needs to show; 0 shows every recipe. */
+    minRating: Int = 0,
+    onMinRatingChange: (Int) -> Unit = {},
     /** Desktop: how many recipe files are on the Needs attention list; the banner shows when it isn't 0. */
     attentionFiles: Int = 0,
     /** Desktop: the recipe folder itself is missing or unreadable; the banner says so instead of counting files. */
@@ -153,9 +156,10 @@ fun RecipeListScreen(
                     shape = RoundedCornerShape(50),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
-                // Owner, 2026-10-10: the cookbook filter and Collapse all / Expand all share a line.
+                // Owner, 2026-10-10: the cookbook chips on one line; the rating filter and Collapse all / Expand all share the next.
+                if (books.isNotEmpty()) BookFilterRow(books, book, onBookChange)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) { if (books.isNotEmpty()) BookFilter(books, book, onBookChange) }
+                    Box(Modifier.weight(1f)) { RatingFilter(minRating, onMinRatingChange) }
                     val categories = groups.orEmpty().map { it.category }
                     if (categories.isNotEmpty() && query.isBlank()) {
                         val allCollapsed = categories.all { RecipeListViewModel.categoryKey(it) in collapsed }
@@ -174,7 +178,11 @@ fun RecipeListScreen(
                     groups == null -> item { CircularProgressIndicator(Modifier.padding(24.dp)) }
                     groups.isEmpty() -> item {
                         Text(
-                            if (query.isBlank()) "No recipes yet. Add one, or import a file." else "No recipes match \"$query\".",
+                            when {
+                                query.isNotBlank() -> "No recipes match \"$query\"."
+                                book != BookFilter.All || minRating > 0 -> NO_FILTER_MATCHES
+                                else -> "No recipes yet. Add one, or import a file."
+                            },
                             color = MealColors.Muted,
                             modifier = Modifier.padding(vertical = 24.dp),
                         )
@@ -291,24 +299,66 @@ private val STAR_SLOT = 72.dp
 /** The recipe list's scrolling part (below the search and filters, which stay put), for tests. */
 const val RECIPE_LIST_TAG = "recipe-list"
 
-/** "All recipes" plus one chip per cookbook in the library; the selected one narrows the list. */
+/** "All recipes", "Not from a cookbook" and one chip per cookbook in the library; the selected one narrows the list. */
 @Composable
-private fun BookFilter(books: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+private fun BookFilterRow(books: List<String>, selected: BookFilter, onSelect: (BookFilter) -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 4.dp),
     ) {
-        FilterChip(selected = selected == null, onClick = { onSelect(null) }, label = { Text("All recipes") })
+        FilterChip(selected = selected == BookFilter.All, onClick = { onSelect(BookFilter.All) }, label = { Text("All recipes") })
+        // Owner, 2026-10-10: the recipes that aren't from a cookbook, with every cookbook put aside.
+        FilterChip(
+            selected = selected == BookFilter.NoBook,
+            onClick = { onSelect(if (selected == BookFilter.NoBook) BookFilter.All else BookFilter.NoBook) },
+            label = { Text(NOT_FROM_A_COOKBOOK) },
+        )
         for (book in books) {
+            val only = BookFilter.Only(book)
             FilterChip(
-                selected = selected == book,
-                onClick = { onSelect(if (selected == book) null else book) },
+                selected = selected == only,
+                onClick = { onSelect(if (selected == only) BookFilter.All else only) },
                 label = { Text(book) },
                 leadingIcon = { Icon(BookIcon, contentDescription = null, modifier = Modifier.size(16.dp)) },
             )
         }
     }
 }
+
+/**
+ * "Rated at least" and five stars (owner, 2026-10-10): tapping one keeps only the recipes rated that many or more,
+ * and tapping the filled one again shows every recipe. The same stars as the recipe page's, so they read the same.
+ */
+@Composable
+private fun RatingFilter(minRating: Int, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(RATED_AT_LEAST, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+        RatingStars(
+            rating = minRating.takeIf { it > 0 },
+            onRate = onChange,
+            size = 20.sp,
+            touch = 40.dp,
+            clearsOnCurrent = true,
+            action = RATING_FILTER_ACTION,
+            clearLabel = CLEAR_RATING_FILTER,
+        )
+    }
+}
+
+/** The cookbook chip that keeps only the recipes from no cookbook. */
+const val NOT_FROM_A_COOKBOOK = "Not from a cookbook"
+
+/** The rating filter's label. */
+const val RATED_AT_LEAST = "Rated at least"
+
+/** The rating filter's stars, for screen readers and tests: "<this> 3 stars". */
+const val RATING_FILTER_ACTION = "Show recipes rated at least"
+
+/** The filled star's second tap. */
+const val CLEAR_RATING_FILTER = "Clear the rating filter"
+
+/** The list when a cookbook or rating filter leaves nothing, with no search typed. */
+const val NO_FILTER_MATCHES = "No recipes match these filters."
 
 /** The Recipes banner when the recipe folder itself is gone: not a file count. */
 const val FOLDER_MISSING = "The recipe folder is missing or can't be read"

@@ -92,6 +92,10 @@ fun RatingStars(
     clearsOnCurrent: Boolean = false,
     touch: Dp = 48.dp,
     boxed: Boolean = false,
+    /** What a tap does, for screen readers: "<action> 3 stars". The list's rating filter says what it shows. */
+    action: String = "Rate",
+    /** What the clearing tap does, when it isn't a rating that is cleared. */
+    clearLabel: String? = null,
 ) {
     val rowModifier = if (onRate == null) {
         Modifier.clearAndSetSemantics { contentDescription = if (rating == null) "Not rated" else "Rated $rating of 5" }
@@ -116,9 +120,10 @@ fun RatingStars(
                         .clickable { onRate(if (clears) 0 else n) }
                         .semantics {
                             contentDescription = when {
+                                clears && clearLabel != null -> clearLabel
                                 clears && subject != null -> "Clear the rating of $subject"
                                 clears -> "Clear rating"
-                                else -> "Rate ${if (subject == null) "" else "$subject "}$n star${if (n == 1) "" else "s"}"
+                                else -> "$action ${if (subject == null) "" else "$subject "}$n star${if (n == 1) "" else "s"}"
                             }
                             role = Role.Button
                             selected = filled

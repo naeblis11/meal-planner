@@ -109,7 +109,7 @@ class RecipeListViewModelTest {
 
         assertEquals(listOf("Flanders Family Cookbook"), vm.books.first { it.isNotEmpty() })
 
-        vm.setBook("Flanders Family Cookbook")
+        vm.setBook(BookFilter.Only("Flanders Family Cookbook"))
         assertEquals(listOf("Fudge", "Toffee"), namesWhen(2))
 
         vm.setQuery("toff")
@@ -117,7 +117,37 @@ class RecipeListViewModelTest {
 
         // Search finds the book's title, with no book picked.
         vm.setQuery("flanders")
-        vm.setBook(null)
+        vm.setBook(BookFilter.All)
         assertEquals(listOf("Fudge", "Toffee"), namesWhen(2))
+    }
+
+    @Test
+    fun hidesTheCookbooksRecipesAndKeepsOnlyRecipesRatedEnough() = runTest {
+        // Owner, 2026-10-10: everything but the cookbook, and a rating floor; the two combine.
+        repo.save(doc("recipe_name: Toffee\nsource_book: Flanders Family Cookbook\nrating: 4\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        repo.save(doc("recipe_name: Fudge\nsource_book: Flanders Family Cookbook\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        repo.save(doc("recipe_name: Brownies\nrating: 2\ncategory: Desserts\ningredients: []\nsteps: []\n"))
+        val vm = newVm()
+        // Waits for the list to hold exactly these names (an earlier list with the same count must not pass).
+        suspend fun awaitNames(vararg names: String) {
+            vm.groups.first { it?.singleOrNull()?.recipes?.map { r -> r.name } == names.toList() }
+        }
+
+        vm.setBook(BookFilter.NoBook)
+        awaitNames("Brownies")
+
+        vm.setBook(BookFilter.All)
+        vm.setMinRating(3)
+        awaitNames("Toffee")
+
+        vm.setMinRating(2)
+        awaitNames("Brownies", "Toffee")
+
+        vm.setBook(BookFilter.Only("Flanders Family Cookbook"))
+        awaitNames("Toffee")
+
+        // 0 shows the unrated recipe again.
+        vm.setMinRating(0)
+        awaitNames("Fudge", "Toffee")
     }
 }

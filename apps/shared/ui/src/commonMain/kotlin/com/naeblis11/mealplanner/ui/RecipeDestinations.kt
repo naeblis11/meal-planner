@@ -207,6 +207,7 @@ private fun RecipeListPane(
     val query by vm.query.collectAsStateWithLifecycle()
     val books by vm.books.collectAsStateWithLifecycle()
     val book by vm.book.collectAsStateWithLifecycle()
+    val minRating by vm.minRating.collectAsStateWithLifecycle()
     // The desktop's recipe folder; null on Android, where none of it shows.
     val folder = container.folder
     val problems by (folder?.problems ?: NO_PROBLEMS).collectAsStateWithLifecycle()
@@ -217,6 +218,8 @@ private fun RecipeListPane(
         books = books,
         book = book,
         onBookChange = vm::setBook,
+        minRating = minRating,
+        onMinRatingChange = vm::setMinRating,
         onOpen = onOpen,
         onNew = onNew,
         onImport = startImport,

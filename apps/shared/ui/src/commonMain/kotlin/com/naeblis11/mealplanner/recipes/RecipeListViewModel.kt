@@ -27,10 +27,15 @@ class RecipeListViewModel(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _book = MutableStateFlow<String?>(null)
+    private val _book = MutableStateFlow<BookFilter>(BookFilter.All)
 
-    /** The cookbook the list is narrowed to, or null for every recipe. */
-    val book: StateFlow<String?> = _book.asStateFlow()
+    /** Which recipes the cookbook filter keeps: every one, one cookbook's, or the ones from no cookbook. */
+    val book: StateFlow<BookFilter> = _book.asStateFlow()
+
+    private val _minRating = MutableStateFlow(0)
+
+    /** The fewest stars a recipe needs to show, 1 to 5; 0 shows unrated recipes too (owner, 2026-10-10). */
+    val minRating: StateFlow<Int> = _minRating.asStateFlow()
 
     private val _collapsed = MutableStateFlow(readCollapsed())
 
@@ -47,9 +52,9 @@ class RecipeListViewModel(
 
     /** The library grouped like the web app's; null until the first load. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val groups: StateFlow<List<CategoryGroup<RecipeSummary>>?> = combine(_query, _book) { query, book -> query to book }
-        .flatMapLatest { (query, book) ->
-            repository.summaries(query).map { found -> if (book == null) found else found.filter { it.book == book } }
+    val groups: StateFlow<List<CategoryGroup<RecipeSummary>>?> = combine(_query, _book, _minRating) { query, book, minRating -> Triple(query, book, minRating) }
+        .flatMapLatest { (query, book, minRating) ->
+            repository.summaries(query).map { found -> found.filter { book.keeps(it) && (it.rating ?: 0) >= minRating } }
         }
         .map { RecipeGrouping.group(it, { r -> r.name }, { r -> r.category }, { r -> r.subcategory }) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -58,8 +63,13 @@ class RecipeListViewModel(
         _query.value = text
     }
 
-    fun setBook(book: String?) {
+    fun setBook(book: BookFilter) {
         _book.value = book
+    }
+
+    /** Keeps only the recipes rated [stars] or more; 0 lifts the filter. */
+    fun setMinRating(stars: Int) {
+        _minRating.value = stars.coerceIn(0, 5)
     }
 
     /** Collapses the heading [key] when open, opens it when collapsed. */
@@ -88,5 +98,25 @@ class RecipeListViewModel(
         fun categoryKey(category: String) = "c:$category"
 
         fun subcategoryKey(category: String, subcategory: String) = "s:$category/$subcategory"
+    }
+}
+
+/** Which recipes the list's cookbook filter keeps. */
+sealed interface BookFilter {
+    fun keeps(recipe: RecipeSummary): Boolean
+
+    /** Every recipe. */
+    data object All : BookFilter {
+        override fun keeps(recipe: RecipeSummary) = true
+    }
+
+    /** Only the recipes from [book]. */
+    data class Only(val book: String) : BookFilter {
+        override fun keeps(recipe: RecipeSummary) = recipe.book == book
+    }
+
+    /** Only the recipes from no cookbook: the owner's own, with every cookbook put aside (owner, 2026-10-10). */
+    data object NoBook : BookFilter {
+        override fun keeps(recipe: RecipeSummary) = recipe.book == null
     }
 }

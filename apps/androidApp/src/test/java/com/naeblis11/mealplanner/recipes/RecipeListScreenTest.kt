@@ -57,19 +57,39 @@ class RecipeListScreenTest {
     @Test
     fun marksCookbookRecipesAndFiltersByBook() {
         val toffee = RecipeSummary(3, "Toffee", "Desserts", null, null, null, "\"Flanders Family Cookbook\"")
-        var picked: String? = "unset"
+        var picked: BookFilter? = null
         compose.setContent {
             MealPlannerTheme {
                 RecipeListScreen(
                     listOf(CategoryGroup("Desserts", emptyList(), listOf(toffee))), "", {}, {}, {}, {}, {}, { null },
-                    books = listOf("Flanders Family Cookbook"), book = null, onBookChange = { picked = it },
+                    books = listOf("Flanders Family Cookbook"), onBookChange = { picked = it },
                 )
             }
         }
         compose.onNodeWithContentDescription("From Flanders Family Cookbook").assertIsDisplayed()
         compose.onNodeWithText("All recipes").assertIsDisplayed()
         compose.onNodeWithText("Flanders Family Cookbook").performClick()
-        assertEquals("Flanders Family Cookbook", picked)
+        assertEquals(BookFilter.Only("Flanders Family Cookbook"), picked)
+        // Owner, 2026-10-10: everything but the cookbook.
+        compose.onNodeWithText(NOT_FROM_A_COOKBOOK).performClick()
+        assertEquals(BookFilter.NoBook, picked)
+    }
+
+    @Test
+    fun filtersByRatingAndSaysWhenTheFiltersLeaveNothing() {
+        var min = -1
+        compose.setContent {
+            MealPlannerTheme {
+                RecipeListScreen(emptyList(), "", {}, {}, {}, {}, {}, { null }, minRating = 3, onMinRatingChange = { min = it })
+            }
+        }
+        compose.onNodeWithText(RATED_AT_LEAST).assertIsDisplayed()
+        compose.onNodeWithText(NO_FILTER_MATCHES).assertIsDisplayed()
+        compose.onNodeWithContentDescription("$RATING_FILTER_ACTION 4 stars").performClick()
+        assertEquals(4, min)
+        // The filled star's second tap lifts the filter.
+        compose.onNodeWithContentDescription(CLEAR_RATING_FILTER).performClick()
+        assertEquals(0, min)
     }
 
     @Test
