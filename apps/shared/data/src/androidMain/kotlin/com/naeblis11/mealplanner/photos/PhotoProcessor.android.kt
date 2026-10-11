@@ -31,6 +31,35 @@ actual object PhotoProcessor {
         return name
     }
 
+    /** Sync: keeps [bytes] as the detail photo [fileName] exactly, and writes its thumbnail, checked as [save] checks. */
+    actual fun store(bytes: ByteArray, imagesDir: File, fileName: String) {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) throw IOException("That file is not a valid image.")
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= PhotoSizes.DETAIL_MAX) sample *= 2
+        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+            ?: throw IOException("That file is not a valid image.")
+        val upright = upright(decoded, bytes)
+        imagesDir.mkdirs()
+        val target = File(imagesDir, fileName)
+        val temp = File(imagesDir, "$fileName.tmp")
+        try {
+            try {
+                temp.writeBytes(bytes)
+            } catch (e: IOException) {
+                throw PhotoWriteException("Could not save $fileName.", e)
+            }
+            if (!temp.renameTo(target)) {
+                target.delete()
+                if (!temp.renameTo(target)) throw PhotoWriteException("Could not save $fileName.")
+            }
+        } finally {
+            temp.delete()
+        }
+        writeJpeg(centreCrop(upright, PhotoSizes.THUMB_SIZE), File(imagesDir, RecipeRepository.thumbName(fileName)), 80)
+    }
+
     private fun upright(bitmap: Bitmap, bytes: ByteArray): Bitmap {
         val orientation = try {
             ExifInterface(ByteArrayInputStream(bytes)).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)

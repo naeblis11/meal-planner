@@ -1,6 +1,6 @@
 # Meal Planner for Android
 
-A standalone Android version of Meal Planner: recipe library, meal calendar, pantry and pantry-aware shopping list, on the phone, with no server, PC or account. It can put the week's meals on a calendar on the phone (your Google calendar, for example). Its permissions are for that calendar sending and for updating itself: it goes online only to check GitHub for a newer Meal Planner and, when you choose, to download it. It carries none of the integrations (Home Assistant, Alexa, voice, the Chrome extension).
+A standalone Android version of Meal Planner: recipe library, meal calendar, pantry and pantry-aware shopping list, on the phone, with no account. It works on its own, and it can also join the Meal Planner PC at home and sync with it over your Wi-Fi (see [Sync with your PC](#sync-with-your-pc)). It can put the week's meals on a calendar on the phone (your Google calendar, for example). It goes online only to check GitHub for a newer Meal Planner (and, when you choose, to download it) and, when you press **Sync**, to reach the PC you joined. It carries none of the integrations (Home Assistant, Alexa, voice, the Chrome extension).
 
 A library moves between the phone and the Windows app as a zip of recipe files (see [Back up and move a library](#back-up-and-move-a-library)).
 
@@ -27,9 +27,54 @@ A backup holds recipes and photos only. **The meal plan, pantry and shopping lis
 
 Debug builds made from now on install beside the release as **Meal Planner debug** and keep their own separate library, so this clash does not happen again.
 
+## Sync with your PC
+
+The phone can keep the same recipes, meal plan, pantry and shopping list as the Meal Planner PC at home. It syncs
+only when you press **Sync**, over your home Wi-Fi; nothing runs in the background.
+
+### Join a PC
+
+1. On the PC, open **Settings** -> **Phones and PCs** and press **Pair a device**. A QR code and a 6-digit code show
+   for five minutes.
+2. On the phone, connect to your home Wi-Fi, then open **Settings** -> **Join a PC** and tap **Scan code**. Point the
+   phone at the QR code. (Google Play services does the scanning, so Meal Planner needs no camera permission.)
+3. If the phone can't scan, tap **Type code** and type the 6 digits. The phone looks for the PC on your Wi-Fi; if it
+   finds more than one Meal Planner PC, choose yours by name.
+
+Scanning is safer: typing works only on a home network you trust. When it worked, Settings says **Paired with** and
+the PC's name.
+
+### Sync
+
+Each main screen (Recipes, Calendar, Pantry, Shopping) has the sync mark in its top bar, with when the phone last
+synced beneath it. Tap it to sync. When it's done, a message says what moved, such as "Sent 3 changes, got 12". If
+the phone can't reach the PC it says "Couldn't reach your PC — is it on and are you on the home Wi-Fi?". If the PC got
+a new address, the phone finds it again by itself.
+
+### The first sync: Merge or Replace
+
+The first time you sync with a PC, the phone asks:
+
+- **Merge** keeps this phone's recipes, plan and lists and combines them with the PC's. Recipes with the same name on
+  both sides are then listed under **Possible duplicates**: for each, choose **Keep both**, or **Keep the PC's** to
+  remove this phone's copy (from the PC too, at the next sync); meals planned with this phone's copy move to the PC's.
+  Nothing is removed until you choose.
+- **Replace** makes this phone a copy of the PC. It first asks where to save a backup of the phone's recipes (as
+  **Export backup** does); if you cancel that, nothing changes.
+
+### Leave
+
+**Settings** -> **Join a PC** -> **Leave** stops this phone syncing with the PC. It asks first. The phone keeps all its
+data, and the PC removes it from its list. If the PC removes this phone itself, the phone says so at its next sync and
+keeps its data. You can join again at any time.
+
+### Device check (owner only)
+
+Before a release, the owner checks pairing and sync on a real phone (see the LAN sync spec's device checklist).
+
 ## Put the week's meals on your calendar
 
-Meal Planner writes events into a calendar that is already on the phone; Android's own calendar sync carries them to Google. There is no Google sign-in, Cloud project or network access in the app.
+Meal Planner writes events into a calendar that is already on the phone; Android's own calendar sync carries them to Google. There is no Google sign-in or Cloud project in the app.
 
 1. Make sure the phone has your Google account (phone **Settings** -> **Passwords & accounts**, or **Accounts**) with its calendar syncing.
 2. In Meal Planner: **Recipes** -> **Settings** -> **Google Calendar** -> **Set up calendar sending**. Allow access to your calendar when Android asks, then pick the calendar to send meals to. (**Choose another calendar** changes it later.)
@@ -121,6 +166,7 @@ The version is in `apps/gradle.properties`: raise `mealplanner.androidVersionCod
 
 - No analytics, no accounts.
 - Internet: only to ask GitHub (github.com and its download hosts, over https) whether there is a newer Meal Planner, at most once a day when the app opens and when you tap **Check for updates**, and to download it when you tap **Install**. It sends nothing about you.
+- Your home network: when you press **Sync** or join a PC, the phone talks only to the Meal Planner PC you joined, over an encrypted connection checked against that PC's own certificate. It finds the PC on your Wi-Fi with Android's own network discovery. Scanning the PC's code uses Google's code scanner in Google Play services. Meal Planner removes the scanner library's own upload pipeline; Google Play services, which runs the scanner, may record that it was used.
 - Installing apps: only to hand a downloaded update, once checked against the signed release list, to Android's own installer, when you tap **Install**.
 - Reading and writing calendars, asked for when you set up calendar sending, and used only to write the meal events.
 - Everything lives in the app's private storage on the phone and in the backups you export. Android's own cloud backup of the app is turned off.

@@ -8,6 +8,10 @@ import androidx.sqlite.execSQL
  * Every schema change since version 1, in order. Never a destructive fallback. These migrations need a
  * SQLiteDriver: without one, Room calls `migrate(SupportSQLiteDatabase)`, which throws, so every builder
  * that opens an existing file must call `setDriver`.
+ *
+ * Every migration after [MIGRATION_5_6] calls `SyncSchema.dropTriggers(connection)` first: Room migrates before
+ * SyncSchema.Callback's onOpen recreates the triggers, so the previous build's would otherwise record the migration's
+ * own writes as changes (and an ALTER TABLE RENAME re-parses them). No triggers existed before version 6.
  */
 object Migrations {
     /** Plan 4: the meal plan, pantry, shopping list and remembered aisles. Recipes are untouched. */
@@ -41,7 +45,44 @@ object Migrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    /**
+     * LAN sync stage 1: each shopping row's sync id (a fresh one for every row already there), a recipe's photo hash
+     * (null until its next save), and sync_change, empty: what the library holds now is the baseline.
+     */
+    val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+        override fun migrate(connection: SQLiteConnection) {
+            V6_CHANGES.forEach { connection.execSQL(it) }
+        }
+    }
+
+    /** LAN sync stage 2a: sync_pending, records waiting to be applied. The old triggers are dropped first (stage 1's rule). */
+    val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+        override fun migrate(connection: SQLiteConnection) {
+            SyncSchema.dropTriggers(connection)
+            V7_TABLES.forEach { connection.execSQL(it) }
+        }
+    }
+
+    /** LAN sync stage 2b: paired_device, the master PC's phones and PCs. The old triggers are dropped first (stage 1's rule). */
+    val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+        override fun migrate(connection: SQLiteConnection) {
+            SyncSchema.dropTriggers(connection)
+            V8_TABLES.forEach { connection.execSQL(it) }
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+
+    // Byte for byte the createSql of schemas/.../8.json.
+    private val V8_TABLES = listOf(
+        "CREATE TABLE IF NOT EXISTS `paired_device` (`device_id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `key_hash` TEXT NOT NULL, `paired_at` INTEGER NOT NULL, `last_sync_at` INTEGER, PRIMARY KEY(`device_id`))",
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_paired_device_key_hash` ON `paired_device` (`key_hash`)",
+    )
+
+    // Byte for byte the createSql of schemas/.../7.json.
+    private val V7_TABLES = listOf(
+        "CREATE TABLE IF NOT EXISTS `sync_pending` (`table_name` TEXT NOT NULL, `sync_key` TEXT NOT NULL, `reason` TEXT NOT NULL, `record` TEXT NOT NULL, PRIMARY KEY(`table_name`, `sync_key`))",
+    )
 
     // Byte for byte the createSql of schemas/.../2.json, so a migrated database is the same as a new one.
     private val V2_TABLES = listOf(
@@ -73,5 +114,17 @@ object Migrations {
     // Byte for byte the createSql of schemas/.../5.json, so a migrated database is the same as a new one.
     private val V5_TABLES = listOf(
         "CREATE TABLE IF NOT EXISTS `google_event` (`calendar_id` TEXT NOT NULL, `date` TEXT NOT NULL, `slot` TEXT NOT NULL, `event_id` TEXT NOT NULL, `content_hash` TEXT NOT NULL, PRIMARY KEY(`calendar_id`, `date`, `slot`))",
+    )
+
+    // The two columns as Room's auto-migration would add them (their text in schemas/.../6.json, listed last as
+    // ALTER TABLE puts them); every existing shopping row gets its own id before the unique index; then the index and
+    // sync_change byte for byte their createSql in 6.json.
+    private val V6_CHANGES = listOf(
+        "ALTER TABLE `recipe` ADD COLUMN `image_hash` TEXT",
+        "ALTER TABLE `shopping_list_item` ADD COLUMN `sync_id` TEXT NOT NULL DEFAULT ''",
+        "UPDATE `shopping_list_item` SET `sync_id` = lower(hex(randomblob(16)))",
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_shopping_list_item_sync_id` ON `shopping_list_item` (`sync_id`)",
+        "CREATE TABLE IF NOT EXISTS `sync_change` (`table_name` TEXT NOT NULL, `sync_key` TEXT NOT NULL, `updated_at` INTEGER NOT NULL, `updated_by` TEXT NOT NULL, `change_seq` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, PRIMARY KEY(`table_name`, `sync_key`))",
+        "CREATE INDEX IF NOT EXISTS `index_sync_change_change_seq` ON `sync_change` (`change_seq`)",
     )
 }

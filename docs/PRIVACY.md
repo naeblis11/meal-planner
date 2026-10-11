@@ -41,6 +41,9 @@ The Windows app answers the Meal Planner Chrome extension on your own PC, and, i
 Home Assistant on your network. It announces itself on your local network so a second Meal Planner
 PC in the same home can see it. None of this leaves your network.
 
+On the phone, scanning your PC's pairing code uses Google's code scanner, which runs in Google Play
+services. Meal Planner removes the scanner library's own upload pipeline; Google Play services, which runs the scanner, may record that it was used.
+
 ## Contact
 
 Questions: open an issue at <https://github.com/naeblis11/meal-planner/issues>.

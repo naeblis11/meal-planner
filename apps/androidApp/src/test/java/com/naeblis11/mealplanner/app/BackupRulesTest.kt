@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.naeblis11.mealplanner.R
 import com.naeblis11.mealplanner.calendar.CalendarChoice
+import com.naeblis11.mealplanner.sync.KeystorePairingStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +21,7 @@ import javax.xml.parsers.DocumentBuilderFactory
  * Android 12+ copies app data to a new phone even with allowBackup off. The database (whose
  * calendar_event ids are the old phone's provider row ids) and the calendar choice must not
  * travel: on the new phone those ids could name the family's own events.
+ * The sync pairing (stage 2c) can't be opened on another phone (its Keystore key stays behind), so it stays out too.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -41,7 +43,7 @@ class BackupRulesTest {
     }
 
     @Test
-    fun theDatabaseAndCalendarChoiceStayOutOfCloudBackupAndDeviceTransfer() {
+    fun theDatabaseCalendarChoiceAndSyncPairingStayOutOfCloudBackupAndDeviceTransfer() {
         val excluded = mutableMapOf<String, MutableSet<String>>()
         val parser = context.resources.getXml(R.xml.data_extraction_rules)
         var section: String? = null
@@ -53,7 +55,7 @@ class BackupRulesTest {
                     parser.getAttributeValue(null, "domain") + ":" + parser.getAttributeValue(null, "path")
             }
         }
-        val expected = setOf("database:.", "sharedpref:${CalendarChoice.FILE}.xml")
+        val expected = setOf("database:.", "sharedpref:${CalendarChoice.FILE}.xml", "file:${KeystorePairingStore.FILE_NAME}")
         assertEquals(setOf("cloud-backup", "device-transfer"), excluded.keys)
         excluded.forEach { (where, rules) -> assertTrue("$where: $rules", rules.containsAll(expected)) }
     }

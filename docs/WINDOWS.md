@@ -26,18 +26,20 @@ On its first run, Windows Defender Firewall may ask whether to allow Meal Planne
 Allow **Private networks** only: untick Public, then choose **Allow access**. The installer adds no
 firewall rule itself, because an install with no administrator rights can't.
 
-If you dismissed the prompt, you can add the two rules the app needs (inbound TCP 5000 for the
-Chrome extension's and Home Assistant's calls, and UDP 5353 so other Meal Planner PCs can find this
-one), on the Private profile only, for the installed program only. This is optional. Open PowerShell
-as administrator, signed in as yourself, and run:
+If you dismissed the prompt, you can add the rules the app needs, on the Private profile only, for the installed program only:
+- inbound TCP 5000, for the Chrome extension's and Home Assistant's calls;
+- inbound TCP 5001, for the phones and PCs that sync with this one;
+- UDP 5353, so other Meal Planner PCs can find this one.
 
-    $exe = "$env:LOCALAPPDATA\Meal-Planner\Meal Planner.exe"; New-NetFirewallRule -DisplayName 'Meal Planner (TCP 5000)' -Direction Inbound -Action Allow -Profile Private -Protocol TCP -LocalPort 5000 -Program $exe | Out-Null; New-NetFirewallRule -DisplayName 'Meal Planner (mDNS UDP 5353)' -Direction Inbound -Action Allow -Profile Private -Protocol UDP -LocalPort 5353 -Program $exe | Out-Null
+This is optional. Open PowerShell as administrator, signed in as yourself, and run:
+
+    $exe = "$env:LOCALAPPDATA\Meal-Planner\Meal Planner.exe"; New-NetFirewallRule -DisplayName 'Meal Planner (TCP 5000)' -Direction Inbound -Action Allow -Profile Private -Protocol TCP -LocalPort 5000 -Program $exe | Out-Null; New-NetFirewallRule -DisplayName 'Meal Planner sync (TCP 5001)' -Direction Inbound -Action Allow -Profile Private -Protocol TCP -LocalPort 5001 -Program $exe | Out-Null; New-NetFirewallRule -DisplayName 'Meal Planner (mDNS UDP 5353)' -Direction Inbound -Action Allow -Profile Private -Protocol UDP -LocalPort 5353 -Program $exe | Out-Null
 
 If you approve with another account's password, `$env:LOCALAPPDATA` is that account's: write the
 path out instead, as `C:\Users\<you>\AppData\Local\Meal-Planner\Meal Planner.exe`. To
 remove the rules again:
 
-    Remove-NetFirewallRule -DisplayName 'Meal Planner (TCP 5000)', 'Meal Planner (mDNS UDP 5353)'
+    Remove-NetFirewallRule -DisplayName 'Meal Planner (TCP 5000)', 'Meal Planner sync (TCP 5001)', 'Meal Planner (mDNS UDP 5353)'
 
 ### Controlled folder access
 
@@ -498,6 +500,51 @@ name or description of its home network adapter (Device Manager, Network adapter
 words above, such as "Docker" or "VMware": the app skips such an adapter. Phase 2 replaces this
 notice: a second PC will join the first one's household, and only the household's master PC will
 answer Alexa.
+
+## Phones and PCs
+
+Settings > **Phones and PCs** pairs a phone (or another PC) with this one, so they can sync over your
+home network.
+
+### Pairing a device
+
+1. On this PC, press **Pair a device**. For five minutes, Settings shows a QR code and a 6-digit code.
+2. On the phone, open Settings > **Join a PC** and scan the code.
+3. If the phone can't scan, type the 6-digit code instead.
+
+Five wrong codes close the window; press **Pair a device** again for a new one.
+
+### The sync port
+
+Sync uses its own port, **TCP 5001**, encrypted with TLS 1.2 or 1.3. The certificate is one this PC makes for
+itself the first time you pair:
+- It is kept in the app data folder: `sync-tls.p12`, with its password sealed by Windows in
+  `sync-tls.key`.
+- The phone remembers it when it pairs, so it never syncs with another machine pretending to be this PC.
+
+The port is open on your home network only while a device is paired or the pairing window is open. It
+stays closed while another household's Meal Planner PC is the one answering (see "Another Meal Planner
+PC on the network"). The first time it opens, Windows' firewall may ask: allow **Private networks** only
+(see "The firewall prompt"). If another program holds port 5001, Settings says so and Meal Planner tries
+again every minute.
+
+### Paired devices
+
+The list shows each paired device, when it last synced, and **Remove**. A removed device keeps its data
+but stops syncing until you pair it again.
+
+### If the certificate is remade
+
+Meal Planner makes a new certificate when it can't read the old one: the app data folder was copied
+from another PC or Windows user, or a file was damaged. Settings then says "This PC's sync certificate
+was remade; pair your devices again." Every paired device now refuses to sync with this PC, as it
+should. Pair each one again from Settings > Join a PC.
+
+### Scan rather than type
+
+Scanning the QR code is the safer way to pair. In principle, a typed code can be guessed by another
+machine on your home network that intercepts the phone's connection during the five minutes the window
+is open. The QR code carries the certificate's fingerprint, so it can't be intercepted that way.
 
 ## Run it
 

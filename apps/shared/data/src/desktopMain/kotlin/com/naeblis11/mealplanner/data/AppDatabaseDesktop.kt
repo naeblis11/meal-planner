@@ -12,5 +12,6 @@ fun AppDatabase.Companion.openAt(file: File): AppDatabase {
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .addMigrations(*Migrations.ALL)
+        .addCallback(SyncSchema.Callback)
         .build()
 }

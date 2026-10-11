@@ -24,4 +24,11 @@ object PhotoSizes {
 expect object PhotoProcessor {
     /** Writes `<uuid>.jpg` and `<uuid>_thumb.jpg` into [imagesDir] and returns the detail file's name. */
     fun save(bytes: ByteArray, imagesDir: File, recipeUuid: String): String
+
+    /**
+     * LAN sync: keeps [bytes] unchanged as the detail photo [fileName] in [imagesDir] (a re-encode would change its
+     * hash on every device), after checking it decodes within the same caps as [save], and writes its thumbnail from it.
+     * Throws IOException("That file is not a valid image.") or [PhotoWriteException] as [save] does.
+     */
+    fun store(bytes: ByteArray, imagesDir: File, fileName: String)
 }

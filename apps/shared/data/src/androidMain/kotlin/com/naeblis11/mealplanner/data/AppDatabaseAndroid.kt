@@ -9,4 +9,5 @@ fun AppDatabase.Companion.open(context: Context): AppDatabase =
     Room.databaseBuilder<AppDatabase>(context.applicationContext, FILE_NAME)
         .setDriver(AndroidSQLiteDriver())
         .addMigrations(*Migrations.ALL)
+        .addCallback(SyncSchema.Callback)
         .build()

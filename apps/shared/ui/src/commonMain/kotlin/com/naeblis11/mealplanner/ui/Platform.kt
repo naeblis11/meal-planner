@@ -45,6 +45,18 @@ expect fun rememberCalendarPermissionRequest(onResult: (Boolean) -> Unit): () ->
 @Composable
 expect fun rememberAppSettingsOpener(onReturn: () -> Unit): () -> Unit
 
+/**
+ * Google's code scanner (LAN sync 2c). Google Play services runs it, so the app needs no camera permission. [onScanned]
+ * gets the code's text; [onUnavailable] runs when this phone can't scan. It launches through [guard]. Null where there
+ * is no scanner (the desktop).
+ */
+@Composable
+expect fun rememberCodeScanner(guard: LaunchGuard, onScanned: (String) -> Unit, onUnavailable: () -> Unit): (() -> Unit)?
+
+/** Opens the system's Wi-Fi settings (Join a PC); [onReturn] runs when the user is back. */
+@Composable
+expect fun rememberWifiSettingsOpener(onReturn: () -> Unit): () -> Unit
+
 /** The system Back gesture or button, where the platform has one. */
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean = true, onBack: () -> Unit)

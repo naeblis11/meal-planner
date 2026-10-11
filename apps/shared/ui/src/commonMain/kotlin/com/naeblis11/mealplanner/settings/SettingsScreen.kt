@@ -84,6 +84,12 @@ fun SettingsScreen(
     onOpenAppData: () -> Unit = {},
     /** Desktop: more for the Folders panel (P7-R11's Allow Meal Planner); nothing on Android. */
     folderExtras: @Composable () -> Unit = {},
+    /** Desktop: "Phones and PCs", LAN sync's pairing and devices (stage 2b); null hides it (Android). */
+    devices: DevicesState? = null,
+    deviceActions: DeviceActions = DeviceActions(),
+    /** Android: "Join a PC", LAN sync's pairing with the household's PC (stage 2c); null hides it (the desktop). */
+    join: JoinState? = null,
+    joinActions: JoinActions = JoinActions(),
 ) {
     Scaffold(
         topBar = {
@@ -119,6 +125,13 @@ fun SettingsScreen(
             }
             if (server != null) {
                 Panel(SERVER_PANEL) { ServerSetting(server, peerNotice?.alexa, onCreateToken, onCopyToken, onTokenDone) }
+            }
+            if (devices != null) {
+                // While an older household's PC answers (P6-R8), pairing is off and says why.
+                Panel(DEVICES_PANEL) { DevicesSetting(devices, deviceActions, yielding = peerNotice?.takeIf { it.alexa != null }?.text) }
+            }
+            if (join != null) {
+                Panel(JOIN_PANEL) { JoinSetting(join, joinActions) }
             }
             Panel("Google Calendar") {
                 if (google != null) {
@@ -166,6 +179,7 @@ fun SettingsScreen(
                     Text(ABOUT_DESKTOP_FONTS)
                 } else {
                     Text(ABOUT_PHONE_DATA)
+                    Text(ABOUT_PHONE_SCANNER)
                     Text("Meals you send to a calendar are written to that calendar on this phone; Android's own calendar sync takes them from there.")
                     Text("Meal Planner is free software under the MIT License.")
                     Text("It is built with Kotlin, Jetpack Compose, AndroidX, Room, kotlinx.serialization and SnakeYAML, all under the Apache License 2.0.")
@@ -193,7 +207,7 @@ private fun CalendarSetup(
     onCancel: () -> Unit,
     onOpenAppSettings: () -> Unit,
 ) {
-    Text("Send a week's meals to a calendar on this phone, such as your Google calendar. Android syncs that calendar; Meal Planner itself goes online only to check GitHub for its own updates.")
+    Text("Send a week's meals to a calendar on this phone, such as your Google calendar. Android syncs that calendar; Meal Planner itself goes online only to check GitHub for its own updates and, when you press Sync, to reach your PC.")
     val chosen = state.chosen
     if (chosen != null) Text("Sending to ${chosen.name}", style = MaterialTheme.typography.titleMedium)
     if (state.permissionDenied) {
@@ -429,16 +443,17 @@ private fun ClientInUse(clientId: String?) {
 const val ABOUT_DESKTOP_DATA =
     "Your recipes, meal plans and lists stay on this PC. Meal Planner goes online only to send a week to the Google " +
         "Calendar you sign in to, to fetch a recipe's photo for the Chrome extension, to answer Home Assistant on your " +
-        "home network once Alexa is set up, and to ask GitHub whether there is a newer Meal Planner (downloading it when " +
-        "you choose Install). On your home network it also says that it is running, with this PC's name, so another PC " +
-        "running Meal Planner can find it."
+        "home network once Alexa is set up, to sync with the phones and PCs you pair (over an encrypted connection on " +
+        "your home network), and to ask GitHub whether there is a newer Meal Planner (downloading it when you choose " +
+        "Install). On your home network it also says that it is running, with this PC's name, so another PC running " +
+        "Meal Planner can find it."
 const val ABOUT_DESKTOP_CALENDAR = "Meals you send go to the Google calendar chosen above; Meal Planner only changes the events it sent."
 const val ABOUT_DESKTOP_FONTS = "It uses Windows' own fonts; none are bundled."
 const val ABOUT_DESKTOP_BUILT_WITH =
     "It is built with Kotlin, Compose Multiplatform, AndroidX (Room, SQLite, Lifecycle and Navigation), kotlinx.coroutines, " +
         "kotlinx.serialization, Ktor, SnakeYAML, metadata-extractor and JmDNS, all under the Apache License 2.0; TwelveMonkeys " +
-        "ImageIO and Skia, under the BSD 3-Clause License; and JNA, under the Apache License 2.0 or the LGPL 2.1. SQLite " +
-        "itself is in the public domain."
+        "ImageIO and Skia, under the BSD 3-Clause License; Project Nayuki's QR Code generator, under the MIT License; and " +
+        "JNA, under the Apache License 2.0 or the LGPL 2.1. SQLite itself is in the public domain."
 
 const val GOOGLE_INTRO =
     "Send a week's meals to one of your Google calendars. Meal Planner changes only the meals it sent; it never reads your other events."

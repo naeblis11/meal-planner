@@ -3,21 +3,26 @@
      - READ_CALENDAR and WRITE_CALENDAR: "Send this week" writes events into a calendar on this phone through
        CalendarContract, and Android's own sync carries them on. They are asked for when the user sets up calendar
        sending.
-     - INTERNET (plan 8): only the update check, update/ReleaseHttp, which talks to github.com and GitHub's download
-       hosts over https (ReleaseHttpTest, AndroidUpdatesTest); no other code on the phone goes online
-       (UpdateNetworkCodeTest).
+     - INTERNET (plan 8, LAN sync 2c): the update check, update/ReleaseHttp (github.com and GitHub's download hosts over
+       https; ReleaseHttpTest, AndroidUpdatesTest), and LAN sync's sync/SyncHttp, only to the PC this phone joined,
+       pinned to its certificate, on Sync and Join a PC. No other code on the phone goes online (UpdateNetworkCodeTest).
+       Finding the PC by mDNS goes through Android's NsdManager, which needs no permission of its own here.
      - REQUEST_INSTALL_PACKAGES (plan 8): hands a downloaded, verified update to Android's package installer, only
        when the user presses Install. Android asks the user to allow "install unknown apps" for Meal Planner once.
+     - ACCESS_NETWORK_STATE (LAN sync 2c): Join a PC checks the phone is on Wi-Fi before it looks for the PC
+       (AndroidWifiCheck).
      allowBackup is off because Android's own backup would copy the library to the cloud; the user's backup is the zip
      they export. On Android 12+ a phone-to-phone transfer ignores allowBackup, so dataExtractionRules keeps the database
      (whose calendar_event ids only mean something on this phone) and the calendar choice out of both cloud backup and
      device transfer. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Plan 8: lets AndroidUpdateInstaller see which apps open an APK (Android 11+ hides other apps otherwise), so it
          can name a system package installer in its intent and never hand the update to anything else. -->
@@ -55,5 +60,22 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- LAN sync 2c: Google's code scanner (play-services-code-scanner) runs its scanning UI in Google Play services,
+             but its library also merges in ML Kit's own upload pipeline, Google's datatransport. Only ReleaseHttp and
+             SyncHttp may go online from this app, so all three of its components are removed: the backend discovery
+             (with the CCT backend that uploads), the scheduler job and its alarm receiver. With no backend, this app
+             uploads nothing itself (ManifestTelemetryTest; checked on a phone in the LAN sync spec's device checklist).
+             This is only the library's own pipeline: Google Play services, which runs the scanner, may record that it
+             was used (the library's Play services API telemetry goes over binder to Play services, which uploads it). -->
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            tools:node="remove" />
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            tools:node="remove" />
+        <receiver
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+            tools:node="remove" />
     </application>
 </manifest>

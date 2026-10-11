@@ -35,6 +35,39 @@ actual object PhotoProcessor {
         return name
     }
 
+    actual fun store(bytes: ByteArray, imagesDir: File, fileName: String) {
+        // decode() enforces MAX_SIDE / MAX_PIXELS and throws "That file is not a valid image." as save() does.
+        val upright = upright(opaque(decode(bytes)), orientation(bytes))
+        try {
+            Files.createDirectories(imagesDir.toPath())
+        } catch (e: IOException) {
+            throw PhotoWriteException("Could not save $fileName.", e)
+        }
+        writeBytes(bytes, File(imagesDir, fileName))
+        writeJpeg(centreCrop(upright, PhotoSizes.THUMB_SIZE), File(imagesDir, RecipeRepository.thumbName(fileName)), 0.80f)
+    }
+
+    // The received bytes exactly, through a temp file and a move, with writeJpeg's failure handling.
+    private fun writeBytes(bytes: ByteArray, target: File) {
+        val temp = File(target.parentFile, "${target.name}.tmp")
+        try {
+            Files.write(temp.toPath(), bytes)
+            try {
+                try {
+                    Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                } catch (e: java.nio.file.AtomicMoveNotSupportedException) {
+                    Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+            } catch (e: AccessDeniedException) {
+                throw ExistingFileRefusedException(e)
+            }
+        } catch (e: IOException) {
+            throw PhotoWriteException("Could not save ${target.name}.", e)
+        } finally {
+            temp.delete()
+        }
+    }
+
     /**
      * Reads the photo, refusing a decompression bomb (a tiny file that declares billions of pixels): the size comes from the
      * header alone, and a large photo is decoded subsampled (every n-th pixel, n a power of two) to still be at least twice

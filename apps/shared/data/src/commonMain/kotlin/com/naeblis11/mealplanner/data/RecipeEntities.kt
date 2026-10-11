@@ -36,6 +36,8 @@ data class RecipeEntity(
     @ColumnInfo(name = "file_name") val fileName: String? = null,
     /** Desktop: SHA-256 (hex) of that file's bytes when it was last indexed or written; always null on Android. */
     @ColumnInfo(name = "file_hash") val fileHash: String? = null,
+    /** SHA-256 (hex) of the recipe's detail photo when it was last saved; null without one. Sync compares it. */
+    @ColumnInfo(name = "image_hash") val imageHash: String? = null,
 )
 
 @Entity(

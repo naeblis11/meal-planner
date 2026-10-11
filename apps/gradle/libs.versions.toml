@@ -24,6 +24,8 @@ ktor = "3.6.0"
 twelvemonkeys = "3.15.2"
 jna = "5.19.1"
 jmdns = "3.6.3"
+qrcodegen = "1.8.0"
+playServicesCodeScanner = "16.1.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -61,9 +63,12 @@ metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-network-tls-certificates = { module = "io.ktor:ktor-network-tls-certificates", version.ref = "ktor" }
+qrcodegen = { module = "io.nayuki:qrcodegen", version.ref = "qrcodegen" }
 twelvemonkeys-imageio-webp = { module = "com.twelvemonkeys.imageio:imageio-webp", version.ref = "twelvemonkeys" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
+play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "playServicesCodeScanner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

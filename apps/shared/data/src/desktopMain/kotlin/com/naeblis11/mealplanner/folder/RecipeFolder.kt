@@ -4,6 +4,7 @@ import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.AppMetaEntity
 import com.naeblis11.mealplanner.data.RecipeFileRow
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.data.SyncSchema
 import com.naeblis11.mealplanner.data.inTransaction
 import com.naeblis11.mealplanner.domain.Orf
 import com.naeblis11.mealplanner.domain.Py
@@ -90,9 +91,22 @@ class RecipeFolder(
     /** Its bytes hash to its index row's file_hash: it holds that row's recipe, as indexed. */
     private class Unchanged(file: File, uuid: String, val hash: String, val bytes: ByteArray) : Read(file, uuid)
 
-    private class Parsed(file: File, uuid: String, val hash: String, val raw: String, val parsed: Map<String, Any?>) : Read(file, uuid)
+    private class Parsed(file: File, uuid: String, val hash: String, val raw: String, val parsed: Map<String, Any?>) : Read(file, uuid) {
+        /** The same uuid as [Read.uuid], which a parsed file always has. */
+        val recipeUuid: String = uuid
+    }
 
     private class Broken(file: File, val problem: RecipeFileProblem) : Read(file, null)
+
+    // A recipe edited by hand changed when its file did, not when the app noticed (LAN sync spec, section 1). Only a
+    // change this index just recorded is dated, and never later than it was recorded (a file dated in the future).
+    private suspend fun dateByFile(uuid: String, file: File, counterBefore: Long) {
+        val change = db.syncDao().change("recipe", uuid) ?: return
+        val modified = file.lastModified()
+        if (change.changeSeq > counterBefore && !change.deleted && modified in 1..change.updatedAt) {
+            db.syncDao().setUpdatedAt("recipe", uuid, modified)
+        }
+    }
 
     /** Indexes the folder. Safe to call at any time: it waits for a save in progress. */
     suspend fun sync(): SyncResult = recipes.exclusive { syncLocked() }
@@ -239,7 +253,11 @@ class RecipeFolder(
             // After acceptance (P7-R10g) only a row still held from the move is kept from that; a uuid changed or
             // blanked by hand in a present file keeps its row, as ever.
             val adopt: (Long) -> Boolean = if (movedFrom != null) { _ -> false } else { id -> id !in moveHeld }
-            ordered.forEach { recipes.indexFile(it.raw, it.parsed, FileStamp(it.file.name, it.hash), adopt) }
+            ordered.forEach {
+                val counter = SyncSchema.changeSeq(db)
+                recipes.indexFile(it.raw, it.parsed, FileStamp(it.file.name, it.hash), adopt)
+                dateByFile(it.recipeUuid, it.file, counter)
+            }
             // A row is stale when its file now holds another recipe: it goes at once, as the file is there.
             // One edge is left: a recipe renamed AND broken in one go (c.yaml, unreadable) whose old name is
             // reused at once (a.yaml). Its row still names a.yaml, so a.yaml's recipe replaces it here, or takes

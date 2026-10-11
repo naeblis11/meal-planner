@@ -19,9 +19,11 @@ so the run is given:
   database and log): -Dmealplanner.dataDir (both in one folder), plus MEAL_PLANNER_DATA_DIR (the library) and
   MEAL_PLANNER_HOME (the app data), all in a temp folder;
 - never port 5000: -Dmealplanner.port, a free port the system picks;
+- never the sync port 5001: -Dmealplanner.syncPort, a second free port (the launcher doesn't set it, so it applies;
+  the sync port stays closed anyway, with nothing paired);
 - no discovery: -Dmealplanner.peers=off (and no UDP 5353 socket is checked);
 - no update check: -Dmealplanner.updates=off, so it never contacts GitHub (plan 8).
-The launcher's own options would beat all five, so an image whose options aren't exactly the installed
+The launcher's own options would beat all six, so an image whose options aren't exactly the installed
 app's is never started (launcher-options.ps1); the script stops with an error instead.
 JDK 25's launcher runs the app in a child "Meal Planner.exe" (the JVM, the window and the sockets), so
 the window and socket checks look at the launcher's whole process tree (process-tree.ps1); the exit
@@ -156,7 +158,7 @@ if ($modulesLine.Count -gt 0) { $modules = $modulesLine[0].Substring(8).Trim('"'
 $missing = @($requiredModules | Where-Object { $modules -notcontains $_ })
 if ($missing.Count -eq 0) { Write-Ok ('the runtime has ' + ($requiredModules -join ', ')) } else { Add-Failure ('the runtime lacks ' + ($missing -join ', ')) }
 
-# 2. A throwaway home for the run: never the real library or the secrets folder, never port 5000.
+# 2. A throwaway home for the run: never the real library or the secrets folder, never port 5000 or 5001.
 $smokeDir = Join-Path ([IO.Path]::GetTempPath()) ('mp-smoke-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 if ($smokeDir.Contains(' ')) { throw "The temp folder $smokeDir has a space in it, which JAVA_TOOL_OPTIONS can't carry. Point TEMP at a folder without spaces." }
 # Both names are checked before either is used: Join-Path on an unset LOCALAPPDATA would throw (under -ErrorAction
@@ -172,11 +174,18 @@ $homeDir = Join-Path $smokeDir 'home'
 $tmpDir = Join-Path $smokeDir 'tmp'
 New-Item -ItemType Directory -Force -Path $homeDir, $tmpDir | Out-Null
 
+# Two free ports at once (both held until both are known), so they differ: the server's and the sync port's.
 $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList ([System.Net.IPAddress]::Loopback), 0
+$syncListener = New-Object System.Net.Sockets.TcpListener -ArgumentList ([System.Net.IPAddress]::Loopback), 0
 $listener.Start()
+$syncListener.Start()
 $port = ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port
+$syncPort = ([System.Net.IPEndPoint]$syncListener.LocalEndpoint).Port
 $listener.Stop()
-if ($port -eq 5000 -or $port -lt 1024) { throw "The system offered port $port; run the script again." }
+$syncListener.Stop()
+foreach ($offered in @($port, $syncPort)) {
+    if ($offered -eq 5000 -or $offered -eq 5001 -or $offered -lt 1024) { throw "The system offered port $offered; run the script again." }
+}
 
 $runBefore = Get-RunValue
 
@@ -188,6 +197,7 @@ $psi.UseShellExecute = $false
 $psi.EnvironmentVariables['JAVA_TOOL_OPTIONS'] = (@(
     "-Dmealplanner.dataDir=$dataDir",
     "-Dmealplanner.port=$port",
+    "-Dmealplanner.syncPort=$syncPort",
     '-Dmealplanner.startWithWindows=off',
     '-Dmealplanner.peers=off',
     '-Dmealplanner.updates=off',
@@ -272,6 +282,7 @@ try {
     } else {
         $listening = @(foreach ($id in $owners) { Get-NetTCPConnection -OwningProcess $id -State Listen -ErrorAction SilentlyContinue })
         if (@($listening | Where-Object { $_.LocalPort -eq 5000 }).Count -gt 0) { Add-Failure 'it listens on port 5000' } else { Write-Ok 'nothing on port 5000' }
+        if (@($listening | Where-Object { $_.LocalPort -eq 5001 }).Count -gt 0) { Add-Failure 'it listens on port 5001 (the installed app''s sync port)' } else { Write-Ok 'nothing on port 5001' }
         $server = @($listening | Where-Object { $_.LocalPort -eq $port })
         $wide = @($server | Where-Object { $_.LocalAddress -ne '127.0.0.1' })
         if ($server.Count -gt 0 -and $wide.Count -eq 0) { Write-Ok "the server listens on 127.0.0.1:$port only" } else { Add-Failure "the server isn't on 127.0.0.1:$port only" }

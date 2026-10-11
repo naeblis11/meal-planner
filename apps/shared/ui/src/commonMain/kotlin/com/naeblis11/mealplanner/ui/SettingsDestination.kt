@@ -8,6 +8,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,11 +22,18 @@ import com.naeblis11.mealplanner.settings.AllowAppControls
 import com.naeblis11.mealplanner.settings.AlexaViewModel
 import com.naeblis11.mealplanner.settings.BackupViewModel
 import com.naeblis11.mealplanner.settings.CalendarSetupViewModel
+import com.naeblis11.mealplanner.settings.DeviceActions
+import com.naeblis11.mealplanner.settings.DevicesState
 import com.naeblis11.mealplanner.settings.FoldersState
 import com.naeblis11.mealplanner.settings.GoogleActions
 import com.naeblis11.mealplanner.settings.GoogleControls
 import com.naeblis11.mealplanner.settings.GoogleState
 import com.naeblis11.mealplanner.settings.GoogleViewModel
+import com.naeblis11.mealplanner.settings.JoinActions
+import com.naeblis11.mealplanner.settings.JoinState
+import com.naeblis11.mealplanner.settings.JoinViewModel
+import com.naeblis11.mealplanner.settings.PairingControls
+import com.naeblis11.mealplanner.settings.PairingViewModel
 import com.naeblis11.mealplanner.settings.PeerControls
 import com.naeblis11.mealplanner.settings.PeerNotice
 import com.naeblis11.mealplanner.settings.ServerControls
@@ -36,6 +45,7 @@ import com.naeblis11.mealplanner.settings.StorageControls
 import com.naeblis11.mealplanner.settings.UpdateActions
 import com.naeblis11.mealplanner.settings.UpdateUiState
 import com.naeblis11.mealplanner.settings.UpdateViewModel
+import com.naeblis11.mealplanner.sync.JoinControls
 import com.naeblis11.mealplanner.update.UpdateControls
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +56,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Settings: another Meal Planner PC's notice, Start with Windows, the server and Google Calendar's sign-in (desktop
- * only), where the desktop keeps things (P7-R10), the phone's calendar, backup, import, updates and About.
+ * only), where the desktop keeps things (P7-R10), Phones and PCs (LAN sync stage 2b, desktop only), Join a PC (LAN sync
+ * stage 2c, Android only), the phone's calendar, backup, import, updates and About.
  */
 fun NavGraphBuilder.settingsDestination(
     nav: NavController,
@@ -59,6 +70,8 @@ fun NavGraphBuilder.settingsDestination(
     peers: PeerControls? = null,
     storage: StorageControls? = null,
     updates: UpdateControls? = null,
+    devices: PairingControls? = null,
+    join: JoinControls? = null,
 ) {
     composable(Routes.SETTINGS) {
         // P6-R6: opening Settings looks for other Meal Planner PCs again; what was found tops the screen (P6-R8).
@@ -110,6 +123,22 @@ fun NavGraphBuilder.settingsDestination(
         // Plan 8: the update check's section, on both apps.
         val updateVm: UpdateViewModel? = updates?.let { controls -> viewModel { UpdateViewModel(controls) } }
         val updateState by (updateVm?.state ?: NO_UPDATES).collectAsStateWithLifecycle()
+        // Stage 2b: Phones and PCs. Leaving Settings closes a pairing window left open (D10).
+        val devicesVm: PairingViewModel? = devices?.let { controls -> viewModel { PairingViewModel(controls) } }
+        val devicesState by (devicesVm?.state ?: NO_PAIRING).collectAsStateWithLifecycle()
+        if (devicesVm != null) {
+            DisposableEffect(devicesVm) {
+                devicesVm.shown()
+                onDispose { devicesVm.left() }
+            }
+        }
+        // Stage 2c: Join a PC (Android). The Wi-Fi is read again whenever Settings comes back to the front (D3).
+        val joinVm: JoinViewModel? = join?.let { controls -> viewModel { JoinViewModel(controls) } }
+        val joinState by (joinVm?.state ?: NO_JOIN).collectAsStateWithLifecycle()
+        if (joinVm != null) LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { joinVm.recheckWifi() }
+        val scanGuard = rememberLaunchGuard()
+        val scan = rememberCodeScanner(scanGuard, onScanned = { text -> joinVm?.scanned(text) }, onUnavailable = { joinVm?.scanUnavailable() })
+        val openWifiSettings = rememberWifiSettingsOpener { joinVm?.recheckWifi() }
         val clientGuard = rememberLaunchGuard()
         // Android's Settings registers no picker of its own for it.
         val chooseClientFile: () -> Unit =
@@ -152,6 +181,22 @@ fun NavGraphBuilder.settingsDestination(
             onOpenLibrary = { storage?.openLibrary() },
             onOpenAppData = { storage?.openAppData() },
             folderExtras = { if (storage != null) AllowAppControls(storage) },
+            devices = devicesState,
+            deviceActions = devicesVm?.let { vm -> DeviceActions(vm::pair, vm::cancelPairing, vm::askRemove, vm::confirmRemove, vm::cancelRemove) } ?: DeviceActions(),
+            join = joinState,
+            joinActions = joinVm?.let { vm ->
+                JoinActions(
+                    scan = { scan?.invoke() ?: vm.scanUnavailable() },
+                    openTyping = vm::openTyping,
+                    cancelTyping = vm::cancelTyping,
+                    submitCode = vm::submitCode,
+                    choose = vm::choose,
+                    askLeave = vm::askLeave,
+                    confirmLeave = vm::confirmLeave,
+                    cancelLeave = vm::cancelLeave,
+                    openWifiSettings = openWifiSettings,
+                )
+            } ?: JoinActions(),
             updates = updateState,
             updateActions = updateVm?.let { vm ->
                 UpdateActions(vm::checkNow, vm::setAutomatic, vm::install, vm::confirmInstall, vm::cancelInstall, vm::openInstallPermission)
@@ -179,6 +224,12 @@ private val NO_PEERS: StateFlow<PeerNotice?> = MutableStateFlow(null)
 
 // No update check given (tests that leave it out).
 private val NO_UPDATES: StateFlow<UpdateUiState?> = MutableStateFlow(null)
+
+// Android has no sync port of its own.
+private val NO_PAIRING: StateFlow<DevicesState?> = MutableStateFlow(null)
+
+// The desktop has no Join a PC.
+private val NO_JOIN: StateFlow<JoinState?> = MutableStateFlow(null)
 
 private val NOTHING: () -> Unit = {}
 

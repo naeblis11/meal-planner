@@ -57,6 +57,7 @@ import com.naeblis11.mealplanner.ui.MealCard
 import com.naeblis11.mealplanner.ui.itemCount
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import com.naeblis11.mealplanner.ui.theme.MealSpacing
+import com.naeblis11.mealplanner.ui.SyncAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +96,7 @@ fun PantryScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { TopAppBar(title = { Text("Pantry", style = MaterialTheme.typography.headlineMedium) }) },
+        topBar = { TopAppBar(title = { Text("Pantry", style = MaterialTheme.typography.headlineMedium) }, actions = { SyncAction() }) },
     ) { padding ->
         if (wide) {
             PantryColumns(state, error, onAdd, onSetOnHand, onEdit = { editingId = it }, modifier = Modifier.padding(padding))

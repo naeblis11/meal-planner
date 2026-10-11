@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,11 +43,14 @@ import com.naeblis11.mealplanner.importing.ImportState
 import com.naeblis11.mealplanner.importing.ImportViewModel
 import com.naeblis11.mealplanner.recipes.NeedsAttentionScreen
 import com.naeblis11.mealplanner.recipes.NeedsAttentionViewModel
+import com.naeblis11.mealplanner.recipes.SyncAttentionViewModel
+import com.naeblis11.mealplanner.recipes.SyncRemoveAsk
 import com.naeblis11.mealplanner.settings.APP_REMOVED_MESSAGE
 import com.naeblis11.mealplanner.settings.APP_REPLACED_MESSAGE
 import com.naeblis11.mealplanner.settings.AllowAppControls
 import com.naeblis11.mealplanner.settings.BackupViewModel
 import com.naeblis11.mealplanner.settings.GoogleControls
+import com.naeblis11.mealplanner.settings.PairingControls
 import com.naeblis11.mealplanner.settings.PeerControls
 import com.naeblis11.mealplanner.settings.RESTART_BY_HAND
 import com.naeblis11.mealplanner.settings.RESTART_NOW_LABEL
@@ -53,8 +59,14 @@ import com.naeblis11.mealplanner.settings.ServerControls
 import com.naeblis11.mealplanner.settings.ServerState
 import com.naeblis11.mealplanner.settings.StartupSwitch
 import com.naeblis11.mealplanner.settings.StorageControls
+import com.naeblis11.mealplanner.settings.SyncAttention
 import com.naeblis11.mealplanner.settings.portInUseNotice
+import com.naeblis11.mealplanner.sync.HeldRemoval
+import com.naeblis11.mealplanner.sync.JoinControls
+import com.naeblis11.mealplanner.sync.SyncControls
 import com.naeblis11.mealplanner.update.UpdateControls
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The whole app. At least WIDE_MIN_WIDTH wide and WIDE_MIN_HEIGHT high (a PC window, an Android tablet) it gets the
@@ -68,6 +80,11 @@ import com.naeblis11.mealplanner.update.UpdateControls
  * it from saving to Documents; null on Android. [restart] is the desktop's notice that a new version was installed over
  * the running one (P7-R12), with Restart now; null on Android.
  * [updates] is the update check (plan 8), on both apps: Settings' Updates section and the launch notice; null leaves both out.
+ * [devices] is the desktop's Phones and PCs (LAN sync stage 2b); null on Android.
+ * [syncAttention] is the desktop's held sync removals (stage 2b), for Needs attention and the Recipes banner; null on Android.
+ * [join] is the phone's Join a PC (LAN sync stage 2c), for Settings; null on the desktop.
+ * [sync] is the phone's Sync button (LAN sync stage 2c): the four main screens' top bars, the first sync's Merge or
+ * Replace, the outcome and the Recipes hint; null on the desktop.
  */
 @Composable
 fun MealPlannerApp(
@@ -82,11 +99,15 @@ fun MealPlannerApp(
     storage: StorageControls? = null,
     restart: RestartControls? = null,
     updates: UpdateControls? = null,
+    devices: PairingControls? = null,
+    syncAttention: SyncAttention? = null,
+    join: JoinControls? = null,
+    sync: SyncControls? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = isWide(maxWidth, maxHeight)
         CompositionLocalProvider(LocalWideLayout provides wide) {
-            AppShell(container, startup, wide, leaveGuard, imports, server, google, quitting, peers, storage, restart, updates)
+            AppShell(container, startup, wide, leaveGuard, imports, server, google, quitting, peers, storage, restart, updates, devices, syncAttention, join, sync)
         }
     }
 }
@@ -106,6 +127,10 @@ private fun AppShell(
     storage: StorageControls?,
     restart: RestartControls?,
     updates: UpdateControls?,
+    devices: PairingControls?,
+    syncAttention: SyncAttention?,
+    join: JoinControls?,
+    sync: SyncControls?,
 ) {
     val nav = rememberNavController()
     val importVm: ImportViewModel = viewModel { ImportViewModel(container.recipes, container.imagesDir, container::newImportStagingDir) }
@@ -115,6 +140,10 @@ private fun AppShell(
         nav.navigate(Routes.IMPORT)
     }
     val backupVm: BackupViewModel = viewModel { BackupViewModel(container.recipes, container.imagesDir) }
+    // Stage 2c: the phone's Sync button, one view model for the four top bars (it survives a rotation); the sync itself
+    // runs in the controls' app-wide scope.
+    val syncVm: SyncViewModel? = sync?.let { controls -> viewModel { SyncViewModel(controls) } }
+    val syncSnackbar = remember { SnackbarHostState() }
     val current by nav.currentBackStackEntryAsState()
     val route = current?.destination?.route
     val tab = MainTab.forRoute(route)
@@ -152,9 +181,14 @@ private fun AppShell(
             nav.openTab(target)
         }
     }
-    CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
+    CompositionLocalProvider(LocalLeaveGuard provides leaveGuard, LocalSyncAttention provides syncAttention, LocalSyncControls provides syncVm) {
+        if (syncVm != null) SyncDialogs(syncVm, syncSnackbar)
+        val tabBar = !wide && tab != null
         Scaffold(
-            bottomBar = { if (!wide && tab != null) MainTabs(selected = tab, onSelect = { openSection(it.route) }) },
+            bottomBar = { if (tabBar) MainTabs(selected = tab, onSelect = { openSection(it.route) }) },
+            // The tab bar takes the navigation bar's inset and the Scaffold lifts the snackbar above it; with no tab bar
+            // (a wide window, a recipe, Settings) the snackbar keeps clear of the navigation bar itself (edge to edge).
+            snackbarHost = { SnackbarHost(syncSnackbar, if (tabBar) Modifier else Modifier.navigationBarsPadding()) },
             // Each screen's own Scaffold handles the system bars; this one only adds the tab bar.
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
         ) { padding ->
@@ -211,10 +245,16 @@ private fun AppShell(
                                 val removing by vm.removing.collectAsStateWithLifecycle()
                                 val removeAsk by vm.removeAsk.collectAsStateWithLifecycle()
                                 val usingNewFolder by vm.usingNewFolder.collectAsStateWithLifecycle()
+                                // Stage 2b: recipes a sync from another device would remove, above the folder's problems.
+                                val syncVm: SyncAttentionViewModel? = syncAttention?.let { attention -> viewModel { SyncAttentionViewModel(attention) } }
+                                val syncHeld by (syncVm?.held ?: NO_SYNC_HELD).collectAsStateWithLifecycle()
+                                val syncBusy by (syncVm?.busy ?: NOT_SYNC_BUSY).collectAsStateWithLifecycle()
+                                val syncAsk by (syncVm?.ask ?: NO_SYNC_ASK).collectAsStateWithLifecycle()
+                                val syncMessage by (syncVm?.message ?: NO_SYNC_MESSAGE).collectAsStateWithLifecycle()
                                 NeedsAttentionScreen(
                                     problems = problems,
-                                    message = message,
-                                    onMessageShown = vm::messageShown,
+                                    message = message ?: syncMessage,
+                                    onMessageShown = { if (message != null) vm.messageShown() else syncVm?.messageShown() },
                                     onBack = dropUnlessResumed { nav.popBackStack() },
                                     onAssignNewId = vm::assignNewId,
                                     onOpenFolder = folder::openFolder,
@@ -227,10 +267,17 @@ private fun AppShell(
                                     onUseNewFolder = vm::useNewFolder,
                                     usingNewFolder = usingNewFolder,
                                     onPointBack = vm::pointBack,
+                                    syncHeld = syncHeld.map { it.name },
+                                    syncBusy = syncBusy,
+                                    syncAsk = syncAsk,
+                                    onAskSyncRemove = { syncVm?.askRemove() },
+                                    onConfirmSyncRemove = { syncVm?.confirmRemove() },
+                                    onCancelSyncRemove = { syncVm?.cancelRemove() },
+                                    onKeepSyncHeld = { syncVm?.keep() },
                                 )
                             }
                         }
-                        settingsDestination(nav, container, backupVm, startImport, startup, server, google, peers, storage, updates)
+                        settingsDestination(nav, container, backupVm, startImport, startup, server, google, peers, storage, updates, devices, join)
                         plannerDestinations(nav, container, google)
                     }
                 }
@@ -313,3 +360,9 @@ private fun NavController.openTab(route: String) {
         restoreState = true
     }
 }
+
+// No held sync removals (Android, and a desktop run without sync).
+private val NO_SYNC_HELD: StateFlow<List<HeldRemoval>> = MutableStateFlow(emptyList())
+private val NOT_SYNC_BUSY: StateFlow<Boolean> = MutableStateFlow(false)
+private val NO_SYNC_ASK: StateFlow<SyncRemoveAsk?> = MutableStateFlow(null)
+private val NO_SYNC_MESSAGE: StateFlow<String?> = MutableStateFlow(null)

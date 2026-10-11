@@ -20,6 +20,23 @@ class PeerTxtTest {
     }
 
     @Test
+    fun theSyncPortGoesOutAsASeventhKeyAndComesBack() {
+        val withSync = record.copy(syncPort = 5001)
+        val txt = PeerTxt.encode(withSync)
+        assertEquals(listOf("v", "role", "hh", "since", "id", "app", "sync"), txt.keys.toList())
+        assertEquals("5001", txt["sync"])
+        assertEquals("1", txt["v"])
+        assertEquals(withSync, PeerTxt.decode("KITCHEN", txt))
+    }
+
+    @Test
+    fun aGarbledSyncPortIsIgnoredNotTheRecord() {
+        for (bad in listOf("0", "65536", "50x1", "", "123456", "-1")) {
+            assertEquals(bad, record, PeerTxt.decode("KITCHEN", PeerTxt.encode(record) + ("sync" to bad)))
+        }
+    }
+
+    @Test
     fun aMissingOrGarbledValueMeansThePeerIsIgnored() {
         val good = PeerTxt.encode(record)
         for (key in good.keys) assertNull(key, PeerTxt.decode("KITCHEN", good - key))

@@ -1,5 +1,6 @@
 package com.naeblis11.mealplanner.desktop
 
+import com.naeblis11.mealplanner.desktop.sync.SyncServer
 import com.naeblis11.mealplanner.desktop.update.DesktopUpdates
 import java.io.File
 import java.io.RandomAccessFile
@@ -60,6 +61,7 @@ class SmokeLauncherOptionsTest {
     fun everySmokeOrPreviewPropertyIsRefused() {
         val leaks = listOf(
             "-Dmealplanner.port=5000",
+            "-Dmealplanner.syncPort=5001",
             "-Dmealplanner.startWithWindows=on",
             "-Dmealplanner.dataDir=C:\\Users\\jo\\build\\preview-data",
             "-Dmealplanner.peers=on",
@@ -94,6 +96,12 @@ class SmokeLauncherOptionsTest {
     fun aLeakOutsideJavaOptionsIsRefusedToo() {
         val verdicts = verdicts(mapOf("args" to cfg("args", good + listOf("[ArgOptions]", "arguments=-Dmealplanner.port=5000"))))
         assertTrue(verdicts.toString(), verdicts.getValue("args").any { it.contains("mealplanner.port") })
+    }
+
+    @Test
+    fun aSyncPortOutsideJavaOptionsIsRefusedToo() {
+        val verdicts = verdicts(mapOf("args" to cfg("args", good + listOf("[ArgOptions]", "arguments=-Dmealplanner.syncPort=5001"))))
+        assertTrue(verdicts.toString(), verdicts.getValue("args").any { it.contains("mealplanner.syncPort") })
     }
 
     @Test
@@ -145,6 +153,18 @@ class SmokeLauncherOptionsTest {
             text.indexOf("EnvironmentVariables['MEAL_PLANNER_DATA_DIR']"),
         )
         assertTrue(options, options.contains("'-D${DesktopUpdates.GATE_PROPERTY}=off'"))
+    }
+
+    @Test
+    fun theSmokeRunNeverTakesTheSyncPort() {
+        // LAN sync stage 2b: the run's own free sync port, never 5001, and a failure if anything listens on 5001.
+        val text = smoke.readText()
+        val options = text.substring(
+            text.indexOf("EnvironmentVariables['JAVA_TOOL_OPTIONS']"),
+            text.indexOf("EnvironmentVariables['MEAL_PLANNER_DATA_DIR']"),
+        )
+        assertTrue(options, options.contains("\"-D${SyncServer.PORT_PROPERTY}=\$syncPort\""))
+        assertTrue(text.contains("\$_.LocalPort -eq 5001 }).Count -gt 0) { Add-Failure"))
     }
 
     private fun cfg(name: String, lines: List<String>): File =

@@ -30,6 +30,12 @@ class JmdnsDiscoveryTest {
     }
 
     @Test
+    fun aRecordWithItsSyncPortSurvivesJmdnsOwnTxtEncoding() {
+        val withSync = record.copy(syncPort = 5001)
+        assertEquals(withSync, JmdnsDiscovery.decode(JmdnsDiscovery.serviceInfo(withSync, 5000)))
+    }
+
+    @Test
     fun aRecordMissingAKeyIsIgnored() {
         val info = ServiceInfo.create(PeerTxt.SERVICE_TYPE, "KITCHEN", 5000, 0, 0, PeerTxt.encode(record) - "hh")
         assertNull(JmdnsDiscovery.decode(info))

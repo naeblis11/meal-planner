@@ -32,6 +32,10 @@ dependencies {
     implementation(libs.jna.platform)
     // Finds other Meal Planner PCs on the home network over mDNS (plan 6). Apache License 2.0.
     implementation(libs.jmdns)
+    // The sync port's self-signed certificate (LAN sync, stage 2b): Ktor's certificate builder, Apache License 2.0.
+    implementation(libs.ktor.network.tls.certificates)
+    // Draws the pairing QR code in Settings (LAN sync, stage 2b): Project Nayuki's QR Code generator, MIT License.
+    implementation(libs.qrcodegen)
 
     testImplementation(libs.junit)
     // Builds an old server database beside the app's, for the test that shows it is never read.
@@ -68,6 +72,7 @@ val installedJvmArgs = listOf("-Dmealplanner.installed=true", "-Dmealplanner.ver
 val notForTheInstalledApp = listOf(
     "mealplanner.dataDir",
     "mealplanner.port",
+    "mealplanner.syncPort",
     "mealplanner.peers",
     "mealplanner.startWithWindows",
     "mealplanner.selfCheck",
@@ -96,6 +101,13 @@ val previewPort = providers.gradleProperty("mealplanner.port").orNull ?: "5055"
 if (previewPort.toIntOrNull()?.takeIf { it in 1024..65535 && it != 5000 } == null) {
     throw GradleException("mealplanner.port must be a port from 1024 to 65535 other than 5000, which the installed app may hold.")
 }
+// LAN sync (stage 2b): the preview's sync port, never the installed app's 5001 (nor 5000), and never its own server's.
+// 5065 by default; 5066 beside a second preview run with -Pmealplanner.port=5056 (CLAUDE.md's peer check), so neither
+// overlaps the two previews' server ports (5055, 5056).
+val previewSyncPort = providers.gradleProperty("mealplanner.syncPort").orNull ?: if (previewPort == "5056") "5066" else "5065"
+if (previewSyncPort.toIntOrNull()?.takeIf { it in 1024..65535 && it != 5000 && it != 5001 && it != previewPort.toInt() } == null) {
+    throw GradleException("mealplanner.syncPort must be a port from 1024 to 65535 other than 5000 and 5001, which the installed app may hold, and other than mealplanner.port.")
+}
 val previewDir = if (previewName == null) "preview-data" else "preview-$previewName"
 // P6-PF7: a preview looks for other Meal Planner PCs only when asked, with "-Pmealplanner.peers=on". Its household is
 // older than any later install's, so one that always announced would make the installed app step back from Google
@@ -107,6 +119,7 @@ if (previewPeers != null && previewPeers != "on" && previewPeers != "off") {
 val previewJvmArgs = buildList {
     add("-Dmealplanner.dataDir=${layout.buildDirectory.dir(previewDir).get().asFile.absolutePath}")
     add("-Dmealplanner.port=$previewPort")
+    add("-Dmealplanner.syncPort=$previewSyncPort")
     if (previewPeers == "on") add("-Dmealplanner.peers=on")
 }
 
@@ -274,6 +287,7 @@ val checkPackagingConfig = tasks.register("checkPackagingConfig") {
         val runArgs = runTask.get().allJvmArgs
         if (runArgs.any { it.startsWith("-Dmealplanner.installed") }) problems += "run passes mealplanner.installed"
         if (runArgs.none { it.startsWith("-Dmealplanner.dataDir=") }) problems += "run lost its preview folder"
+        if (runArgs.none { it == "-Dmealplanner.syncPort=$previewSyncPort" }) problems += "run lost its preview sync port ($previewSyncPort)"
         if (problems.isNotEmpty()) throw GradleException("The packaging settings are wrong:\n" + problems.joinToString("\n"))
         logger.lifecycle("Packaged launcher: ${msi?.launcherJvmArgs?.get()}")
         logger.lifecycle("MSI: version $desktopVersion, per user, into %LOCALAPPDATA%\\${msiInstallDir.replace('/', '\\')}, upgrade code $msiUpgradeUuid")

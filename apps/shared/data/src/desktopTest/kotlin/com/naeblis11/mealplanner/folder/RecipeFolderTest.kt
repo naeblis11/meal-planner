@@ -63,6 +63,22 @@ class RecipeFolderTest {
 
     private fun sync(): RecipeFolder.SyncResult = runBlocking { folder.sync() }
 
+    @Test
+    fun aHandEditIsDatedByTheFilesModifiedTime() {
+        write("soup.yaml", recipe("Soup", "u-soup"))
+        File(dir, "soup.yaml").setLastModified(1_700_000_000_000L)
+        sync()
+        assertEquals(1_700_000_000_000L, runBlocking { db.syncDao().change("recipe", "u-soup")!!.updatedAt })
+
+        // A sync that changes nothing leaves the date alone, and a time in the future is not believed.
+        sync()
+        assertEquals(1_700_000_000_000L, runBlocking { db.syncDao().change("recipe", "u-soup")!!.updatedAt })
+        write("soup.yaml", recipe("Soup", "u-soup", amount = "2"))
+        File(dir, "soup.yaml").setLastModified(System.currentTimeMillis() + 86_400_000L)
+        sync()
+        assertTrue(runBlocking { db.syncDao().change("recipe", "u-soup")!!.updatedAt } <= System.currentTimeMillis())
+    }
+
     private fun names(): List<String> = runBlocking { recipes.allRecipes().map { it.name } }
 
     private fun row(uuid: String): RecipeEntity = runBlocking { recipes.allRecipes().single { it.recipeUuid == uuid } }

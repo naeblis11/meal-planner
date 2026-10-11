@@ -54,11 +54,13 @@ import com.naeblis11.mealplanner.data.RecipeSummary
 import com.naeblis11.mealplanner.domain.CategoryGroup
 import com.naeblis11.mealplanner.ui.AttentionBanner
 import com.naeblis11.mealplanner.ui.BookIcon
+import com.naeblis11.mealplanner.ui.JoinHint
 import com.naeblis11.mealplanner.ui.PhotoImage
 import com.naeblis11.mealplanner.ui.RatingStars
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import java.io.File
 import kotlinx.coroutines.launch
+import com.naeblis11.mealplanner.ui.SyncAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +87,8 @@ fun RecipeListScreen(
     filesMissing: Boolean = false,
     /** Desktop: the recipe folder isn't the one the database was made from (P7-R10c); nothing is removed meanwhile. */
     folderMoved: Boolean = false,
+    /** Desktop: recipes a sync from another device would remove, held under Needs attention (stage 2b). */
+    syncHeld: Int = 0,
     onAttention: () -> Unit = {},
     /** Desktop: opens the recipes folder in Explorer, false when it couldn't (the screen says so); null hides the button (Android). */
     onOpenFolder: (() -> Boolean)? = null,
@@ -99,6 +103,10 @@ fun RecipeListScreen(
     onToggle: (String) -> Unit = {},
     onCollapseAll: (List<String>) -> Unit = {},
     onExpandAll: () -> Unit = {},
+    /** Android: the first-run hint to join a PC (LAN sync stage 2c), until paired or put away. */
+    joinHint: Boolean = false,
+    onJoin: () -> Unit = {},
+    onDismissJoinHint: () -> Unit = {},
 ) {
     // The list's stars only show a rating (owner, 2026-10-09); it is changed on the recipe page. The snackbar is for
     // Open recipe folder.
@@ -110,6 +118,7 @@ fun RecipeListScreen(
             TopAppBar(
                 title = { Text("Recipes", style = MaterialTheme.typography.headlineMedium) },
                 actions = {
+                    SyncAction()
                     if (onOpenFolder != null) {
                         TextButton(onClick = { if (!onOpenFolder()) scope.launch { snackbar.showSnackbar(OPEN_FOLDER_FAILED) } }) {
                             Text("Open recipe folder")
@@ -130,13 +139,15 @@ fun RecipeListScreen(
         // The banner, the search and the cookbook filter stay put; only the recipes below them scroll.
         Column(Modifier.fillMaxSize().padding(padding)) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                if (folderMissing || folderMoved || filesMissing || attentionFiles > 0) {
+                if (joinHint) JoinHint(onJoin, onDismissJoinHint, Modifier.padding(top = 8.dp))
+                if (folderMissing || folderMoved || filesMissing || attentionFiles > 0 || syncHeld > 0) {
                     AttentionBanner(
                         when {
                             folderMissing -> FOLDER_MISSING
                             folderMoved -> FOLDER_MOVED
                             filesMissing -> FILES_MISSING
-                            else -> attentionText(attentionFiles)
+                            attentionFiles > 0 -> attentionText(attentionFiles)
+                            else -> syncHeldBanner(syncHeld)
                         },
                         // Not while a form holds the pane: opening the list from here would leave the form behind.
                         Modifier.padding(top = 8.dp)

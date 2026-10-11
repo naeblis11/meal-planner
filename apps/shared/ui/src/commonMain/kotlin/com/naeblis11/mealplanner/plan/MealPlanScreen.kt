@@ -55,6 +55,7 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import com.naeblis11.mealplanner.ui.SyncAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +98,7 @@ fun MealPlanScreen(
     LaunchedEffect(error, sendProblem) { if (error != null || sendProblem != null) listState.animateScrollToItem(0) }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { TopAppBar(title = { Text("Meal plan", style = MaterialTheme.typography.headlineMedium) }) },
+        topBar = { TopAppBar(title = { Text("Meal plan", style = MaterialTheme.typography.headlineMedium) }, actions = { SyncAction() }) },
     ) { padding ->
         if (wide) {
             WeekGrid(

@@ -34,6 +34,9 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            // LAN sync 2c: Google's code scanner for Join a PC's QR code. Google Play services runs the scanning UI, so the
+            // app has no camera permission and no camera code (README Requirements).
+            implementation(libs.play.services.code.scanner)
         }
     }
 }

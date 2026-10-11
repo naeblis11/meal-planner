@@ -113,6 +113,17 @@ actual fun rememberAppSettingsOpener(onReturn: () -> Unit): () -> Unit {
     return remember { { latest() } }
 }
 
+/** The desktop scans nothing: it is the PC that shows the code. */
+@Composable
+actual fun rememberCodeScanner(guard: LaunchGuard, onScanned: (String) -> Unit, onUnavailable: () -> Unit): (() -> Unit)? = null
+
+/** The desktop has no Join a PC; there is nothing to open. */
+@Composable
+actual fun rememberWifiSettingsOpener(onReturn: () -> Unit): () -> Unit {
+    val latest by rememberUpdatedState(onReturn)
+    return remember { { latest() } }
+}
+
 /** No system Back on the desktop; screens offer their own Back/Cancel. */
 @Composable
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) = Unit

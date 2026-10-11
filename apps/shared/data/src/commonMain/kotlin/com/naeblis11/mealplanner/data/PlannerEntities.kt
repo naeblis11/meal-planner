@@ -36,8 +36,8 @@ data class PantryItemEntity(
     @ColumnInfo(name = "added_on") val addedOn: String? = null,
 )
 
-/** One line of the shopping list. */
-@Entity(tableName = "shopping_list_item")
+/** One line of the shopping list. [syncId] names it on every device (rows with one name can be several). */
+@Entity(tableName = "shopping_list_item", indices = [Index(value = ["sync_id"], unique = true)])
 data class ShoppingItemEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -46,6 +46,7 @@ data class ShoppingItemEntity(
     val aisle: String? = null,
     @ColumnInfo(name = "in_pantry") val inPantry: Boolean = false,
     val checked: Boolean = false,
+    @ColumnInfo(name = "sync_id", defaultValue = "") val syncId: String = SyncIds.newId(),
 )
 
 /** The aisle the user chose for an ingredient; it beats the keyword guess from then on. */

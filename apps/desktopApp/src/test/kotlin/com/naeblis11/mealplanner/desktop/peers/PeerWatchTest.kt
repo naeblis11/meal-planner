@@ -188,12 +188,14 @@ class PeerWatchTest {
         watch.start(scope)
         eventually { watch.status.value.off }
         discovery.available = true
-        // Repeated until the first try has let go of the one-look flag; the asks after the one taken are dropped.
+        // Repeated until the first try has let go of the one-look flag, and no more once one is taken (its announce is
+        // the second): while it runs the flag drops the others, but one asked after it ended would look a second time.
         eventually {
-            watch.browseNow()
+            if (discovery.announces.get() < 2) watch.browseNow()
             discovery.browses.get() == 1
         }
         assertEquals(2, discovery.announces.get())
+        assertEquals(1, discovery.browses.get())
         eventually { watch.status.value == PeerStatus() }
     }
 

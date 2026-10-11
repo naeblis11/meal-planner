@@ -21,13 +21,14 @@ object PeerTxt {
     private val HASH = Regex("[0-9a-f]{16}")
     private val ID = Regex("[0-9a-f]{32}")
     private val SINCE = Regex("[0-9]{1,18}")
+    private val PORT = Regex("[0-9]{1,5}")
     private val DROPPED_TYPES = setOf(
         Character.CONTROL, Character.FORMAT, Character.LINE_SEPARATOR, Character.PARAGRAPH_SEPARATOR,
         Character.PRIVATE_USE, Character.UNASSIGNED, Character.SURROGATE,
     )
     private val MARK_TYPES = setOf(Character.NON_SPACING_MARK, Character.ENCLOSING_MARK)
 
-    /** The six TXT keys, in this order. */
+    /** The six TXT keys, in this order, then `sync` (LAN sync stage 2b: the sync port) when the record has one. `v` stays 1. */
     fun encode(record: PeerRecord): Map<String, String> = linkedMapOf(
         "v" to VERSION,
         "role" to ROLE_MASTER,
@@ -35,7 +36,7 @@ object PeerTxt {
         "since" to record.since.toString(),
         "id" to record.instanceId,
         "app" to cleanApp(record.app),
-    )
+    ).apply { record.syncPort?.let { put("sync", it.toString()) } }
 
     /** A peer's record from its instance [name] and [txt]; null when anything is missing or garbled. Keys it doesn't know are ignored. */
     fun decode(name: String?, txt: Map<String, String?>): PeerRecord? {
@@ -46,7 +47,9 @@ object PeerTxt {
         val id = value("id")?.takeIf { ID.matches(it) } ?: return null
         val app = value("app")?.takeIf { it.isNotEmpty() && it.all { c -> c in ' '..'~' } } ?: return null
         val shown = cleanName(name) ?: return null
-        return PeerRecord(shown, hash, since, id, app)
+        // Optional: a garbled sync port is left out, never the peer.
+        val sync = value("sync")?.takeIf { PORT.matches(it) }?.toInt()?.takeIf { it in 1..65535 }
+        return PeerRecord(shown, hash, since, id, app, sync)
     }
 
     /** SHA-256 of the household id, as its first 16 lower-case hex digits: enough to tell households apart, and not the id. */

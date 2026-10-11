@@ -11,6 +11,9 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -40,6 +43,7 @@ import com.naeblis11.mealplanner.recipes.RecipeListScreen
 import com.naeblis11.mealplanner.recipes.RecipeListViewModel
 import com.naeblis11.mealplanner.recipes.RowActions
 import com.naeblis11.mealplanner.recipes.StepActions
+import com.naeblis11.mealplanner.sync.HeldRemoval
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -211,6 +215,14 @@ private fun RecipeListPane(
     // The desktop's recipe folder; null on Android, where none of it shows.
     val folder = container.folder
     val problems by (folder?.problems ?: NO_PROBLEMS).collectAsStateWithLifecycle()
+    // Stage 2b: recipes held from a sync's removal count on the same banner.
+    val syncHeld by (LocalSyncAttention.current?.held ?: NO_SYNC_HELD).collectAsStateWithLifecycle()
+    // Stage 2c: the phone's first-run hint, until it is paired or put away (kept in the screen settings).
+    val syncVm = LocalSyncControls.current
+    val syncBar by (syncVm?.state ?: NO_SYNC_BAR).collectAsStateWithLifecycle()
+    var hintDismissed by remember { mutableStateOf(container.settings.getLong(JOIN_HINT_DISMISSED_KEY) != null) }
+    val showJoinHint = syncVm != null && syncBar.status.known && !syncBar.status.paired && !hintDismissed
+    val openSettings = dropUnlessResumed { nav.navigate(Routes.SETTINGS) }
     RecipeListScreen(
         groups = groups,
         query = query,
@@ -223,7 +235,7 @@ private fun RecipeListPane(
         onOpen = onOpen,
         onNew = onNew,
         onImport = startImport,
-        onSettings = dropUnlessResumed { nav.navigate(Routes.SETTINGS) },
+        onSettings = openSettings,
         thumbnail = { summary ->
             summary.imageFilename?.takeIf { RecipeRepository.isSafeImageName(it) }
                 ?.let { container.recipes.imageFile(RecipeRepository.thumbName(it)) }
@@ -232,6 +244,7 @@ private fun RecipeListPane(
         folderMissing = problems.any { it.kind == RecipeFileProblem.Kind.FOLDER && !it.canRemoveMissing && !it.canUseNewFolder },
         folderMoved = problems.any { it.canUseNewFolder },
         filesMissing = problems.any { it.canRemoveMissing },
+        syncHeld = syncHeld.size,
         onAttention = dropUnlessResumed { nav.navigate(Routes.NEEDS_ATTENTION) },
         onOpenFolder = folder?.let { f -> { f.openFolder() } },
         selectedId = selectedId,
@@ -241,6 +254,12 @@ private fun RecipeListPane(
         onToggle = vm::toggle,
         onCollapseAll = vm::collapseAll,
         onExpandAll = vm::expandAll,
+        joinHint = showJoinHint,
+        onJoin = openSettings,
+        onDismissJoinHint = {
+            hintDismissed = true
+            container.settings.put(mapOf(JOIN_HINT_DISMISSED_KEY to 1L))
+        },
     )
 }
 
@@ -292,3 +311,5 @@ private fun EditDestination(vm: RecipeEditViewModel, nav: NavController, onSaved
 
 // Stand-ins on Android, which has no recipe folder.
 private val NO_PROBLEMS: StateFlow<List<RecipeFileProblem>> = MutableStateFlow(emptyList())
+private val NO_SYNC_BAR: StateFlow<SyncBarState> = MutableStateFlow(SyncBarState())
+private val NO_SYNC_HELD: StateFlow<List<HeldRemoval>> = MutableStateFlow(emptyList())

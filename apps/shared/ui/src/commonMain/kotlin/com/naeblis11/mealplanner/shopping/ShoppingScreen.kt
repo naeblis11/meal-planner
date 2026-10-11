@@ -58,6 +58,7 @@ import com.naeblis11.mealplanner.ui.SectionLabel
 import com.naeblis11.mealplanner.ui.itemCount
 import com.naeblis11.mealplanner.ui.theme.MealColors
 import com.naeblis11.mealplanner.ui.theme.MealSpacing
+import com.naeblis11.mealplanner.ui.SyncAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,7 +101,10 @@ fun ShoppingScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Shopping list", style = MaterialTheme.typography.headlineMedium) },
-                actions = { TextButton(onClick = { addOpen = true }) { Text("Add item") } },
+                actions = {
+                    SyncAction()
+                    TextButton(onClick = { addOpen = true }) { Text("Add item") }
+                },
             )
         },
     ) { padding ->

@@ -203,6 +203,13 @@ class RecipeRepository(
     private fun sha256(bytes: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 
+    // The photo's fingerprint for sync: a photo replaced under the same name is a change of the recipe.
+    private fun imageHashOf(name: String?): String? {
+        if (name == null || !isSafeImageName(name)) return null
+        val photo = File(imagesDir, name)
+        return if (photo.isFile) sha256(photo.readBytes()) else null
+    }
+
     // Newest first, and past any failure, so one file that can't be restored doesn't strand the rest.
     private fun undoWrites(store: RecipeFileStore, before: List<Pair<String, ByteArray?>>, cause: Throwable) {
         for ((name, bytes) in before.asReversed()) {
@@ -253,6 +260,7 @@ class RecipeRepository(
             rawYaml = raw,
             fileName = file?.name,
             fileHash = file?.hash,
+            imageHash = imageHashOf(text(parsed["image"])),
         )
         val id = if (existing == null) {
             dao.insertRecipe(entity)
@@ -367,7 +375,16 @@ class RecipeRepository(
     /** Deletes the recipe and its photo files, unless another recipe uses the same photo. */
     suspend fun delete(id: Long): Unit = writeLock.withLock { withContext(dispatcher) { deleteLocked(id) } }
 
-    private suspend fun deleteLocked(id: Long) {
+    /**
+     * Removes recipe [id] in favour of recipe [keepId] (the phone's Keep the PC's, LAN sync D5): in one transaction the
+     * meals planned with [id] move to [keepId], then [id] is deleted as [delete] deletes it. The meal_plan triggers stamp
+     * the moved meals, so the next sync sends them with [keepId]'s recipe. If [keepId] no longer exists (deleted since the
+     * duplicates were listed) there is nothing to move them to, and this is a plain [delete]: the meals go with the recipe.
+     */
+    suspend fun replaceWith(id: Long, keepId: Long): Unit =
+        writeLock.withLock { withContext(dispatcher) { deleteLocked(id, moveMealsTo = keepId) } }
+
+    private suspend fun deleteLocked(id: Long, moveMealsTo: Long? = null) {
         val row = dao.recipe(id) ?: return
         // P7-R10f: never the file of another recipe (its name now holds one, in a moved library).
         val store = files
@@ -377,7 +394,10 @@ class RecipeRepository(
         }
         // Desktop: the file goes to the Recycle Bin first, so a failure there leaves the recipe as it was.
         row.fileName?.let { name -> files?.trash(name) }
-        db.inTransaction { unindex(id) }
+        db.inTransaction {
+            if (moveMealsTo != null && moveMealsTo != id && dao.recipeExists(moveMealsTo)) dao.movePlanEntries(id, moveMealsTo)
+            unindex(id)
+        }
         row.imageFilename?.let { deleteImageIfUnused(it) }
     }
 

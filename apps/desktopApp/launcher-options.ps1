@@ -2,9 +2,10 @@
 # writes, without ever running the smoke script. Dot-source it; it only defines a function.
 #
 # The app image's "app\Meal Planner.cfg" holds the launcher's java-options, and those beat the smoke run's
-# JAVA_TOOL_OPTIONS (the JVM reads JAVA_TOOL_OPTIONS first). A leaked -Dmealplanner.port=5000, startWithWindows=on,
-# dataDir, peers or updates would bind port 5000, write the Run key, use another library, announce on the LAN or
-# contact GitHub (plan 8) before anything noticed, so the smoke run refuses to start an image unless its options are
+# JAVA_TOOL_OPTIONS (the JVM reads JAVA_TOOL_OPTIONS first). A leaked -Dmealplanner.port=5000, syncPort,
+# startWithWindows=on, dataDir, peers or updates would bind port 5000 (or move the sync port, LAN sync stage 2b), write
+# the Run key, use another library, announce on the LAN or contact GitHub (plan 8) before anything noticed, so the smoke
+# run refuses to start an image unless its options are
 # exactly these:
 # - the installed app's own two: -Dmealplanner.installed=true and -Dmealplanner.version=<version> (each once);
 # - jpackage's own -Djpackage.app-version=<version>;
@@ -42,7 +43,7 @@ function Get-LauncherOptionProblems([string]$CfgFile, [string]$Version) {
     $resourcesDir = '^-Dcompose\.application\.resources\.dir=\$APPDIR(\\{1,2}|/)[A-Za-z0-9._-]+$'
     $options = New-Object System.Collections.Generic.List[string]
     foreach ($line in $lines) {
-        if ($line -match 'mealplanner\.(dataDir|port|peers|startWithWindows|selfCheck|updates)') {
+        if ($line -match 'mealplanner\.(dataDir|port|syncPort|peers|startWithWindows|selfCheck|updates)') {
             $problems.Add("the launcher .cfg sets a smoke or preview property: $($line.Trim())")
             continue
         }

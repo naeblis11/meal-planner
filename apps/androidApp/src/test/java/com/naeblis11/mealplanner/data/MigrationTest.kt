@@ -13,6 +13,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -69,7 +70,7 @@ class MigrationTest {
     }
 
     @Test
-    fun aVersion1LibraryOpensAsVersion5WithEveryRecipeKept() = runTest {
+    fun aVersion1LibraryOpensAsVersion8WithEveryRecipeKept() = runTest {
         createAt(1) { oneRecipe() }
         val db = AppDatabase.open(context)
         try {
@@ -81,14 +82,14 @@ class MigrationTest {
             db.calendarEventDao().record(CalendarEventEntity(calendarId = 1, date = "2026-10-05", slot = "Dinner", eventId = 9, contentHash = "h"))
             assertEquals(listOf(9L), db.calendarEventDao().all().map { it.eventId })
             assertEquals(emptyList<String>(), db.recipeDao().fileNames())
-            assertEquals(5, userVersion(db))
+            assertEquals(8, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion2LibraryOpensAsVersion5WithItsPlanPantryAndListKept() = runTest {
+    fun aVersion2LibraryOpensAsVersion8WithItsPlanPantryAndListKept() = runTest {
         createAt(2) {
             oneRecipe()
             execSQL("INSERT INTO meal_plan (date, slot, recipe_id, servings) VALUES ('2026-10-05', 'Dinner', 7, '4')")
@@ -104,14 +105,14 @@ class MigrationTest {
             assertTrue(milk.checked)
             assertEquals("Dairy & Eggs", db.shoppingDao().rememberedAisle("milk"))
             assertEquals(emptyList<CalendarEventEntity>(), db.calendarEventDao().all())
-            assertEquals(5, userVersion(db))
+            assertEquals(8, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion3LibraryOpensAsVersion5WithEmptyFileColumns() = runTest {
+    fun aVersion3LibraryOpensAsVersion8WithEmptyFileColumns() = runTest {
         createAt(3) {
             oneRecipe()
             execSQL("INSERT INTO meal_plan (date, slot, recipe_id, servings) VALUES ('2026-10-05', 'Dinner', 7, NULL)")
@@ -127,14 +128,14 @@ class MigrationTest {
             assertNull(db.appMetaDao().get("legacy_import"))
             db.appMetaDao().put(AppMetaEntity("legacy_import", "done"))
             assertEquals("done", db.appMetaDao().get("legacy_import"))
-            assertEquals(5, userVersion(db))
+            assertEquals(8, userVersion(db))
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun aVersion4LibraryOpensAsVersion5WithAnEmptyGoogleEventTable() = runTest {
+    fun aVersion4LibraryOpensAsVersion8WithAnEmptyGoogleEventTable() = runTest {
         createAt(4) {
             oneRecipe()
             execSQL("INSERT INTO app_meta (`key`, `value`) VALUES ('legacy_import', 'done')")
@@ -144,7 +145,46 @@ class MigrationTest {
             assertEquals(listOf("Soup"), db.recipeDao().names())
             assertEquals("done", db.appMetaDao().get("legacy_import"))
             assertEquals(emptyList<GoogleEventEntity>(), db.googleEventDao().all())
-            assertEquals(5, userVersion(db))
+            assertEquals(8, userVersion(db))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun aVersion6LibraryOpensAsVersion8WithItsChangesKeptAndTriggersBack() = runTest {
+        createAt(6) {
+            oneRecipe()
+            execSQL("INSERT INTO sync_change (table_name, sync_key, updated_at, updated_by, change_seq, deleted) VALUES ('recipe', 'u-7', 5, 'dev', 3, 0)")
+        }
+        val db = AppDatabase.open(context)
+        try {
+            assertEquals(listOf(SyncChangeEntity("recipe", "u-7", 5L, "dev", 3L, false)), db.syncDao().allChanges())
+            assertEquals(emptyList<SyncPendingEntity>(), db.syncDao().pending())
+            db.pantryDao().insertOrIgnore(PantryItemEntity(name = "Milk"))
+            assertEquals(false, db.syncDao().change("pantry_item", "milk")!!.deleted)
+            assertEquals(8, userVersion(db))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun aVersion5LibraryOpensAsVersion8WithASyncIdOnEveryShoppingRow() = runTest {
+        createAt(5) {
+            oneRecipe()
+            execSQL("INSERT INTO shopping_list_item (name, in_pantry, checked) VALUES ('Eggs', 0, 0)")
+            execSQL("INSERT INTO shopping_list_item (name, in_pantry, checked) VALUES ('Eggs', 0, 1)")
+        }
+        val db = AppDatabase.open(context)
+        try {
+            val rows = db.shoppingDao().allInIdOrder()
+            assertEquals(listOf(false, true), rows.map { it.checked })
+            assertNotEquals(rows[0].syncId, rows[1].syncId)
+            rows.forEach { assertTrue(it.syncId, Regex("[0-9a-f]{32}").matches(it.syncId)) }
+            assertNull(db.recipeDao().recipe(7)!!.imageHash)
+            assertEquals(emptyList<SyncChangeEntity>(), db.syncDao().changedSince(-1))
+            assertEquals(8, userVersion(db))
         } finally {
             db.close()
         }
@@ -156,6 +196,38 @@ class MigrationTest {
         val db = Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.FILE_NAME).build()
         try {
             assertThrows(IllegalStateException::class.java) { db.openHelper.writableDatabase }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun thePhonesDatabaseRecordsChanges() = runTest {
+        createAt(5) {}
+        val db = AppDatabase.open(context)
+        try {
+            db.pantryDao().insertOrIgnore(PantryItemEntity(name = "Milk"))
+            val c = db.syncDao().change("pantry_item", "milk")!!
+            assertEquals(SyncSchema.deviceId(db), c.updatedBy)
+            assertEquals(1L, c.changeSeq)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun aVersion7LibraryOpensAsVersion8WithNoPairedDevicesAndItsPendingRecordsKept() = runTest {
+        createAt(7) {
+            oneRecipe()
+            execSQL("INSERT INTO sync_pending (table_name, sync_key, reason, record) VALUES ('meal_plan', '2026-10-12|Dinner', 'missing_recipe', '{}')")
+        }
+        val db = AppDatabase.open(context)
+        try {
+            assertEquals(listOf("2026-10-12|Dinner"), db.syncDao().pending().map { it.syncKey })
+            assertEquals(0, db.pairedDeviceDao().count())
+            db.pantryDao().insertOrIgnore(PantryItemEntity(name = "Milk"))
+            assertEquals(false, db.syncDao().change("pantry_item", "milk")!!.deleted)
+            assertEquals(8, userVersion(db))
         } finally {
             db.close()
         }

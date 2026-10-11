@@ -9,6 +9,7 @@ import com.naeblis11.mealplanner.data.openAt
 import com.naeblis11.mealplanner.desktop.peers.PeerIdentity
 import com.naeblis11.mealplanner.desktop.peers.PeerWatch
 import com.naeblis11.mealplanner.desktop.server.AppServer
+import com.naeblis11.mealplanner.desktop.sync.DesktopSync
 import com.naeblis11.mealplanner.folder.FolderFileStore
 import com.naeblis11.mealplanner.folder.LIBRARY_BLOCKED_MESSAGE
 import com.naeblis11.mealplanner.folder.RecipeFolder
@@ -54,7 +55,7 @@ const val DESKTOP_DB = "mealplanner-app.db"
  * [settingsFactory] gives the small settings (the prefs node by default; tests pass MapSettings);
  * [rearmPollMillis] is how often a recipe folder that isn't watched is looked for; [serverFactory] makes the built-in
  * server (plan 4) from this app, and null (most tests) means there is none; [peersFactory] likewise makes the look-out
- * for other Meal Planner PCs (plan 6).
+ * for other Meal Planner PCs (plan 6); [syncFactory] makes LAN sync's master side (stage 2b).
  */
 class DesktopApp(
     val libraryDir: File,
@@ -69,6 +70,8 @@ class DesktopApp(
     private val libraryAccess: LibraryAccess = LibraryAccess(),
     /** Where the app's one-off notes go (stderr, so the log); tests pass their own. */
     private val log: (String) -> Unit = { System.err.println(it) },
+    /** The master PC's side of LAN sync (stage 2b), made from this app; null (most tests) means none. */
+    syncFactory: ((DesktopApp) -> DesktopSync)? = null,
 ) {
     val recipesDir = File(libraryDir, "recipes")
     val imagesDir = File(libraryDir, "recipe-images")
@@ -234,6 +237,9 @@ class DesktopApp(
     /** Other Meal Planner PCs on the network (plan 6), made after the server; null when nothing looks for them. */
     val peers: PeerWatch? = peersFactory?.invoke(this)
 
+    /** LAN sync's master side (stage 2b), made after the server and the look-out; null when there is none. */
+    val sync: DesktopSync? = syncFactory?.invoke(this)
+
     private val closed = AtomicBoolean(false)
 
     @Volatile
@@ -278,6 +284,17 @@ class DesktopApp(
             // P4-R1: the server answers once the library is indexed, so Alexa's "plan tacos" finds it. A port in use or
             // any other failure is the server's to report; startup goes on either way.
             server?.let { s -> attempt("Starting the server") { s.start(scope) } }
+            // LAN sync stage 2b: the sync port (closed while nothing is paired), the device list and held removals. A
+            // failure is logged as its class only, and startup goes on.
+            sync?.let { s ->
+                try {
+                    s.start(scope)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    System.err.println("Meal Planner: Starting sync failed: ${e.javaClass.simpleName}")
+                }
+            }
             // P6-R6: announce this PC and look for others beside the server, in the background: never a wait here.
             peers?.let { p -> attempt("Looking for other Meal Planner PCs") { p.start(scope) } }
             val toStart = registered
@@ -381,7 +398,8 @@ class DesktopApp(
     /**
      * Stops the server and the background work, then closes the database. The order matters, because no request or
      * sync may touch a closed database: stop the server (bounded, outside the wait below: a bind under way, up to
-     * KtorEngine.START_TIMEOUT_MILLIS, then KtorEngine's grace and timeout), stop announcing to other Meal Planner PCs
+     * KtorEngine.START_TIMEOUT_MILLIS, then KtorEngine's grace and timeout), stop the sync port (LAN sync, bounded by
+     * JdkHttpsEngine's stop delay and drain; a sync request still running is waited for below), stop announcing to other Meal Planner PCs
      * (about 1 s), stop the watcher and wait for a sync it is running, stop the startup work, the re-arm
      * loop and the removal re-check and wait for them, wait for a recipe, meal plan, shopping or pantry write still running, and only then
      * close the database.
@@ -400,6 +418,14 @@ class DesktopApp(
                 System.err.println("Meal Planner: stopping the server failed: $e")
             }
         }
+        // LAN sync: no device may reach a closing database either; bounded (HttpsServer's stop and its threads' drain).
+        sync?.let { s ->
+            try {
+                s.stop()
+            } catch (e: Exception) {
+                System.err.println("Meal Planner: stopping sync failed: ${e.javaClass.simpleName}")
+            }
+        }
         // P6-R6: stop announcing once nothing here answers any more, and before the database closes; bounded (about 1 s).
         // A look under way is cancelled, not waited for here; the scope's bounded wait below sees it end.
         peers?.let { p ->
@@ -411,6 +437,9 @@ class DesktopApp(
         }
         val stopped = runBlocking {
             withTimeoutOrNull(closeTimeoutMillis) {
+                // LAN sync: the port is stopped, but HttpServer's stop may return with a request still in the routes (an
+                // exchange writing recipes); the database stays open until it is answered.
+                sync?.awaitIdle()
                 watcher?.closeAndJoin()
                 scope.coroutineContext.job.cancelAndJoin()
                 // Startup or the re-arm loop may have made a watcher after the first close; the cancel stopped it.

@@ -2,15 +2,19 @@
 <!-- Android 12+ copies app data to a new phone even with allowBackup off. The database
      must not travel: calendar_event holds this phone's calendar row ids, which on another
      phone could name the family's own events. The calendar choice (SharedPreferences file
-     "calendar", CalendarChoice.FILE) is such an id too. The user's backup is the zip they
-     export from Settings. -->
+     "calendar", CalendarChoice.FILE) is such an id too. The sync pairing (LAN sync stage 2c,
+     sync-pairing.bin in files, KeystorePairingStore.FILE_NAME) is sealed with a Keystore key
+     that stays on this phone, so a copy could never be opened. The user's backup is the zip
+     they export from Settings. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="database" path="." />
         <exclude domain="sharedpref" path="calendar.xml" />
+        <exclude domain="file" path="sync-pairing.bin" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="database" path="." />
         <exclude domain="sharedpref" path="calendar.xml" />
+        <exclude domain="file" path="sync-pairing.bin" />
     </device-transfer>
 </data-extraction-rules>

@@ -7,6 +7,8 @@ import com.naeblis11.mealplanner.calendar.CalendarChoice
 import com.naeblis11.mealplanner.calendar.CalendarGateway
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.open
+import com.naeblis11.mealplanner.sync.AndroidSync
+import com.naeblis11.mealplanner.sync.PhoneSyncControls
 import com.naeblis11.mealplanner.update.AndroidUpdates
 import com.naeblis11.mealplanner.update.DeferredUpdates
 import com.naeblis11.mealplanner.update.Updates
@@ -57,6 +59,16 @@ class MealPlannerApplication : Application() {
      */
     val updateControls: DeferredUpdates by lazy { DeferredUpdates(build = { updates }) }
 
+    /** How the phone's LAN sync is made (stage 2c); full-app tests swap in one over an in-process hub before anything uses it. */
+    internal var syncFactory: () -> PhoneSyncControls = { AndroidSync.create(this, container) }
+
+    /**
+     * LAN sync (stage 2c): the Sync button and Settings' Join a PC. There is one per process, so a sync, a pairing or a
+     * Leave outlives the screen, and the activity, that started it. It is made on first use; it reads the pairing off the
+     * main thread.
+     */
+    val syncControls: PhoneSyncControls by lazy { syncFactory() }
+
     private val launchCheckStarted = AtomicBoolean(false)
 
     /** How many launch checks this process started (at most one); for the tests. */
@@ -84,3 +96,6 @@ fun Context.appContainer(): AppContainer = (applicationContext as MealPlannerApp
 
 /** The screens' update check (DeferredUpdates): never makes Updates on the calling thread. */
 fun Context.appUpdates(): DeferredUpdates = (applicationContext as MealPlannerApplication).updateControls
+
+/** The phone's LAN sync (stage 2c), one per process. */
+fun Context.appSync(): PhoneSyncControls = (applicationContext as MealPlannerApplication).syncControls

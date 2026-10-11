@@ -29,6 +29,13 @@ interface RecipeDao {
     @Query("DELETE FROM meal_plan WHERE recipe_id = :recipeId")
     suspend fun deletePlanEntries(recipeId: Long)
 
+    /** Moves the meals planned with [fromId] to [toId] (the meal_plan triggers stamp each, so a sync sends them). */
+    @Query("UPDATE meal_plan SET recipe_id = :toId WHERE recipe_id = :fromId")
+    suspend fun movePlanEntries(fromId: Long, toId: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM recipe WHERE id = :id)")
+    suspend fun recipeExists(id: Long): Boolean
+
     @Query("SELECT COUNT(*) FROM meal_plan WHERE recipe_id = :recipeId")
     fun observePlannedCount(recipeId: Long): Flow<Int>
 
@@ -101,4 +108,14 @@ interface RecipeDao {
 
     @Query("SELECT id, recipe_uuid, file_name, file_hash FROM recipe ORDER BY id")
     suspend fun fileIndex(): List<RecipeFileRow>
+
+    @Query("SELECT COUNT(*) FROM recipe")
+    suspend fun count(): Int
+
+    @Query("UPDATE recipe SET image_hash = :hash WHERE id = :id")
+    suspend fun setImageHash(id: Long, hash: String?)
+
+    /** Recipes with a photo named but no hash yet (saved before schema 6). */
+    @Query("SELECT * FROM recipe WHERE image_filename IS NOT NULL AND image_hash IS NULL")
+    suspend fun missingImageHashes(): List<RecipeEntity>
 }

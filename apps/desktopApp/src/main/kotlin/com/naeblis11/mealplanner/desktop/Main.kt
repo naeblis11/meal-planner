@@ -22,6 +22,7 @@ import com.naeblis11.mealplanner.desktop.google.GoogleAccount
 import com.naeblis11.mealplanner.desktop.google.GoogleClients
 import com.naeblis11.mealplanner.desktop.google.GoogleTokenStore
 import com.naeblis11.mealplanner.desktop.peers.JmdnsDiscovery
+import com.naeblis11.mealplanner.desktop.peers.PeerInterfaces
 import com.naeblis11.mealplanner.desktop.peers.PeerMessages
 import com.naeblis11.mealplanner.desktop.peers.PeerTxt
 import com.naeblis11.mealplanner.desktop.peers.PeerWatch
@@ -37,6 +38,10 @@ import com.naeblis11.mealplanner.desktop.server.ServerRoutes
 import com.naeblis11.mealplanner.desktop.server.VoiceActions
 import com.naeblis11.mealplanner.desktop.server.extensionRoutes
 import com.naeblis11.mealplanner.desktop.server.voiceRoutes
+import com.naeblis11.mealplanner.desktop.sync.DesktopSync
+import com.naeblis11.mealplanner.desktop.sync.JdkHttpsEngine
+import com.naeblis11.mealplanner.desktop.sync.SyncCertificate
+import com.naeblis11.mealplanner.desktop.sync.SyncServer
 import com.naeblis11.mealplanner.desktop.update.DesktopUpdates
 import com.naeblis11.mealplanner.desktop.update.UpdateQuit
 import com.naeblis11.mealplanner.desktop.update.trayTooltip
@@ -187,6 +192,10 @@ internal fun lookForPeers(installed: String?, peers: String?): Boolean = if (pee
  * Alexa on port 5000 (plan 4), and sends the week to Google Calendar (plan 5).
  */
 fun main(args: Array<String>) {
+    // The JDK HttpServer's backstop limits (300 s per whole request and per whole reply; the sync port's own StallGuard
+    // limits each stage and each read to 30 s and a reply to 120 s). This runs before anything can load the JDK's
+    // HttpServer (SelfCheck's, GoogleSignIn's), because it reads those limits only once.
+    JdkHttpsEngine.applyJdkLimits()
     // P7-R10: the app's own data (database, log, lock) is in the secrets folder, which Windows' Controlled folder access
     // doesn't guard; only the library (recipes, photos) is in Documents.
     val appDataDir = DesktopPaths.appDataDir()
@@ -226,6 +235,9 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
     // The built-in server on port 5000 (P4-R1): started by app.start() after the startup sync, stopped first by close().
     // The preview (Gradle's run) listens on 5055 instead, through mealplanner.port, read once here.
     val port = MealPlannerServer.portFrom()
+    // LAN sync (stage 2b): port 5001, or the preview's (5065, or 5066 beside a second preview) through
+    // mealplanner.syncPort, read once here.
+    val syncPort = SyncServer.portFrom()
     // The version other Meal Planner PCs see (plan 6); the packaged app sets it, as for Settings' About.
     val version = System.getProperty(DesktopUpdates.VERSION_PROPERTY) ?: "dev"
     val discoveryOn = lookForPeers(System.getProperty(StartWithWindows.INSTALLED_PROPERTY), System.getProperty(PEERS_PROPERTY))
@@ -277,12 +289,39 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
             { desktop ->
                 PeerWatch(
                     JmdnsDiscovery(),
-                    own = { desktop.identity.record(PeerTxt.pcName(), version) },
+                    own = { desktop.identity.record(PeerTxt.pcName(), version).copy(syncPort = syncPort) },
                     port = port,
-                    // P6-R8: the server listens again as the token and the yield allow.
-                    onYieldChanged = { desktop.server?.rebind() },
+                    // P6-R8: the server listens again as the token and the yield allow; so does the sync port (stage 2b).
+                    // Each in its own try, so one that fails never keeps the other from listening as it should.
+                    onYieldChanged = {
+                        try {
+                            desktop.server?.rebind()
+                        } catch (e: Exception) {
+                            System.err.println("Meal Planner: rebinding the server failed: ${e.javaClass.simpleName}")
+                        }
+                        try {
+                            desktop.sync?.rebind()
+                        } catch (e: Exception) {
+                            System.err.println("Meal Planner: rebinding the sync port failed: ${e.javaClass.simpleName}")
+                        }
+                    },
                 )
             }
+        },
+        // LAN sync's master side (stage 2b): closed until a device is paired or Pair a device is open, and while an older
+        // household's PC answers. Its certificate and sealed password live beside the secrets file, in the app data folder.
+        syncFactory = { desktop ->
+            DesktopSync(
+                database = { desktop.container.database },
+                recipes = { desktop.container.recipes },
+                imagesDir = desktop.imagesDir,
+                certificate = SyncCertificate(appDataDir, DpapiProtector()),
+                household = { desktop.identity.household.id() },
+                pcName = { PeerTxt.pcName() },
+                lanAllowed = { desktop.peers?.yieldTo() == null },
+                addresses = { PeerInterfaces.pick(PeerInterfaces.system()).map { it.hostAddress } },
+                port = syncPort,
+            )
         },
     )
     val started = app.start()
@@ -471,6 +510,10 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                                 restart = replaced,
                                 // Plan 8: Settings' Updates section and the launch notice.
                                 updates = updates,
+                                // LAN sync (stage 2b): Settings' Phones and PCs.
+                                devices = app.sync,
+                                // LAN sync (stage 2b): held sync removals in Needs attention and on the Recipes banner.
+                                syncAttention = app.sync,
                             )
                         }
                     }

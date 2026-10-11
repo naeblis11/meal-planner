@@ -75,6 +75,16 @@ fun NeedsAttentionScreen(
     usingNewFolder: Boolean = false,
     /** "Point back": how to give the app its old folder again. */
     onPointBack: (RecipeFileProblem) -> Unit = {},
+    /** Desktop: recipes a sync from another device would remove (LAN sync stage 2b); empty hides the row. */
+    syncHeld: List<String> = emptyList(),
+    /** True while Remove them or Keep them is working; both are disabled. */
+    syncBusy: Boolean = false,
+    /** The sync confirmation's numbers while it is open; null otherwise. */
+    syncAsk: SyncRemoveAsk? = null,
+    onAskSyncRemove: () -> Unit = {},
+    onConfirmSyncRemove: () -> Unit = {},
+    onCancelSyncRemove: () -> Unit = {},
+    onKeepSyncHeld: () -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -102,9 +112,13 @@ fun NeedsAttentionScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            if (problems.isEmpty()) {
+            if (problems.isEmpty() && syncHeld.isEmpty()) {
                 item { Text("Nothing needs attention.", color = MealColors.Muted, modifier = Modifier.padding(vertical = 24.dp)) }
             } else {
+                // Held from a sync (stage 2b): first, as it is about recipes rather than files.
+                if (syncHeld.isNotEmpty()) {
+                    item { SyncHeldRow(syncHeld, syncBusy, onAskSyncRemove, onKeepSyncHeld) }
+                }
                 // A missing folder says what to do in its own message; there are no files to fix then.
                 if (problems.any { it.kind != RecipeFileProblem.Kind.FOLDER }) {
                     item {
@@ -128,6 +142,14 @@ fun NeedsAttentionScreen(
             text = { Text(removeMissingQuestion(removeAsk.recipes, removeAsk.plannedMeals)) },
             confirmButton = { TextButton(onClick = onConfirmRemoveMissing) { Text("Remove", color = MealColors.Danger) } },
             dismissButton = { TextButton(onClick = onKeepMissing) { Text("Keep them") } },
+        )
+    }
+    if (syncAsk != null) {
+        AlertDialog(
+            onDismissRequest = onCancelSyncRemove,
+            text = { Text(syncRemoveQuestion(syncAsk.recipes, syncAsk.plannedMeals)) },
+            confirmButton = { TextButton(onClick = onConfirmSyncRemove) { Text("Remove", color = MealColors.Danger) } },
+            dismissButton = { TextButton(onClick = onCancelSyncRemove) { Text("Cancel") } },
         )
     }
 }
@@ -170,6 +192,21 @@ private fun ProblemRow(
                 TextButton(onClick = onUseNewFolder, enabled = !usingNewFolder) { Text(USE_NEW_FOLDER) }
                 TextButton(onClick = { onPointBack(problem) }) { Text(POINT_BACK) }
             }
+        }
+    }
+    HorizontalDivider(color = MealColors.LineSoft)
+}
+
+/** Recipes a sync from another device would remove: their names, Remove them (asks first) and Keep them. */
+@Composable
+private fun SyncHeldRow(held: List<String>, busy: Boolean, onRemove: () -> Unit, onKeep: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        Text("From another device", style = MaterialTheme.typography.titleMedium)
+        Text(syncHeldText(held.size), color = MealColors.DangerHover)
+        Text(held.joinToString(", "), color = MealColors.Muted)
+        Row {
+            TextButton(onClick = onRemove, enabled = !busy) { Text(SYNC_REMOVE, color = MealColors.Danger) }
+            TextButton(onClick = onKeep, enabled = !busy) { Text(SYNC_KEEP) }
         }
     }
     HorizontalDivider(color = MealColors.LineSoft)

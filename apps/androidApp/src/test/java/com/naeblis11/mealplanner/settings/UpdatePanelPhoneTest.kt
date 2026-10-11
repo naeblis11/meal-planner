@@ -51,5 +51,8 @@ class UpdatePanelPhoneTest {
         // P8-PF5: from plan 8 the phone goes online for its updates, so no screen may still say it never does.
         compose.onNodeWithText("never goes online", substring = true).assertDoesNotExist()
         compose.onNodeWithText("goes online only to check GitHub for its own updates", substring = true).assertExists()
+        // LAN sync (stage 2c): the phone also reaches the PC it joined, when Sync is pressed.
+        compose.onNodeWithText("when you press Sync, to reach your PC", substring = true).assertExists()
+        compose.onNodeWithText(ABOUT_PHONE_SCANNER).assertExists()
     }
 }

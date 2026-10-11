@@ -97,7 +97,10 @@ class ShoppingRepository(
 
     // The week's (or one recipe's) ingredients merged into the list, as shopping_list.add_week does.
     private suspend fun mergeLocked(meals: List<ShoppingMerge.PlannedMeal>) {
-        val existing = dao.allInIdOrder().map { it.toListRow() }
+        val rows = dao.allInIdOrder()
+        val existing = rows.map { it.toListRow() }
+        // Each row keeps its sync id: a merge changes a row, it doesn't replace it.
+        val syncIds = rows.associate { it.id to it.syncId }
         // Only what is on hand: a crossed-out pantry item has run out, so it needs buying.
         val pantry = dao.onHandPantry().map { PantryRule(it.name, it.exactMatch) }
         val aisles = dao.knownAisles().associate { it.name to it.aisle }
@@ -106,9 +109,9 @@ class ShoppingRepository(
         for (row in ShoppingMerge.addWeek(existing, meals, pantry, aisles)) {
             val id = row.id
             if (id == null) {
-                dao.insert(row.toEntity(0))
+                dao.insert(row.toEntity(0, SyncIds.newId()))
             } else if (row != before[id]) {
-                dao.update(row.toEntity(id))
+                dao.update(row.toEntity(id, syncIds.getValue(id)))
             }
         }
     }
@@ -168,7 +171,8 @@ class ShoppingRepository(
 
     private fun ShoppingItemEntity.toListRow() = ShoppingMerge.ListRow(id, name, amount, unit, aisle, inPantry, checked)
 
-    private fun ShoppingMerge.ListRow.toEntity(id: Long) = ShoppingItemEntity(id, name, amount, unit, aisle, inPantry, checked)
+    private fun ShoppingMerge.ListRow.toEntity(id: Long, syncId: String) =
+        ShoppingItemEntity(id, name, amount, unit, aisle, inPantry, checked, syncId)
 
     // The recipe's first yield amount as Python's str() writes it; unreadable yields mean
     // "no yield" (ratio 1), as shopping_list._planned_ratio treats them.

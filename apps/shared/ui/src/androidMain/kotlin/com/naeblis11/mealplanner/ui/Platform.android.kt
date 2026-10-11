@@ -22,6 +22,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.content.FileProvider
+import com.google.mlkit.common.MlKitException
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.naeblis11.mealplanner.calendar.CalendarPermissions
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -144,6 +148,64 @@ actual fun rememberAppSettingsOpener(onReturn: () -> Unit): () -> Unit {
                 }
             } catch (e: ActivityNotFoundException) {
                 // No system settings app to open (not a real phone): nothing to do.
+            }
+        }
+    }
+}
+
+/**
+ * Google's code scanner for QR codes. Its UI is Play services'; the app holds no camera permission. A phone without
+ * Play services (or whose scanner fails) is "unavailable". The user backing out is not a failure.
+ */
+@Composable
+actual fun rememberCodeScanner(guard: LaunchGuard, onScanned: (String) -> Unit, onUnavailable: () -> Unit): (() -> Unit)? {
+    val context = LocalContext.current
+    val scanned by rememberUpdatedState(onScanned)
+    val unavailable by rememberUpdatedState(onUnavailable)
+    return remember(guard, context) {
+        {
+            guard.launch {
+                val task = try {
+                    val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+                    GmsBarcodeScanning.getClient(context, options).startScan()
+                } catch (e: RuntimeException) {
+                    null
+                }
+                if (task == null) {
+                    guard.done()
+                    unavailable()
+                } else {
+                    task.addOnSuccessListener { barcode ->
+                        guard.done()
+                        // A code that isn't text is no pairing code: PairingQr says so.
+                        scanned(barcode.rawValue.orEmpty())
+                    }
+                    task.addOnCanceledListener { guard.done() }
+                    task.addOnFailureListener { e ->
+                        guard.done()
+                        if ((e as? MlKitException)?.errorCode != MlKitException.CODE_SCANNER_CANCELLED) unavailable()
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Opens the system's Wi-Fi settings; [onReturn] runs when the user is back. */
+@Composable
+actual fun rememberWifiSettingsOpener(onReturn: () -> Unit): () -> Unit {
+    val guard = rememberLaunchGuard()
+    val latest by rememberUpdatedState(onReturn)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        guard.done()
+        latest()
+    }
+    return remember(guard, launcher) {
+        {
+            try {
+                guard.launch { launcher.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
+            } catch (e: ActivityNotFoundException) {
+                // No Wi-Fi settings to open (not a real phone): nothing to do.
             }
         }
     }

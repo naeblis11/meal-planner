@@ -16,8 +16,9 @@ import androidx.room.RoomDatabaseConstructor
         RecipeEntity::class, RecipeIngredientEntity::class, RecipeStepEntity::class,
         MealPlanEntity::class, PantryItemEntity::class, ShoppingItemEntity::class, IngredientAisleEntity::class,
         CalendarEventEntity::class, AppMetaEntity::class, GoogleEventEntity::class,
+        SyncChangeEntity::class, SyncPendingEntity::class, PairedDeviceEntity::class,
     ],
-    version = 5,
+    version = 8,
     exportSchema = true,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -35,6 +36,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun appMetaDao(): AppMetaDao
 
     abstract fun googleEventDao(): GoogleEventDao
+
+    abstract fun syncDao(): SyncDao
+
+    abstract fun pairedDeviceDao(): PairedDeviceDao
 
     companion object {
         const val FILE_NAME = "mealplanner.db"

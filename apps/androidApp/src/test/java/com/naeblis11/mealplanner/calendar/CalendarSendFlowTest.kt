@@ -1,8 +1,9 @@
 package com.naeblis11.mealplanner.calendar
 
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.naeblis11.mealplanner.app.AppContainer
@@ -46,31 +47,36 @@ class CalendarSendFlowTest {
 
     // Screens load and sends run on real IO threads, which waitForIdle does not wait for. 10 s, as NavigationTest's:
     // under the whole suite's load the first send's real IO has taken more than 5 s.
-    private fun await(text: String) =
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+    private fun await(text: String) = await(hasText(text))
+
+    private fun await(matcher: SemanticsMatcher) =
+        compose.waitUntil(10_000) { compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
+
+    // "Send this week" shows its words while still disabled (no week loaded yet, or a send running), and a click on a
+    // disabled button does nothing. The screen's transition runs on the test clock, the week's load on real IO threads,
+    // so under load the button can show before the week is there: wait for it to be enabled before clicking.
+    private fun click(text: String) {
+        await(hasText(text) and isEnabled())
+        compose.onNode(hasText(text) and isEnabled()).performClick()
+    }
 
     @Test
     fun setUpACalendarThenSendTheWeekTwice() {
-        compose.onNodeWithText("Calendar").performClick()
-        await("Send this week to Google Calendar")
-        compose.onNodeWithText("Send this week to Google Calendar").performClick()
+        click("Calendar")
+        click("Send this week to Google Calendar")
         await(CalendarMessages.NOT_SET_UP)
 
-        compose.onNodeWithText("Open Settings").performClick()
-        await("Set up calendar sending")
-        compose.onNodeWithText("Set up calendar sending").performClick()
-        await("Family (family@example.com)")
-        compose.onNodeWithText("Family (family@example.com)").performClick()
+        click("Open Settings")
+        click("Set up calendar sending")
+        click("Family (family@example.com)")
         await("Sending to Family (family@example.com)")
-        compose.onNodeWithText("Back").performClick()
+        click("Back")
 
-        await("Send this week to Google Calendar")
-        compose.onNodeWithText("Send this week to Google Calendar").performClick()
+        click("Send this week to Google Calendar")
         await("Calendar updated: 1 added.")
         assertEquals(listOf("Dinner: Soup"), gateway.titles())
 
-        await("Send this week to Google Calendar")
-        compose.onNodeWithText("Send this week to Google Calendar").performClick()
+        click("Send this week to Google Calendar")
         await("Your calendar was already up to date.")
         assertEquals(listOf("insert 101"), gateway.writes)
     }
