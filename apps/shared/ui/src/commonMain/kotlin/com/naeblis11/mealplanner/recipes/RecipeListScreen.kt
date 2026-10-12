@@ -6,6 +6,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,7 +64,7 @@ import java.io.File
 import kotlinx.coroutines.launch
 import com.naeblis11.mealplanner.ui.SyncAction
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RecipeListScreen(
     groups: List<CategoryGroup<RecipeSummary>>?,
@@ -169,8 +171,14 @@ fun RecipeListScreen(
                 )
                 // Owner, 2026-10-10: the cookbook chips on one line; the rating filter and Collapse all / Expand all share the next.
                 if (books.isNotEmpty()) BookFilterRow(books, book, onBookChange)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) { RatingFilter(minRating, onMinRatingChange) }
+                // A phone is too narrow for the label, five stars and the button on one line (owner, 2026-10-11): the button
+                // wraps below rather than the stars running under it or the label being crushed.
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RatingFilter(minRating, onMinRatingChange)
                     val categories = groups.orEmpty().map { it.category }
                     if (categories.isNotEmpty() && query.isBlank()) {
                         val allCollapsed = categories.all { RecipeListViewModel.categoryKey(it) in collapsed }
@@ -341,9 +349,11 @@ private fun BookFilterRow(books: List<String>, selected: BookFilter, onSelect: (
  * and tapping the filled one again shows every recipe. The same stars as the recipe page's, so they read the same.
  */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun RatingFilter(minRating: Int, onChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(RATED_AT_LEAST, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+    // On a narrow phone or with large text the stars go below the label rather than off the edge.
+    FlowRow(itemVerticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(RATED_AT_LEAST, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium, maxLines = 1, softWrap = false)
         RatingStars(
             rating = minRating.takeIf { it > 0 },
             onRate = onChange,

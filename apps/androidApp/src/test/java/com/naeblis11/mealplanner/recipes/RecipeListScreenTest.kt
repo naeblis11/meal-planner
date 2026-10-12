@@ -2,11 +2,13 @@ package com.naeblis11.mealplanner.recipes
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
@@ -15,11 +17,16 @@ import com.naeblis11.mealplanner.domain.CategoryGroup
 import com.naeblis11.mealplanner.domain.SubcategoryGroup
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h3000dp")
@@ -92,6 +99,49 @@ class RecipeListScreenTest {
         assertEquals(0, min)
     }
 
+    // Owner, 2026-10-11: on a phone the rating filter's stars ran under Collapse all (and its label was crushed into a
+    // sliver). The label stays on one line, and Collapse all moves below the stars when they don't share a line.
+    @Test
+    @Config(qualifiers = "w360dp-h800dp")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun onAPhoneTheRatingFilterAndCollapseAllDontOverlap() = ratingRowFits()
+
+    @Test
+    @Config(qualifiers = "w360dp-h800dp", fontScale = 1.3f)
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun withLargeTextTheRatingFilterAndCollapseAllDontOverlap() = ratingRowFits()
+
+    @Test
+    @Config(qualifiers = "w320dp-h700dp", fontScale = 1.3f)
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun onASmallPhoneWithLargeTextTheStarsStayOnScreen() = ratingRowFits()
+
+    @Test
+    @Config(qualifiers = "w360dp-h800dp", fontScale = 2.0f)
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun withTheLargestTextTheStarsStayOnScreen() = ratingRowFits()
+
+    private fun ratingRowFits() {
+        compose.setContent { MealPlannerTheme { RecipeListScreen(groups, "", {}, {}, {}, {}, {}, { null }) } }
+        val label = compose.onNodeWithText(RATED_AT_LEAST).getUnclippedBoundsInRoot()
+        val stars = (1..5).map { compose.onNodeWithContentDescription("$RATING_FILTER_ACTION $it " + if (it == 1) "star" else "stars").getUnclippedBoundsInRoot() }
+        val button = compose.onNodeWithText(COLLAPSE_ALL).getUnclippedBoundsInRoot()
+        // One line of text, however large the font: a crushed label wraps into a tall column.
+        assertTrue("the label is crushed: $label", label.height < 40.dp && label.width > label.height)
+        // A squeezed star keeps drawing its icon past its zero-width box, under the button.
+        val screen = compose.onRoot().getUnclippedBoundsInRoot()
+        for (star in stars) {
+            assertTrue("a star is squeezed: $star", star.width >= 24.dp)
+            assertTrue("a star runs off the screen: $star", star.right <= screen.right)
+        }
+        for (part in listOf(label) + stars) {
+            val apart = part.right <= button.left || part.left >= button.right || part.bottom <= button.top || part.top >= button.bottom
+            assertTrue("$part overlaps Collapse all $button", apart)
+            assertTrue("$part runs past the label's left edge", part.left >= label.left)
+        }
+        compose.onNodeWithText(COLLAPSE_ALL).assertIsDisplayed()
+    }
+
     @Test
     @Config(qualifiers = "w411dp-h800dp")
     fun theSearchAndFiltersStayPutWhileTheListScrolls() {
@@ -116,4 +166,5 @@ class RecipeListScreenTest {
         compose.setContent { MealPlannerTheme { RecipeListScreen(groups, "", {}, {}, {}, {}, {}, { null }) } }
         compose.onNodeWithText("All recipes").assertDoesNotExist()
     }
+
 }
