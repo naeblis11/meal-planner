@@ -10,7 +10,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 /**
- * P7-R2: the installer's and the launcher's icon, made once from the repo's icon.png with Pillow and committed. An
+ * P7-R2: the installer's and the launcher's icon, made from the repo's icon.svg by tools/make_icons.py and committed. An
  * .ico is a 6-byte header, then one 16-byte entry per size (a width of 0 means 256), each pointing at a PNG.
  */
 class PackagingIconTest {

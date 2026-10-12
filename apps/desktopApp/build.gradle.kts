@@ -161,8 +161,7 @@ compose.desktop {
                 // Compose has no shortcut prompt: the desktop shortcut is always made, and the user may delete it.
                 shortcut = true
                 upgradeUuid = msiUpgradeUuid
-                // Made once from the repo's icon.png with Pillow (requirements-dev.txt), from the worktree root:
-                // python -c "from PIL import Image; Image.open('icon.png').convert('RGBA').save('apps/desktopApp/packaging/meal-planner.ico', sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])"
+                // Made from the repo's icon.svg by tools/make_icons.py (Pillow, requirements-dev.txt) and committed
                 iconFile.set(project.file("packaging/meal-planner.ico"))
             }
         }

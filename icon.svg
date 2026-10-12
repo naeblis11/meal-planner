@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Meal Planner's mark, in the family style of the Steadfast and VibeForge icons: a dark steel pot on black,
+       glowing ember-gradient steam and pixel embers. The source of icon.png and every icon made from it. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#1a0a0c"/>
+      <stop offset=".55" stop-color="#050305"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff5a28" stop-opacity=".55"/>
+      <stop offset=".6" stop-color="#ff1f8f" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#ff1f8f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a3142"/>
+      <stop offset=".45" stop-color="#151a25"/>
+      <stop offset="1" stop-color="#0b0e15"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8d97b3" stop-opacity=".9"/>
+      <stop offset=".35" stop-color="#4a536b" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#1c2230" stop-opacity=".3"/>
+    </linearGradient>
+    <linearGradient id="fire" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffc21a"/>
+      <stop offset=".5" stop-color="#ff6a1a"/>
+      <stop offset="1" stop-color="#ff1f8f"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="16" result="b1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b2"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <clipPath id="potClip">
+      <path d="M262 560 H762 V700 C762 768 714 806 646 806 H378 C310 806 262 768 262 700 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="430" r="380" fill="url(#halo)"/>
+
+  <!-- steam -->
+  <g filter="url(#glow)" fill="none" stroke="url(#fire)" stroke-linecap="round">
+    <path d="M512 452 C462 402 462 352 512 302 C562 252 562 202 512 152" stroke-width="36"/>
+    <path d="M396 466 C360 430 360 394 396 358 C432 322 432 286 396 250" stroke-width="28"/>
+    <path d="M628 466 C664 430 664 394 628 358 C592 322 592 286 628 250" stroke-width="28"/>
+  </g>
+
+  <!-- handles -->
+  <path d="M262 600 H216 C196 600 186 612 186 628 C186 644 196 656 216 656 H262"
+        fill="none" stroke="url(#rim)" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M762 600 H808 C828 600 838 612 838 628 C838 644 828 656 808 656 H762"
+        fill="none" stroke="url(#rim)" stroke-width="22" stroke-linejoin="round"/>
+
+  <!-- lid -->
+  <path d="M236 548 C250 486 368 470 512 470 C656 470 774 486 788 548 Z"
+        fill="url(#steel)" stroke="url(#rim)" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="472" y="440" width="80" height="34" rx="12" fill="url(#steel)" stroke="url(#rim)" stroke-width="6"/>
+
+  <!-- pot -->
+  <path d="M262 560 H762 V700 C762 768 714 806 646 806 H378 C310 806 262 768 262 700 Z"
+        fill="url(#steel)" stroke="url(#rim)" stroke-width="6"/>
+  <path d="M296 590 H728 V696 C728 748 694 774 642 774 H382 C330 774 296 748 296 696 Z"
+        fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="3"/>
+  <!-- warm reflection on the pot -->
+  <g clip-path="url(#potClip)">
+    <ellipse cx="540" cy="600" rx="220" ry="90" fill="#ff6a1a" opacity=".18" filter="url(#soft)"/>
+  </g>
+
+  <!-- pixel embers -->
+  <g filter="url(#glow)">
+    <rect x="770" y="210" width="44" height="44" rx="5" fill="#ff1f8f"/>
+    <rect x="712" y="150" width="30" height="30" rx="4" fill="#ff6a1a"/>
+    <rect x="820" y="330" width="26" height="26" rx="3" fill="#ff3d6e"/>
+    <rect x="232" y="232" width="30" height="30" rx="4" fill="#ffc21a"/>
+    <rect x="196" y="350" width="20" height="20" rx="3" fill="#ff8a1a"/>
+  </g>
+</svg>

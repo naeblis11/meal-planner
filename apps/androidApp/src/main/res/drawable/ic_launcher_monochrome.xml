@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon (monochrome) layer: icon.svg's pot, lid, steam and embers, inset to 80% to match the PNG
+     foreground. The launcher tints it; only alpha matters. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <group
+        android:pivotX="512"
+        android:pivotY="512"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+        <!-- Steam -->
+        <path
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="36"
+            android:strokeLineCap="round"
+            android:pathData="M512,452 C462,402 462,352 512,302 C562,252 562,202 512,152" />
+        <path
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="28"
+            android:strokeLineCap="round"
+            android:pathData="M396,466 C360,430 360,394 396,358 C432,322 432,286 396,250 M628,466 C664,430 664,394 628,358 C592,322 592,286 628,250" />
+        <!-- Handles -->
+        <path
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="22"
+            android:strokeLineJoin="round"
+            android:pathData="M262,600 H216 C196,600 186,612 186,628 C186,644 196,656 216,656 H262 M762,600 H808 C828,600 838,612 838,628 C838,644 828,656 808,656 H762" />
+        <!-- Lid, knob and pot -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M236,548 C250,486 368,470 512,470 C656,470 774,486 788,548 Z M484,440 H540 A12,12 0 0 1 552,452 V474 H472 V452 A12,12 0 0 1 484,440 Z M262,560 H762 V700 C762,768 714,806 646,806 H378 C310,806 262,768 262,700 Z" />
+        <!-- Embers -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M770,210h44v44h-44z M712,150h30v30h-30z M820,330h26v26h-26z M232,232h30v30h-30z M196,350h20v20h-20z" />
+    </group>
+</vector>

@@ -34,7 +34,7 @@ Two standalone apps, no server and no cloud copy of the data. The Windows deskto
 
 ## Brand Commitments
 
-Named "Meal Planner" in the window title and the app's name, paired with a cookbook-and-calendar mark (`icon.png`, made into the desktop's tray and installer icons). No other brand identity (voice, extended palette) has been established beyond the DESIGN.md visual system.
+Named "Meal Planner" in the window title and the app's name, paired with a steaming-pot mark in the same family as the owner's Steadfast and VibeForge icons (a dark steel object on black with glowing ember-gradient lines and pixel embers): `icon.svg` is the source, and `tools/make_icons.py` makes `icon.png`, the desktop's tray and installer icons, the Android launcher icon and the extension's icons from it. No other brand identity (voice, extended palette) has been established beyond the DESIGN.md visual system.
 
 ## Evidence on Hand
 

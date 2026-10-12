@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import org.jetbrains.skia.Image
 
-/** The repo's icon.png, scaled to 64 x 64 for the tray and the title bar (Task 3 of plan 3 made it with Pillow). */
+/** The repo's icon, 64 x 64 for the tray and the title bar (made from icon.svg by tools/make_icons.py). */
 const val ICON_RESOURCE = "meal-planner-icon.png"
 
 fun appIconBitmap(): ImageBitmap {

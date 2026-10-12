@@ -1,4 +1,4 @@
 # The only Python left in the repo is developer tooling: the Alexa skill's tests, the public
-# export (tools/export_public.py) and two one-off icon scripts. No app runs on Python.
+# export (tools/export_public.py) and the icon script (tools/make_icons.py). No app runs on Python.
 pyyaml>=6.0   # tests/test_alexa_assets.py reads alexa/home-assistant.yaml
-pillow>=10.0  # chrome-extension/generate_icons.py and the desktop installer's .ico (apps/desktopApp/build.gradle.kts)
+pillow>=10.0  # tools/make_icons.py scales icon.svg's render into every app icon
