@@ -2,4 +2,6 @@
 <resources>
     <!-- The edge of icon.svg's background, so the adaptive icon's foreground blends into it -->
     <color name="ic_launcher_background">#FF000000</color>
+    <!-- DESIGN.md colors paper: the launch window on a light phone -->
+    <color name="launch_ground">#FFFFFFFF</color>
 </resources>

@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -381,7 +382,9 @@ private fun DayHeading(day: DayView) {
 // Each grid column's inner padding; today's tint fills it.
 private val TODAY_INSET = 4.dp
 
-/** DESIGN.md's meal-slot tints: the header's background and its ink. */
+/** DESIGN.md's meal-slot tints: the header's background and its ink, in the current theme. */
+@Composable
+@ReadOnlyComposable
 fun slotColors(slot: String): Pair<Color, Color> = when (slot) {
     "Breakfast" -> MealColors.BreakfastTint to MealColors.BreakfastInk
     "Lunch" -> MealColors.LunchTint to MealColors.LunchInk

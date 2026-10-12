@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- On a phone set to dark: DESIGN.md's dark paper, so the launch doesn't flash white. -->
+    <style name="Theme.MealPlanner" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/launch_ground</item>
+    </style>
+</resources>

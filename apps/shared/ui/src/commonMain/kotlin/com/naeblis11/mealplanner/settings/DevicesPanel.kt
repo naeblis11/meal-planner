@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.naeblis11.mealplanner.ui.AttentionBanner
 import com.naeblis11.mealplanner.ui.theme.MealColors
+import com.naeblis11.mealplanner.ui.theme.MealPalette
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -131,17 +132,20 @@ private fun DeviceLine(row: DeviceRow, onRemove: () -> Unit) {
     }
 }
 
-/** A QR code drawn module by module: ink on paper, with the four-module quiet zone a scanner needs. */
+/**
+ * A QR code drawn module by module: ink on paper, with the four-module quiet zone a scanner needs. Always the light
+ * palette's dark-on-white, in dark mode too: many phone scanners can't read a light-on-dark (inverted) code.
+ */
 @Composable
 fun QrImage(qr: QrModules, modifier: Modifier = Modifier) {
     Canvas(modifier.semantics { contentDescription = QR_DESCRIPTION }) {
         val cells = qr.size + 2 * QUIET_ZONE
         val cell = size.minDimension / cells
-        drawRect(MealColors.Paper, size = Size(cell * cells, cell * cells))
+        drawRect(MealPalette.Light.paper, size = Size(cell * cells, cell * cells))
         for (y in 0 until qr.size) {
             for (x in 0 until qr.size) {
                 if (qr.isDark(x, y)) {
-                    drawRect(MealColors.Ink, topLeft = Offset((x + QUIET_ZONE) * cell, (y + QUIET_ZONE) * cell), size = Size(cell, cell))
+                    drawRect(MealPalette.Light.ink, topLeft = Offset((x + QUIET_ZONE) * cell, (y + QUIET_ZONE) * cell), size = Size(cell, cell))
                 }
             }
         }

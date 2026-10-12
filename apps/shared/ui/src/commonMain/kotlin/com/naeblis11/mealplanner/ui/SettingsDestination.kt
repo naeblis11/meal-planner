@@ -87,6 +87,7 @@ fun NavGraphBuilder.settingsDestination(
                 }
             }
         }
+        val themeMode by container.theme.mode.collectAsStateWithLifecycle()
         val libraryNotice by (storage?.libraryNotice ?: NO_LIBRARY_NOTICE).collectAsStateWithLifecycle()
         val libraryChecking by (storage?.checking ?: NOT_CHECKING).collectAsStateWithLifecycle()
         val checkScope = rememberCoroutineScope()
@@ -201,6 +202,8 @@ fun NavGraphBuilder.settingsDestination(
             updateActions = updateVm?.let { vm ->
                 UpdateActions(vm::checkNow, vm::setAutomatic, vm::install, vm::confirmInstall, vm::cancelInstall, vm::openInstallPermission)
             } ?: UpdateActions(),
+            themeMode = themeMode,
+            onThemeModeChange = container.theme::set,
         )
     }
 }

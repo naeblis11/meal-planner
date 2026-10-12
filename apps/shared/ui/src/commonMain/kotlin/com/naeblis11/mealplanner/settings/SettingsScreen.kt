@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.naeblis11.mealplanner.app.ThemeMode
 import com.naeblis11.mealplanner.calendar.CalendarInfo
 import com.naeblis11.mealplanner.calendar.CalendarMessages
 import com.naeblis11.mealplanner.calendar.GoogleCalendar
@@ -90,6 +92,9 @@ fun SettingsScreen(
     /** Android: "Join a PC", LAN sync's pairing with the household's PC (stage 2c); null hides it (the desktop). */
     join: JoinState? = null,
     joinActions: JoinActions = JoinActions(),
+    /** Light, dark, or the system's choice (owner, 2026-10-12); null hides the panel. */
+    themeMode: ThemeMode? = null,
+    onThemeModeChange: (ThemeMode) -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -140,6 +145,9 @@ fun SettingsScreen(
                     CalendarSetup(calendar, onSetUpCalendar, onChooseCalendar, onCancelChoosing, onOpenAppSettings)
                 }
             }
+            if (themeMode != null) {
+                Panel(APPEARANCE_PANEL) { AppearanceSetting(themeMode, onThemeModeChange) }
+            }
             Panel("Backup") {
                 // Moving recipes to the PC is the phone's sentence; the PC (which has the server panel) only says what it is.
                 Text(
@@ -167,6 +175,7 @@ fun SettingsScreen(
             if (updates != null) {
                 Panel(UPDATES_PANEL) { UpdateSetting(updates, updateActions) }
             }
+            Panel(PRIVACY_PANEL) { PrivacySetting() }
             Panel("About") {
                 Text("Meal Planner $version")
                 if (google != null) {
@@ -236,12 +245,65 @@ private fun CalendarSetup(
     }
 }
 
+/**
+ * Settings' Privacy panel: the summary always, the rest behind Read the policy.
+ *
+ * The whole policy lives in the app rather than behind a link because the app is usable with no connection at all,
+ * and a policy you can only read online is no use in a grocery store. [PrivacyPolicy] is the only copy; the one in
+ * `docs/PRIVACY.md` is kept identical by `tests/test_privacy_policy.py`.
+ */
+@Composable
+internal fun PrivacySetting() {
+    var open by rememberSaveable { mutableStateOf(false) }
+    Text(PrivacyPolicy.SUMMARY)
+    if (open) {
+        Text(PrivacyPolicy.UPDATED, color = MealColors.Muted, style = MaterialTheme.typography.bodySmall)
+        PrivacyPolicy.SECTIONS.forEach { (heading, body) ->
+            Text(heading, style = MaterialTheme.typography.titleMedium)
+            Text(body)
+        }
+    }
+    OutlinedButton(onClick = { open = !open }) { Text(if (open) HIDE_PRIVACY else READ_PRIVACY) }
+}
+
 @Composable
 private fun Panel(title: String, content: @Composable () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MealColors.Paper), border = CardDefaults.outlinedCardBorder(), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge)
             content()
+        }
+    }
+}
+
+/** Settings' Appearance panel (owner, 2026-10-12). */
+const val APPEARANCE_PANEL = "Appearance"
+
+/** Settings' Privacy panel, which holds the whole of [PrivacyPolicy]. */
+const val PRIVACY_PANEL = "Privacy"
+const val READ_PRIVACY = "Read the privacy policy"
+const val HIDE_PRIVACY = "Hide the privacy policy"
+
+/** The three choices, in the order they show; [ThemeMode.SYSTEM] is the default. */
+val THEME_CHOICES: List<Pair<ThemeMode, String>> = listOf(
+    ThemeMode.SYSTEM to "Match system",
+    ThemeMode.LIGHT to "Light",
+    ThemeMode.DARK to "Dark",
+)
+
+/** Light, dark, or whatever the PC or phone is set to; the app recolours at once and keeps the choice. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AppearanceSetting(mode: ThemeMode, onChange: (ThemeMode) -> Unit) {
+    Text("Choose a light or dark look, or follow this device's own setting.", color = MealColors.Muted)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for ((choice, label) in THEME_CHOICES) {
+            FilterChip(
+                selected = mode == choice,
+                onClick = { onChange(choice) },
+                label = { Text(label) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            )
         }
     }
 }

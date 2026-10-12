@@ -38,6 +38,9 @@ class AppContainer(
 
     val settings: SettingsStore by lazy(settingsFactory)
 
+    /** Settings > Appearance: light, dark, or the system's choice (owner, 2026-10-12). */
+    val theme: ThemePreference by lazy { ThemePreference(settings) }
+
     val recipes: RecipeRepository by lazy { RecipeRepository(database, imagesDir, files = files, onLibraryBlocked = onLibraryBlocked) }
 
     val plans: MealPlanRepository by lazy { MealPlanRepository(database) }

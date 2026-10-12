@@ -1,49 +1,54 @@
 # Meal Planner privacy policy
 
-Meal Planner is a free recipe, meal-plan, pantry and shopping-list app for Windows and Android. It
-has no servers, no accounts and no analytics. Nothing you put in it is sent to the people who make it.
+Last updated 12 October 2026
 
-## What stays on your devices
+Meal Planner is made by VibeForgeDev. It has no accounts, no adverts and no analytics, it keeps what you enter on your own devices, and it sends none of it to us.
 
-Your recipes, photos, meal plans, pantry and shopping list are stored only on your own PC (your
-Documents folder and your user's local app data) and on your phone (the app's private storage), and
-in any backup files you choose to export. Android's own cloud backup of the app is turned off.
+<!--
+  This file and the policy shown in the app (apps/shared/ui/.../settings/PrivacyPolicy.kt) are kept word for word
+  the same by tests/test_privacy_policy.py. Edit the Kotlin, then run that test, which says what to change here.
+-->
 
-## Google Calendar (optional)
+## What the app keeps, and where
 
-If you choose **Sign in with Google** under Settings > Google Calendar, you sign in to your own Google account on
-Google's own page, and Meal Planner asks for two permissions:
+Your recipes, photos, meal plans, pantry and shopping list are kept on the device you entered them on, and in any backup you choose to make. They are not uploaded, and no one else can reach them through the app.
 
-- `calendar.calendarlist.readonly`: to list your calendars, so you can pick the one meals go to.
-- `calendar.events`: to add, change and remove the meal events Meal Planner itself created in the
-  calendar you picked.
+## What we receive
 
-Meal Planner reads no other calendar data and never changes events it did not create. The sign-in
-is kept only on your PC, encrypted with Windows' own data protection for your Windows user. Nothing
-from your Google account goes anywhere but between your PC and Google.
+Nothing. VibeForgeDev runs no service that your data passes through, receives no information from the app, and has no way to see your recipes, plans or lists. Nothing is sold or shared with anyone, because nothing is collected in the first place.
 
-You can stop this at any time: Settings > Google Calendar > Sign out forgets the sign-in on the PC,
-and you can remove Meal Planner's access at <https://myaccount.google.com/permissions>.
+## When the app goes online
 
-Meal Planner's use of information received from Google APIs adheres to the
-[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
-including the Limited Use requirements.
+The app works without a connection, and goes online only for things you ask for: to check whether a newer version is available and download one when you choose to install it, to send meals to a calendar you have connected, to fetch a photo for a recipe you are importing from a website, and to exchange your library with your own devices. Each of those sends only what the task needs. None of them sends anything to us.
 
-## Update checks
+## Your own devices
 
-At most once a day when it opens, and when you press **Check for updates**, each app asks GitHub
-(github.com and GitHub's download hosts, over https) whether there is a newer version, and downloads
-it when you press **Install**. It sends nothing about you or your data.
+You can pair your devices so they share one library. That exchange goes directly between your own devices over an encrypted connection; it does not pass through us or any other company.
 
-## On your home network
+## Calendars you connect
 
-The Windows app answers the Meal Planner Chrome extension on your own PC, and, if you set it up,
-Home Assistant on your network. It announces itself on your local network so a second Meal Planner
-PC in the same home can see it. None of this leaves your network.
+Connecting a calendar is optional. The app adds, changes and removes only the meal entries it created itself, and reads nothing else in your calendar. You can disconnect at any time, and you can also withdraw the app's access from the calendar account's own settings.
 
-On the phone, scanning your PC's pairing code uses Google's code scanner, which runs in Google Play
-services. Meal Planner removes the scanner library's own upload pipeline; Google Play services, which runs the scanner, may record that it was used.
+## Google Calendar
+
+Where the calendar you connect is a Google one, you sign in on Google's own page and the app never sees your password. It asks only to list your calendars, so you can choose one, and to manage events in the calendar you chose. Meal Planner's use of information received from Google APIs follows the Google API Services User Data Policy, including the Limited Use requirements.
+
+## Other software you connect
+
+You can let other software you run yourself send recipes or spoken commands to the app. Those connections stay on your own device or your own home network.
+
+## Scanning a pairing code
+
+On a phone, pairing by scanning a code uses the code scanner built into Google Play services. The app removes that component's own reporting. Google Play services, which runs the scanner, may still record that it was used. You can pair by typing a code instead.
+
+## Children
+
+Meal Planner is not directed at children, and it collects no information about anyone who uses it.
+
+## Changes
+
+If this policy changes, the new version travels with the app and is shown here. The date above is when it last changed.
 
 ## Contact
 
-Questions: open an issue at <https://github.com/naeblis11/meal-planner/issues>.
+Questions about this policy: vibeforgedev.com

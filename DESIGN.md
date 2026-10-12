@@ -23,6 +23,28 @@ colors:
   slot-lunch-ink: "#3c6690"
   slot-dinner-tint: "#fbeee0"
   slot-dinner-ink: "#a86a2c"
+dark-colors:
+  ink: "#e3ebe5"
+  paper: "#121a16"
+  paper-alt: "#1a241f"
+  surface: "#121a16"
+  line: "#2e3a33"
+  line-soft: "#222c26"
+  muted: "#a2b1a8"
+  muted-2: "#7c8b82"
+  accent: "#4cb884"
+  accent-hover: "#8ad6ad"
+  accent-bright: "#62cc97"
+  accent-tint: "#1c3a2b"
+  danger: "#f08a80"
+  danger-hover: "#ffb4ab"
+  danger-tint: "#3b1f1c"
+  slot-breakfast-tint: "#22331e"
+  slot-breakfast-ink: "#9fcb8b"
+  slot-lunch-tint: "#1c2836"
+  slot-lunch-ink: "#97bbe0"
+  slot-dinner-tint: "#3a2a19"
+  slot-dinner-ink: "#e6ab6a"
 typography:
   page-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
@@ -124,6 +146,9 @@ A pure white ground with near-black ink, one forest-green accent, a dedicated da
 
 ### Meal-Slot Tints (weekly meal-plan grid only)
 Breakfast `#eaf5e8` tint / `#4c7a3c` ink &middot; Lunch `#e8f0f8` tint / `#3c6690` ink &middot; Dinner `#fbeee0` tint / `#a86a2c` ink. Applied only as a meal-slot card's header background and icon color on the Meal Plan week grid — real information (which meal this slot is), never decoration, and never used as body text color or full-card background elsewhere.
+
+### Dark Mode
+Settings > Appearance offers **Match system** (the default), **Light** and **Dark** (owner, 2026-10-12). Dark is the same kitchen after dark, not a second identity: every token keeps its name and job, and only its value changes (`dark-colors` above). The ground is a deep green-black (`#121a16`, cards and page alike, with `#1a241f` as the recessed surface), ink is a soft off-white, and forest green is lifted to `#4cb884` so it still carries every action at 7:1 on the ground. `accent-hover` and `danger-hover` go *lighter* rather than deeper, because their job is text on the pale tints, which turn dark. Every text pairing meets WCAG AA (4.5:1) and is at least as strong as its light counterpart. Two things never change with the theme: a QR code is always dark modules on white, because many phone scanners can't read an inverted code, and the One Accent Rule holds exactly as in light.
 
 ### Named Rules
 **The One Accent Rule.** Forest green is the only color carrying actions, links, and active/selected state anywhere outside the meal-plan grid. The meal-slot tints are the one named exception, scoped to that single grid and to header chrome only.

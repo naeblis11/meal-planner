@@ -1,5 +1,6 @@
 package com.naeblis11.mealplanner.desktop
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -8,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
@@ -52,6 +54,7 @@ import com.naeblis11.mealplanner.ui.AwtFileChooser
 import com.naeblis11.mealplanner.ui.LeaveGuard
 import com.naeblis11.mealplanner.ui.LocalFileChooser
 import com.naeblis11.mealplanner.ui.MealPlannerApp
+import com.naeblis11.mealplanner.ui.theme.MealPalette
 import com.naeblis11.mealplanner.ui.theme.MealPlannerTheme
 import io.ktor.server.routing.Route
 import java.awt.Frame
@@ -491,8 +494,15 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                 if (shell.hasBeenShown) {
                     // File dialogs belong to this window (P3-R5): they open over it and keep it modal.
                     val chooser = remember(window) { AwtFileChooser(window) }
+                    // Settings > Appearance (owner, 2026-10-12): light, dark, or Windows' own app mode.
+                    val themeMode by app.container.theme.mode.collectAsState()
+                    val dark = themeMode.isDark(isSystemInDarkTheme())
+                    // The window's own ground, so a resize never shows a white edge behind the dark app.
+                    SideEffect { window.background = java.awt.Color((if (dark) MealPalette.Dark else MealPalette.Light).paper.toArgb()) }
+                    // Windows draws the title bar, so it is asked to match (best effort; DarkTitleBar).
+                    LaunchedEffect(window, dark) { DarkTitleBar.apply(window, dark) }
                     CompositionLocalProvider(LocalFileChooser provides chooser) {
-                        MealPlannerTheme {
+                        MealPlannerTheme(dark = dark) {
                             MealPlannerApp(
                                 app.container,
                                 startup = startup,

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launch window before Compose draws: DESIGN.md's light paper. The app then follows Settings > Appearance. -->
+    <style name="Theme.MealPlanner" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launch_ground</item>
+    </style>
+</resources>

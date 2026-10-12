@@ -2,6 +2,7 @@ package com.naeblis11.mealplanner.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.naeblis11.mealplanner.calendar.CalendarInfo
@@ -109,6 +110,39 @@ class SettingsScreenTest {
     fun aPhoneWithoutWritableCalendarsSaysSo() {
         show(calendar = CalendarSetupState(picker = CalendarPicker.Choosing(emptyList())))
         compose.onNodeWithText(CalendarMessages.NO_CALENDARS).assertIsDisplayed()
+    }
+
+    @Test
+    fun privacyShowsTheSummaryAndOpensTheWholePolicy() {
+        show()
+        // The summary is always there; the policy itself waits behind the button, so Settings
+        // does not open onto a wall of text.
+        compose.onNodeWithText(PrivacyPolicy.SUMMARY).assertIsDisplayed()
+        val first = PrivacyPolicy.SECTIONS.first()
+        compose.onNodeWithText(first.second).assertDoesNotExist()
+
+        compose.onNodeWithText(READ_PRIVACY).performClick()
+        compose.onNodeWithText(first.second).assertExists()
+        compose.onNodeWithText(PrivacyPolicy.SECTIONS.last().second).assertExists()
+        compose.onNodeWithText(PrivacyPolicy.UPDATED).assertExists()
+
+        compose.onNodeWithText(HIDE_PRIVACY).performClick()
+        compose.onNodeWithText(first.second).assertDoesNotExist()
+    }
+
+    @Test
+    fun theWholePolicyIsReadableWithNoConnection() {
+        // Every section is in the app itself -- nothing here is a link, because the app is
+        // meant to work with no connection at all.
+        show()
+        compose.onNodeWithText(READ_PRIVACY).performClick()
+        PrivacyPolicy.SECTIONS.forEach { (heading, body) ->
+            // A heading may repeat elsewhere on the screen ("Google Calendar" is also the
+            // calendar panel's wording), so headings are asserted as "at least one"; the
+            // bodies are long enough to be unique.
+            assertTrue(heading, compose.onAllNodesWithText(heading).fetchSemanticsNodes().isNotEmpty())
+            compose.onNodeWithText(body).assertExists()
+        }
     }
 
     @Test
