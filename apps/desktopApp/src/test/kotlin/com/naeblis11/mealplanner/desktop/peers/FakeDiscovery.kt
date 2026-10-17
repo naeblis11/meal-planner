@@ -59,6 +59,9 @@ class FakeDiscovery(
 
     val browses = AtomicInteger()
 
+    /** Every reannounce() call (stage 4a). */
+    val reannounces = AtomicInteger()
+
     @Volatile
     var releaseOnClose: Boolean = true
 
@@ -82,6 +85,15 @@ class FakeDiscovery(
         events += "announce"
         announces.incrementAndGet()
         if (!available) return false
+        announced = record to port
+        network.announce(this, record)
+        return true
+    }
+
+    override fun reannounce(record: PeerRecord, port: Int): Boolean {
+        events += "reannounce"
+        reannounces.incrementAndGet()
+        if (!available || announced == null || closes.get() > 0) return false
         announced = record to port
         network.announce(this, record)
         return true

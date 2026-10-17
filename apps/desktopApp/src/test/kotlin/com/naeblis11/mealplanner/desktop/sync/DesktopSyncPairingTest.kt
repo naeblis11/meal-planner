@@ -22,7 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -64,8 +63,7 @@ class DesktopSyncPairingTest {
     @After
     fun tearDown() {
         sync.stop()
-        scope.cancel()
-        db.close()
+        closeAfterScope(scope, db)
         dir.deleteRecursively()
     }
 

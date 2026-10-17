@@ -18,6 +18,9 @@ data class SyncStatus(val known: Boolean = false, val pcName: String? = null, va
 interface SyncControls {
     val status: StateFlow<SyncStatus>
 
+    /** Whose sentences the screens show: the phone's, or a client PC's (stage 4a). */
+    val noun: SyncNoun get() = SyncNoun.PHONE
+
     /** A sync, Replace's backup or a Leave is under way; one at a time, app-wide. */
     val syncing: StateFlow<Boolean>
 
@@ -52,6 +55,9 @@ interface SyncControls {
 /** Settings' "Join a PC" (LAN sync stage 2c, D3) as the screen sees it. Null on the desktop. */
 interface JoinControls {
     val status: StateFlow<SyncStatus>
+
+    /** Whose sentences the screens show: the phone's, or a client PC's (stage 4a). */
+    val noun: SyncNoun get() = SyncNoun.PHONE
 
     /** A sync (or a Leave) is under way: Leave is not offered meanwhile, and [leave] refuses. */
     val syncing: StateFlow<Boolean>

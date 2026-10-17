@@ -26,6 +26,9 @@ internal class HubConnector(private val harness: SyncHarness) : SyncConnector {
     /** "host:port pin name" for each pairing; the pin is "unpinned" on the typed path. */
     val pairs = CopyOnWriteArrayList<String>()
 
+    /** The `kind` each pairing asked to be listed as (stage 4a). */
+    val kinds = CopyOnWriteArrayList<String>()
+
     /** "host:port" for each exchange that reached the hub. */
     val exchanges = CopyOnWriteArrayList<String>()
 
@@ -41,7 +44,8 @@ internal class HubConnector(private val harness: SyncHarness) : SyncConnector {
 
     private fun certificateAt(host: String, port: Int): String = hosts["$host:$port"] ?: throw SyncHttpException(SyncHttp.UNREACHABLE)
 
-    override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String): Paired {
+    override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String, kind: String): Paired {
+        kinds += kind
         duringNextPair?.let { duringNextPair = null; it() }
         val seen = certificateAt(host, port)
         if (pin != null && pin != seen) throw WrongPcException()

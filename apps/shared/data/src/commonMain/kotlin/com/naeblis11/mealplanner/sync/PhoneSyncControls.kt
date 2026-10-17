@@ -11,11 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -36,6 +38,8 @@ class PhoneSyncControls(
     private val imagesDir: File,
     private val wifi: () -> Boolean,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    /** The phone's sentences, or a client PC's (stage 4a). */
+    override val noun: SyncNoun = SyncNoun.PHONE,
 ) : SyncControls, JoinControls {
     private val scope = CoroutineScope(SupervisorJob() + io)
 
@@ -122,7 +126,7 @@ class PhoneSyncControls(
                 throw e
             } catch (e: Exception) {
                 if (e is UnpairedException) _duplicates.value = emptyList()
-                SyncMessages.syncFailed(e, pcName)
+                SyncMessages.syncFailed(e, pcName, noun)
             }
             refresh()
         } finally {
@@ -168,7 +172,7 @@ class PhoneSyncControls(
                 throw e
             } catch (e: Exception) {
                 _duplicates.update { it + duplicate }
-                _outcome.value = SyncMessages.REMOVE_COPY_FAILED
+                _outcome.value = SyncMessages.removeCopyFailed(noun)
             }
         }
     }
@@ -220,4 +224,7 @@ class PhoneSyncControls(
 
     /** Stops this scope (tests; the app keeps it for the process). */
     fun close() = scope.cancel()
+
+    /** Stage 4a: stops this scope and waits for its work to end, so a client PC's database is closed only after. */
+    suspend fun closeAndJoin() = scope.coroutineContext.job.cancelAndJoin()
 }

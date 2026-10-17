@@ -125,6 +125,46 @@ class JmdnsDiscovery(
         return kept
     }
 
+    // Stage 4a. Each interface's JmDNS takes its record back (a goodbye, which JmDNS waits for) and announces the new one,
+    // on a worker, all at once; one that can't is closed and dropped. One still going after startMillis keeps going.
+    override fun reannounce(record: PeerRecord, port: Int): Boolean {
+        val instances = synchronized(lock) { if (isClosed) return false else running.toList() }
+        if (instances.isEmpty()) return false
+        val swaps = try {
+            instances.map { dns ->
+                dns to workers.submit(
+                    Callable {
+                        try {
+                            dns.unregisterAll()
+                            dns.register(serviceInfo(record, port))
+                            true
+                        } catch (e: Exception) {
+                            log("Meal Planner: announcing this PC again failed: ${e.javaClass.simpleName}")
+                            false
+                        }
+                    },
+                )
+            }
+        } catch (e: RejectedExecutionException) {
+            return false // Closed meanwhile.
+        }
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(startMillis)
+        val failed = mutableListOf<Responder>()
+        for ((dns, swap) in swaps) {
+            val left = (deadline - System.nanoTime()).coerceAtLeast(0L)
+            try {
+                if (!swap.get(left, TimeUnit.NANOSECONDS)) failed += dns
+            } catch (e: TimeoutException) {
+                // Still going: it keeps the interface, and close() stops it.
+            } catch (e: ExecutionException) {
+                failed += dns
+            }
+        }
+        val dropped = synchronized(lock) { failed.filter { running.remove(it) } }
+        dropped.forEach(::closeQuietly)
+        return synchronized(lock) { !isClosed && running.isNotEmpty() }
+    }
+
     override fun browse(millis: Long): List<PeerRecord> {
         val instances = synchronized(lock) { if (isClosed) emptyList() else running.toList() }
         if (instances.isEmpty()) return emptyList()
@@ -233,6 +273,9 @@ interface Responder {
     /** Announces [info]; throws when it can't. */
     fun register(info: ServiceInfo)
 
+    /** Takes back every record this responder announced (stage 4a, before announcing a new one). */
+    fun unregisterAll()
+
     fun addServiceListener(type: String, listener: ServiceListener)
 
     fun removeServiceListener(type: String, listener: ServiceListener)
@@ -244,6 +287,8 @@ interface Responder {
 /** The app's responder: one JmDNS. */
 private class JmdnsResponder(private val dns: JmDNS) : Responder {
     override fun register(info: ServiceInfo) = dns.registerService(info)
+
+    override fun unregisterAll() = dns.unregisterAllServices()
 
     override fun addServiceListener(type: String, listener: ServiceListener) = dns.addServiceListener(type, listener)
 

@@ -14,10 +14,13 @@ import kotlinx.coroutines.sync.withLock
 /** Sync was asked for with no pairing stored. */
 class NotPairedException : SyncHttpException("This phone isn't paired with a PC. Join one in Settings.")
 
-/** The phone's way to the PC's sync port: a seam over SyncHttp ([HttpSyncConnector]), so tests reach a SyncHub in-process. */
+/** The phone's (or a client PC's) way to the PC's sync port: a seam over SyncHttp ([HttpSyncConnector]), so tests reach a SyncHub in-process. */
 interface SyncConnector {
-    /** Pairs by the code shown on the PC: pinned to [pin] (the QR code), or unpinned when null (the typed code). */
-    suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String): Paired
+    /**
+     * Pairs by the code shown on the PC: pinned to [pin] (the QR code), or unpinned when null (the typed code). [kind] is
+     * PairingWire.KIND_PHONE or KIND_PC: what the PC lists this device as.
+     */
+    suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String, kind: String): Paired
 
     /** The paired PC at [host]:[port], pinned to [pin], with this phone's [deviceKey]. */
     fun transport(host: String, port: Int, pin: String, deviceKey: String): SyncTransport
@@ -28,8 +31,8 @@ interface SyncConnector {
 
 /** The real connector: 2b's pinned SyncHttp. */
 object HttpSyncConnector : SyncConnector {
-    override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String): Paired =
-        SyncHttp(host, port, pin).pair(code, deviceId, name, PairingWire.KIND_PHONE)
+    override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String, kind: String): Paired =
+        SyncHttp(host, port, pin).pair(code, deviceId, name, kind)
 
     override fun transport(host: String, port: Int, pin: String, deviceKey: String): SyncTransport =
         SyncHttp(host, port, pin).transport(deviceKey)
@@ -67,6 +70,11 @@ object SyncMarks {
  *
  * There is exactly one PhoneSync per process, held app-scoped with its one [PhoneSyncControls]: the lock only
  * serializes work within one instance, so a second one would race the first over the pairing and the marks.
+ *
+ * **A client PC** (stage 4a) is the same client with [kind] PairingWire.KIND_PC: the PC lists it as a PC. [onJoined]
+ * runs after a pairing is kept (the household id already taken), and [onLeft] after a Leave or a removal has forgotten
+ * it; on a PC they change its role (and give a PC that left a household of its own). Both run under the lock, and a
+ * failure in either is thrown on: the pairing (or its forgetting) has already been kept.
  */
 class PhoneSync(
     private val db: AppDatabase,
@@ -77,6 +85,9 @@ class PhoneSync(
     private val deviceName: String,
     private val connector: SyncConnector = HttpSyncConnector,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val kind: String = PairingWire.KIND_PHONE,
+    private val onJoined: suspend (householdId: String) -> Unit = {},
+    private val onLeft: suspend () -> Unit = {},
 ) {
     private val lock = Mutex()
     private val meta = db.appMetaDao()
@@ -101,7 +112,7 @@ class PhoneSync(
         var otherMachine = false
         for (address in invite.addresses) {
             val paired = try {
-                connector.pair(address, invite.port, invite.fingerprint, invite.code, deviceId, deviceName)
+                connector.pair(address, invite.port, invite.fingerprint, invite.code, deviceId, deviceName, kind)
             } catch (e: WrongPcException) {
                 otherMachine = true
                 continue
@@ -116,7 +127,7 @@ class PhoneSync(
 
     /** Pairs with [pc] by the typed [code], unpinned: SyncHttp checks the PC's proof before trusting what it saw. */
     suspend fun pairTyped(code: String, pc: FoundPc): PhonePairing = lock.withLock {
-        val paired = connector.pair(pc.host, pc.port, null, code, SyncSchema.deviceId(db), deviceName)
+        val paired = connector.pair(pc.host, pc.port, null, code, SyncSchema.deviceId(db), deviceName, kind)
         keep(paired, listOf(pc.host), pc.port)
     }
 
@@ -129,6 +140,7 @@ class PhoneSync(
         store.save(pairing)
         SyncMarks.clear(db)
         meta.put(AppMetaEntity(Household.KEY, reply.householdId))
+        onJoined(reply.householdId)
         return pairing
     }
 
@@ -160,6 +172,7 @@ class PhoneSync(
     private suspend fun forget() {
         store.clear()
         SyncMarks.clear(db)
+        onLeft()
     }
 
     // An address that isn't the PC any more: nothing answered, or another machine (another certificate) did.

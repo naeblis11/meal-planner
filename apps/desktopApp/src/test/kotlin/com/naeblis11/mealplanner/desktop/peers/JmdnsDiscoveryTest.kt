@@ -85,10 +85,18 @@ class JmdnsDiscoveryTest {
     private class FakeResponder(private val registerFails: Boolean) : Responder {
         @Volatile var registered = 0
         @Volatile var closed = 0
+        @Volatile var unregistered = 0
+        @Volatile var failNext = false
+        @Volatile var last: ServiceInfo? = null
 
         override fun register(info: ServiceInfo) {
-            if (registerFails) throw java.io.IOException("register failed")
+            if (registerFails || failNext) throw java.io.IOException("register failed")
             registered++
+            last = info
+        }
+
+        override fun unregisterAll() {
+            unregistered++
         }
 
         override fun addServiceListener(type: String, listener: ServiceListener) = Unit
@@ -137,6 +145,46 @@ class JmdnsDiscoveryTest {
         discovery.close()
         assertEquals(1, working.closed)
         assertEquals(1, failed.closed)
+    }
+
+    @Test
+    fun aReannounceTakesTheOldRecordBackAndAnnouncesTheNewOnEachInterface() {
+        val opened = CopyOnWriteArrayList<FakeResponder>()
+        val discovery = JmdnsDiscovery(
+            addresses = { listOf(testNet(1), testNet(2)) },
+            log = {},
+            open = { _, _ -> FakeResponder(registerFails = false).also { opened += it } },
+        )
+        assertTrue(discovery.announce(record, 5055))
+        val client = record.copy(role = PeerTxt.ROLE_CLIENT)
+        assertTrue(discovery.reannounce(client, 5055))
+        for (dns in opened) {
+            assertEquals(1, dns.unregistered)
+            assertEquals(2, dns.registered)
+            assertEquals(client, JmdnsDiscovery.decode(dns.last!!))
+        }
+        discovery.close()
+        assertFalse("closed", discovery.reannounce(record, 5055))
+    }
+
+    @Test
+    fun aReannounceDropsAnInterfaceThatCantAndIsOffWhenNoneCan() {
+        val opened = CopyOnWriteArrayList<FakeResponder>()
+        val discovery = JmdnsDiscovery(
+            addresses = { listOf(testNet(1), testNet(2)) },
+            log = {},
+            open = { _, _ -> FakeResponder(registerFails = false).also { opened += it } },
+        )
+        assertFalse("nothing announced yet", discovery.reannounce(record, 5055))
+        assertTrue(discovery.announce(record, 5055))
+        opened[0].failNext = true
+        assertTrue(discovery.reannounce(record, 5055))
+        assertEquals(1, opened[0].closed)
+        assertEquals(0, opened[1].closed)
+        opened[1].failNext = true
+        assertFalse(discovery.reannounce(record, 5055))
+        assertEquals(1, opened[1].closed)
+        discovery.close()
     }
 
     // A browse's listener, driven by hand: no JmDNS, no socket. Each request stands for one requestServiceInfo call.

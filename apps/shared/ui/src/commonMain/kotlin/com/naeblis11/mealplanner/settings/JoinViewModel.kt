@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.naeblis11.mealplanner.sync.FoundPc
 import com.naeblis11.mealplanner.sync.JoinControls
 import com.naeblis11.mealplanner.sync.SyncMessages
+import com.naeblis11.mealplanner.sync.SyncNoun
 import com.naeblis11.mealplanner.sync.SyncStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,8 @@ data class JoinState(
     val leaveAsk: Boolean = false,
     val scanUnavailable: Boolean = false,
     val syncing: Boolean = false,
+    /** Stage 4a: this is a PC's Join a household (Type code only, no Wi-Fi line, PC wording). */
+    val forPc: Boolean = false,
 ) {
     /** Scan code, Type code, Pair and Leave may start something. */
     val canStart: Boolean get() = busy == null && !syncing
@@ -69,16 +72,18 @@ class JoinViewModel(private val controls: JoinControls) : ViewModel() {
 
     private val local = MutableStateFlow(Local())
 
+    private val forPc = controls.noun == SyncNoun.PC
+
     // The typed code: kept only from Pair until the pairing ends or while the user chooses among several PCs; forgotten
     // after any pairing, when no PC is found and when the dialog is cancelled.
     private var code = ""
 
     val state: StateFlow<JoinState> = combine(controls.status, controls.onWifi, controls.syncing, local) { status, wifi, syncing, mine ->
-        JoinState(status, wifi, mine.busy, mine.error, mine.typing, mine.choices, mine.leaveAsk, mine.scanUnavailable, syncing)
+        JoinState(status, wifi, mine.busy, mine.error, mine.typing, mine.choices, mine.leaveAsk, mine.scanUnavailable, syncing, forPc)
     }.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
-        JoinState(controls.status.value, controls.onWifi.value, syncing = controls.syncing.value),
+        JoinState(controls.status.value, controls.onWifi.value, syncing = controls.syncing.value, forPc = forPc),
     )
 
     // Something of this section's under way, or the app's sync: nothing new starts.
@@ -118,7 +123,7 @@ class JoinViewModel(private val controls: JoinControls) : ViewModel() {
             when (found.size) {
                 0 -> {
                     code = ""
-                    local.update { it.copy(busy = null, error = SyncMessages.NO_PC_FOUND) }
+                    local.update { it.copy(busy = null, error = SyncMessages.noPcFound(controls.noun)) }
                 }
                 1 -> pairTyped(found.single())
                 else -> local.update { it.copy(busy = null, choices = found) }
@@ -147,7 +152,7 @@ class JoinViewModel(private val controls: JoinControls) : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                local.update { it.copy(error = SyncMessages.pairingFailed(e, scanned)) }
+                local.update { it.copy(error = SyncMessages.pairingFailed(e, scanned, controls.noun)) }
             } finally {
                 code = ""
                 local.update { it.copy(busy = null) }

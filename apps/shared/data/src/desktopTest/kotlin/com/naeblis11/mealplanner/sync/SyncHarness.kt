@@ -26,10 +26,17 @@ internal class SyncHarness(
 
         /** Recipe files written (with [withFiles]). */
         var fileWrites = 0
-        private val folder = File(dir, "recipes").apply { mkdirs() }
+
+        /** Recipe files moved to the "Recycle Bin" (with [withFiles]): recorded by name, then deleted. */
+        val trashed = mutableListOf<String>()
+        val folder = File(dir, "recipes").apply { mkdirs() }
         val recipes = RecipeRepository(
             db, images,
-            files = if (!withFiles) null else FolderFileStore(folder, moveToTrash = null, writer = { f, b -> fileWrites++; AtomicFiles.write(f, b) }),
+            files = if (!withFiles) null else FolderFileStore(
+                folder,
+                moveToTrash = { f -> trashed += f.name; f.delete() },
+                writer = { f, b -> fileWrites++; AtomicFiles.write(f, b) },
+            ),
         )
     }
 

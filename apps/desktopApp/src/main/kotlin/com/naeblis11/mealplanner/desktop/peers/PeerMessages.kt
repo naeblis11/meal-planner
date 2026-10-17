@@ -10,8 +10,12 @@ object PeerMessages {
     fun keeping(name: String): String =
         "Another PC on this network ($name) runs Meal Planner as a separate household. This PC keeps Google Calendar and Alexa."
 
-    /** A copy of this household (restored from a backup, say): a notice only. */
-    fun sameHousehold(name: String): String = "Another copy of this household runs on $name."
+    /**
+     * Stage 4a: another main PC of this household (a copy restored from a backup, or a PC set up before 4a that never
+     * joined): both stop serving phones and PCs until one joins the other.
+     */
+    fun twoMasters(name: String): String =
+        "$name is also set up as this household's main PC. Make one of them join the other in Settings."
 
     /** YIELD_GOOGLE: the Calendar's send banner while this PC yields. */
     fun yieldGoogle(name: String): String =

@@ -104,7 +104,8 @@ class SyncClient(
         val cursorHub = if (cursor == null) null else meta.get(CURSOR_HUB_KEY)
         val reply = transport.exchange(ExchangeRequest(clock(), cursor ?: 0L, full, out, cursorHub))
         val shifted = inMyClock(reply)
-        if (replace) SyncReset.clearLocal(db)
+        // On a client PC the recipe files go too (stage 4a), or the folder sync would index them again and send them back.
+        if (replace) recipes.clearForReplace { SyncReset.clearLocal(db) }
         // A full reply carries this device's own records too. One it still has a change for is its own latest (only it
         // stamps as itself): taking it again would make a new change of its own and send it back next time.
         val incoming = shifted.filter { it.updatedBy != me || db.syncDao().change(it.table, it.key) == null }

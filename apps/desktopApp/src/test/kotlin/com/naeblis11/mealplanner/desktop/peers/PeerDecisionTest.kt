@@ -44,11 +44,62 @@ class PeerDecisionTest {
     }
 
     @Test
-    fun theSameHouseholdIsANoticeOnly() {
+    fun twoMainPcsOfOneHouseholdBothSeeIt() {
         val copy = peer("LAPTOP", '5', 100L, 1)
         val status = PeerDecision.decide(me, listOf(copy))
         assertNull(status.yieldTo)
-        assertEquals(PeerMessages.sameHousehold("LAPTOP"), status.notice)
+        assertEquals("LAPTOP", status.twoMasters)
+        assertEquals(PeerMessages.twoMasters("LAPTOP"), status.notice)
+        val theirs = PeerDecision.decide(copy, listOf(me))
+        assertEquals("THIS-PC", theirs.twoMasters)
+        assertEquals(PeerMessages.twoMasters("THIS-PC"), theirs.notice)
+    }
+
+    @Test
+    fun aClientBesideItsMasterIsNoNoticeOnEitherSide() {
+        val client = peer("LAPTOP", '5', 100L, 1).copy(role = PeerTxt.ROLE_CLIENT)
+        val mine = PeerDecision.decide(me, listOf(client))
+        assertEquals(PeerStatus(peers = listOf("LAPTOP")), mine)
+        val theirs = PeerDecision.decide(client, listOf(me))
+        assertEquals(PeerStatus(peers = listOf("THIS-PC")), theirs)
+    }
+
+    @Test
+    fun aClientNeverSeesTwoMastersOfItsHousehold() {
+        val client = peer("LAPTOP", '5', 100L, 1).copy(role = PeerTxt.ROLE_CLIENT)
+        val status = PeerDecision.decide(client, listOf(me, peer("DEN", '5', 50L, 2)))
+        assertNull(status.twoMasters)
+        assertNull(status.notice)
+    }
+
+    @Test
+    fun anotherHouseholdsClientNeverMakesAnyoneYieldOrKeep() {
+        val olderClient = peer("DEN", '9', 100L, 1).copy(role = PeerTxt.ROLE_CLIENT)
+        val status = PeerDecision.decide(me, listOf(olderClient))
+        assertNull(status.yieldTo)
+        assertNull(status.notice)
+        assertEquals(listOf("DEN"), status.peers)
+        val newerClient = peer("NEW", '9', 900L, 2).copy(role = PeerTxt.ROLE_CLIENT)
+        assertNull(PeerDecision.decide(me, listOf(newerClient)).notice)
+    }
+
+    @Test
+    fun aClientYieldsToAnOlderHouseholdsMasterButKeepsNothing() {
+        val client = me.copy(role = PeerTxt.ROLE_CLIENT)
+        val older = peer("DEN", '9', 100L, 1)
+        val status = PeerDecision.decide(client, listOf(older))
+        assertEquals("DEN", status.yieldTo)
+        assertEquals(PeerMessages.yielding("DEN"), status.notice)
+        // A newer household's master: a client has no Google or Alexa of its own to keep, so nothing is said.
+        assertNull(PeerDecision.decide(client, listOf(peer("NEW", '9', 900L, 2))).notice)
+    }
+
+    @Test
+    fun yieldingIsSaidBeforeTwoMasters() {
+        val status = PeerDecision.decide(me, listOf(peer("COPY", '5', 50L, 1), peer("DEN", '9', 100L, 2)))
+        assertEquals("DEN", status.yieldTo)
+        assertEquals("COPY", status.twoMasters)
+        assertEquals(PeerMessages.yielding("DEN"), status.notice)
     }
 
     @Test

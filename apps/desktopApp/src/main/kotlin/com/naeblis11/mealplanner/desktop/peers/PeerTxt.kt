@@ -12,6 +12,9 @@ object PeerTxt {
     const val SERVICE_TYPE = "_mealplanner._tcp.local."
     const val VERSION = "1"
     const val ROLE_MASTER = "master"
+
+    /** Stage 4a: a PC that joined another as a client. Readers from before 4a (and the phone's PcRecords) skip it. */
+    const val ROLE_CLIENT = "client"
     const val MAX_NAME_BYTES = 63
     const val MAX_VALUE_CHARS = 64
     const val MAX_PEERS = 32
@@ -31,7 +34,7 @@ object PeerTxt {
     /** The six TXT keys, in this order, then `sync` (LAN sync stage 2b: the sync port) when the record has one. `v` stays 1. */
     fun encode(record: PeerRecord): Map<String, String> = linkedMapOf(
         "v" to VERSION,
-        "role" to ROLE_MASTER,
+        "role" to record.role,
         "hh" to record.householdHash,
         "since" to record.since.toString(),
         "id" to record.instanceId,
@@ -41,7 +44,8 @@ object PeerTxt {
     /** A peer's record from its instance [name] and [txt]; null when anything is missing or garbled. Keys it doesn't know are ignored. */
     fun decode(name: String?, txt: Map<String, String?>): PeerRecord? {
         fun value(key: String): String? = txt[key]?.takeIf { it.length <= MAX_VALUE_CHARS }
-        if (value("v") != VERSION || value("role") != ROLE_MASTER) return null
+        if (value("v") != VERSION) return null
+        val role = value("role")?.takeIf { it == ROLE_MASTER || it == ROLE_CLIENT } ?: return null
         val hash = value("hh")?.takeIf { HASH.matches(it) } ?: return null
         val since = value("since")?.takeIf { SINCE.matches(it) }?.toLong()?.takeIf { it > 0 } ?: return null
         val id = value("id")?.takeIf { ID.matches(it) } ?: return null
@@ -49,7 +53,7 @@ object PeerTxt {
         val shown = cleanName(name) ?: return null
         // Optional: a garbled sync port is left out, never the peer.
         val sync = value("sync")?.takeIf { PORT.matches(it) }?.toInt()?.takeIf { it in 1..65535 }
-        return PeerRecord(shown, hash, since, id, app, sync)
+        return PeerRecord(shown, hash, since, id, app, sync, role)
     }
 
     /** SHA-256 of the household id, as its first 16 lower-case hex digits: enough to tell households apart, and not the id. */

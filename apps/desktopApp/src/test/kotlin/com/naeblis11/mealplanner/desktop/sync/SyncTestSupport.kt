@@ -19,7 +19,21 @@ import javax.net.ssl.SSLContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+
+/**
+ * Cancels [scope] and waits for its work to end, then closes [db]. cancel() alone returns while a collector of the scope
+ * (DesktopSync's paired-devices list) may still be in a Room query on an IO thread, and closing the database under it
+ * crashed the test JVM in the bundled SQLite driver. Bounded: work that won't end fails the test and leaves the database
+ * open, as DesktopApp.close() does.
+ */
+internal fun closeAfterScope(scope: CoroutineScope, db: AppDatabase) {
+    runBlocking { withTimeout(10_000) { scope.coroutineContext.job.cancelAndJoin() } }
+    db.close()
+}
 
 /** A sync engine that binds nothing: it records where it was asked to listen, keeps the handler, and fails when told to. */
 class FakeSyncEngine : SyncEngine {
@@ -120,8 +134,7 @@ internal class SyncRig : Closeable {
 
     override fun close() {
         server.stop()
-        scope.cancel()
-        db.close()
+        closeAfterScope(scope, db)
         root.deleteRecursively()
     }
 

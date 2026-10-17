@@ -9,6 +9,8 @@ import com.naeblis11.mealplanner.data.openAt
 import com.naeblis11.mealplanner.desktop.peers.PeerIdentity
 import com.naeblis11.mealplanner.desktop.peers.PeerWatch
 import com.naeblis11.mealplanner.desktop.server.AppServer
+import com.naeblis11.mealplanner.desktop.sync.DesktopClient
+import com.naeblis11.mealplanner.desktop.sync.DesktopJoinOffer
 import com.naeblis11.mealplanner.desktop.sync.DesktopSync
 import com.naeblis11.mealplanner.folder.FolderFileStore
 import com.naeblis11.mealplanner.folder.LIBRARY_BLOCKED_MESSAGE
@@ -55,7 +57,8 @@ const val DESKTOP_DB = "mealplanner-app.db"
  * [settingsFactory] gives the small settings (the prefs node by default; tests pass MapSettings);
  * [rearmPollMillis] is how often a recipe folder that isn't watched is looked for; [serverFactory] makes the built-in
  * server (plan 4) from this app, and null (most tests) means there is none; [peersFactory] likewise makes the look-out
- * for other Meal Planner PCs (plan 6); [syncFactory] makes LAN sync's master side (stage 2b).
+ * for other Meal Planner PCs (plan 6); [syncFactory] makes LAN sync's master side (stage 2b); [clientFactory] makes its
+ * client side (stage 4a: this PC joined to another).
  */
 class DesktopApp(
     val libraryDir: File,
@@ -72,11 +75,18 @@ class DesktopApp(
     private val log: (String) -> Unit = { System.err.println(it) },
     /** The master PC's side of LAN sync (stage 2b), made from this app; null (most tests) means none. */
     syncFactory: ((DesktopApp) -> DesktopSync)? = null,
+    /** LAN sync's client side (stage 4a), made from this app; null (most tests) means this PC can't join another. */
+    clientFactory: ((DesktopApp) -> DesktopClient)? = null,
+    /** Stage 4a, R8: how long after start a first run looks for the household's main PC. */
+    private val joinOfferDelayMillis: Long = DesktopJoinOffer.LOOK_DELAY_MILLIS,
 ) {
     val recipesDir = File(libraryDir, "recipes")
     val imagesDir = File(libraryDir, "recipe-images")
     val cacheDir = File(appDataDir, ".cache")
     private val databaseFile = File(appDataDir, DESKTOP_DB)
+
+    // Stage 4a, R8: no database at this start, so a true first run.
+    private val firstRun = !databaseFile.exists()
 
     private val _libraryNotice = MutableStateFlow<String?>(null)
 
@@ -240,6 +250,26 @@ class DesktopApp(
     /** LAN sync's master side (stage 2b), made after the server and the look-out; null when there is none. */
     val sync: DesktopSync? = syncFactory?.invoke(this)
 
+    /** LAN sync's client side (stage 4a): this PC joined to the household's main PC; null when there is none. */
+    val client: DesktopClient? = clientFactory?.invoke(this)
+
+    /** Stage 4a, R8: a first run's offer to join the main PC found on the network; null when this PC can't join one. */
+    val joinOffer: DesktopJoinOffer? = client?.let { c ->
+        DesktopJoinOffer(settings, firstRun, isClient = c::isClient, find = { c.controls.findPcs() })
+    }
+
+    /**
+     * Whether the built-in server may listen on the home network (with a token): not while an older household's PC
+     * answers Alexa (P6-R8), nor on a client PC, whose main PC does (stage 4a, R4).
+     */
+    fun serverOnLan(): Boolean = peers?.yieldTo() == null && client?.isClient() != true
+
+    /**
+     * Whether the sync port may listen (stage 2b): as the server, and not while another main PC of this household is
+     * seen (stage 4a, R12), since phones and PCs must have one main PC to sync with.
+     */
+    fun syncOnLan(): Boolean = serverOnLan() && peers?.twoMasters() == null
+
     private val closed = AtomicBoolean(false)
 
     @Volatile
@@ -272,6 +302,8 @@ class DesktopApp(
             // P6-R4: settle when this household was created, first thing. Google Calendar's send shares this Household
             // (Main passes identity.household), so a send that comes first dates an old database from its file too.
             attempt("Dating the household") { identity.household.created() }
+            // Stage 4a: whether this PC is a client, before anything binds (a client never listens on the network).
+            client?.let { c -> attempt("Reading this PC's household") { c.load() } }
             val syncFailure = attempt("Indexing the recipe folder") { folder.sync() }
             afterStartupSync()
             if (syncFailure == null && registered == null && recipesDir.isDirectory) {
@@ -297,6 +329,15 @@ class DesktopApp(
             }
             // P6-R6: announce this PC and look for others beside the server, in the background: never a wait here.
             peers?.let { p -> attempt("Looking for other Meal Planner PCs") { p.start(scope) } }
+            // Stage 4a, R9: a client that has synced before syncs once now, in the background.
+            client?.let { c -> attempt("Syncing with the main PC") { c.startupSync() } }
+            // R8: one look for the main PC on a first run, a few seconds on, in the background.
+            joinOffer?.let { offer ->
+                scope.launch {
+                    delay(joinOfferDelayMillis)
+                    attempt("Looking for the household's main PC") { offer.look() }
+                }
+            }
             val toStart = registered
             if (toStart != null && recipesDir.isDirectory) {
                 attempt("Watching the recipe folder") {
@@ -400,7 +441,7 @@ class DesktopApp(
      * sync may touch a closed database: stop the server (bounded, outside the wait below: a bind under way, up to
      * KtorEngine.START_TIMEOUT_MILLIS, then KtorEngine's grace and timeout), stop the sync port (LAN sync, bounded by
      * JdkHttpsEngine's stop delay and drain; a sync request still running is waited for below), stop announcing to other Meal Planner PCs
-     * (about 1 s), stop the watcher and wait for a sync it is running, stop the startup work, the re-arm
+     * (about 1 s), cancel a client PC's sync and wait for it, stop the watcher and wait for a sync it is running, stop the startup work, the re-arm
      * loop and the removal re-check and wait for them, wait for a recipe, meal plan, shopping or pantry write still running, and only then
      * close the database.
      * The waits are bounded by closeTimeoutMillis: when they run out, the database is left open (the process
@@ -440,6 +481,8 @@ class DesktopApp(
                 // LAN sync: the port is stopped, but HttpServer's stop may return with a request still in the routes (an
                 // exchange writing recipes); the database stays open until it is answered.
                 sync?.awaitIdle()
+                // Stage 4a: a client's sync with its main PC is cancelled and waited for; it writes recipes and photos.
+                client?.close()
                 watcher?.closeAndJoin()
                 scope.coroutineContext.job.cancelAndJoin()
                 // Startup or the re-arm loop may have made a watcher after the first close; the cancel stopped it.

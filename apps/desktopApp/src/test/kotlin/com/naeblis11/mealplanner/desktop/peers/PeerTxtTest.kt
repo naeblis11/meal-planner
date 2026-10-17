@@ -20,6 +20,24 @@ class PeerTxtTest {
     }
 
     @Test
+    fun aClientPcGoesOutAsRoleClientAndComesBack() {
+        val client = record.copy(role = PeerTxt.ROLE_CLIENT, syncPort = 5001)
+        val txt = PeerTxt.encode(client)
+        assertEquals("client", txt["role"])
+        assertEquals(client, PeerTxt.decode("KITCHEN", txt))
+    }
+
+    @Test
+    fun theFindersOfMainPcsSkipAClient() {
+        // The phone's PcRecords (and a PC's JmdnsPcFinder, which uses it) list only main PCs, as readers before 4a did.
+        fun bytes(txt: Map<String, String>) = txt.mapValues { it.value.toByteArray(Charsets.UTF_8) }
+        val master = PeerTxt.encode(record.copy(syncPort = 5001))
+        val client = PeerTxt.encode(record.copy(role = PeerTxt.ROLE_CLIENT, syncPort = 5001))
+        assertEquals("KITCHEN", com.naeblis11.mealplanner.sync.PcRecords.foundPc("KITCHEN", "192.0.2.20", bytes(master))?.name)
+        assertNull(com.naeblis11.mealplanner.sync.PcRecords.foundPc("KITCHEN", "192.0.2.20", bytes(client)))
+    }
+
+    @Test
     fun theSyncPortGoesOutAsASeventhKeyAndComesBack() {
         val withSync = record.copy(syncPort = 5001)
         val txt = PeerTxt.encode(withSync)
@@ -41,7 +59,7 @@ class PeerTxtTest {
         val good = PeerTxt.encode(record)
         for (key in good.keys) assertNull(key, PeerTxt.decode("KITCHEN", good - key))
         val garbled = listOf(
-            "v" to "2", "v" to null, "role" to "client",
+            "v" to "2", "v" to null, "role" to "boss", "role" to "MASTER", "role" to "",
             "hh" to "0123456789ABCDEF", "hh" to "0123456789abcde", "hh" to "0123456789abcdeg",
             "since" to "-5", "since" to "12x", "since" to "", "since" to "1".repeat(19),
             "id" to "0123456789abcdef", "id" to "0123456789abcdef0123456789abcdeZ",

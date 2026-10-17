@@ -13,7 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
  * Settings' view of the built-in server (P4-R6): Create a token (or Make a new token) saves it, then the server
  * rebinds onto the home network. createToken blocks (the rebind waits for a bind under way, then binds, each up to
  * KtorEngine.START_TIMEOUT_MILLIS): AlexaViewModel calls it off the UI thread. It lives as long as the app, so the
- * token it made waits in [pendingReveal] for a Settings to show it, even one opened after the create began.
+ * token it made waits in [pendingReveal] for a Settings to show it, even one opened after the create began. While
+ * [refusal] gives a sentence (stage 4a: this PC is a client, and its main PC answers Alexa) no token is made.
  */
 class DesktopServerControls(
     private val server: AppServer,
@@ -21,6 +22,7 @@ class DesktopServerControls(
     private val clipboard: (String) -> Unit = ::toSystemClipboard,
     private val readClipboard: () -> String? = ::fromSystemClipboard,
     private val log: (String) -> Unit = { System.err.println(it) },
+    private val refusal: () -> String? = { null },
 ) : ServerControls {
     override val status: StateFlow<ServerStatus> get() = server.status
 
@@ -29,6 +31,7 @@ class DesktopServerControls(
     // One at a time, so a token saved is always the one the server rebinds with.
     @Synchronized
     override fun createToken(): String {
+        refusal()?.let { throw IllegalStateException(it) }
         val made = try {
             token.create()
         } catch (e: Exception) {

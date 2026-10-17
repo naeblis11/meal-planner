@@ -87,6 +87,74 @@ class PeerWatchTest {
     }
 
     @Test
+    fun aRoleChangeAnnouncesTheNewRecordAndLooksAgain() {
+        val discovery = FakeDiscovery(network)
+        val role = AtomicReference(PeerTxt.ROLE_MASTER)
+        val watch = PeerWatch(discovery, own = { me.copy(role = role.get()) }, port = 5055, onYieldChanged = { changes.incrementAndGet() }, log = {})
+        runBlocking { watch.start(scope).join() }
+        role.set(PeerTxt.ROLE_CLIENT)
+        runBlocking { watch.roleChanged()!!.join() }
+        assertEquals(1, discovery.reannounces.get())
+        assertEquals(me.copy(role = PeerTxt.ROLE_CLIENT) to 5055, discovery.announced)
+        assertEquals(listOf("announce", "browse", "reannounce", "browse"), discovery.events)
+        // The network carries the new record: another PC reading it sees a client.
+        assertEquals(listOf(PeerTxt.ROLE_CLIENT), network.seen().map { it.role })
+    }
+
+    @Test
+    fun aRoleChangedWhileOffIsTheOneAnnouncedOnceOn() {
+        val discovery = FakeDiscovery(network, available = false)
+        val role = AtomicReference(PeerTxt.ROLE_MASTER)
+        val watch = PeerWatch(discovery, own = { me.copy(role = role.get()) }, port = 5055, retryMillis = 20, log = {})
+        val started = watch.start(scope)
+        eventually { watch.status.value.off }
+        role.set(PeerTxt.ROLE_CLIENT)
+        runBlocking { watch.roleChanged()!!.join() }
+        assertEquals(0, discovery.reannounces.get())
+        discovery.available = true
+        runBlocking { started.join() }
+        assertEquals(me.copy(role = PeerTxt.ROLE_CLIENT) to 5055, discovery.announced)
+    }
+
+    @Test
+    fun aReannounceThatFailsIsOffAndTriedAgain() {
+        val fake = FakeDiscovery(network)
+        val refuse = java.util.concurrent.atomic.AtomicBoolean(true)
+        val discovery = object : PeerDiscovery by fake {
+            override fun reannounce(record: PeerRecord, port: Int): Boolean = !refuse.get() && fake.reannounce(record, port)
+        }
+        val role = AtomicReference(PeerTxt.ROLE_MASTER)
+        val watch = PeerWatch(discovery, own = { me.copy(role = role.get()) }, port = 5055, retryMillis = 20, log = {})
+        runBlocking { watch.start(scope).join() }
+        role.set(PeerTxt.ROLE_CLIENT)
+        val changed = watch.roleChanged()!!
+        // Off, then announced afresh by the retry: announce() takes the new record.
+        eventually { fake.announced?.first?.role == PeerTxt.ROLE_CLIENT }
+        runBlocking { changed.join() }
+        assertEquals(2, fake.announces.get())
+        assertFalse(watch.status.value.off)
+    }
+
+    @Test
+    fun twoMastersOfOneHouseholdRebindsAndClearsWhenTheOtherJoins() {
+        val copy = record("LAPTOP", '5', 100L, 1)
+        network.add(copy)
+        val watch = watch(FakeDiscovery(network))
+        runBlocking { watch.start(scope).join() }
+        assertEquals("LAPTOP", watch.twoMasters())
+        assertNull(watch.yieldTo())
+        assertEquals(PeerNotice(PeerMessages.twoMasters("LAPTOP")), watch.notice.value)
+        assertEquals(1, changes.get())
+        // The other one joins this PC: it is a client now.
+        network.clearAdded()
+        network.add(copy.copy(role = PeerTxt.ROLE_CLIENT))
+        watch.browseNow()
+        eventually { changes.get() == 2 }
+        assertNull(watch.twoMasters())
+        assertNull(watch.notice.value)
+    }
+
+    @Test
     fun aPeerGoneAtTheNextLookClearsTheYield() {
         network.add(older)
         val watch = watch(FakeDiscovery(network))

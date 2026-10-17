@@ -40,8 +40,11 @@ import com.naeblis11.mealplanner.desktop.server.ServerRoutes
 import com.naeblis11.mealplanner.desktop.server.VoiceActions
 import com.naeblis11.mealplanner.desktop.server.extensionRoutes
 import com.naeblis11.mealplanner.desktop.server.voiceRoutes
+import com.naeblis11.mealplanner.desktop.sync.DesktopClient
 import com.naeblis11.mealplanner.desktop.sync.DesktopSync
+import com.naeblis11.mealplanner.desktop.sync.DpapiPairingStore
 import com.naeblis11.mealplanner.desktop.sync.JdkHttpsEngine
+import com.naeblis11.mealplanner.desktop.sync.JmdnsPcFinder
 import com.naeblis11.mealplanner.desktop.sync.SyncCertificate
 import com.naeblis11.mealplanner.desktop.sync.SyncServer
 import com.naeblis11.mealplanner.desktop.update.DesktopUpdates
@@ -50,6 +53,8 @@ import com.naeblis11.mealplanner.desktop.update.trayTooltip
 import com.naeblis11.mealplanner.importing.ImportInbox
 import com.naeblis11.mealplanner.settings.ServerState
 import com.naeblis11.mealplanner.settings.portInUseNotice
+import com.naeblis11.mealplanner.sync.DeviceNames
+import com.naeblis11.mealplanner.sync.SyncMessages
 import com.naeblis11.mealplanner.ui.AwtFileChooser
 import com.naeblis11.mealplanner.ui.LeaveGuard
 import com.naeblis11.mealplanner.ui.LocalFileChooser
@@ -279,8 +284,9 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                     ),
                 ),
                 port = port,
-                // P6-R8: while an older household's PC answers Alexa, this one stays on this PC (the token is kept).
-                lanAllowed = { desktop.peers?.yieldTo() == null },
+                // P6-R8: while an older household's PC answers Alexa, this one stays on this PC (the token is kept); so
+                // does a client PC's (stage 4a, R4: its main PC answers Alexa; the Chrome extension still works here).
+                lanAllowed = desktop::serverOnLan,
             )
         },
         // Other Meal Planner PCs on the network (plan 6): announced after the startup sync, looked for at start and when
@@ -292,22 +298,18 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
             { desktop ->
                 PeerWatch(
                     JmdnsDiscovery(),
-                    own = { desktop.identity.record(PeerTxt.pcName(), version).copy(syncPort = syncPort) },
-                    port = port,
-                    // P6-R8: the server listens again as the token and the yield allow; so does the sync port (stage 2b).
-                    // Each in its own try, so one that fails never keeps the other from listening as it should.
-                    onYieldChanged = {
-                        try {
-                            desktop.server?.rebind()
-                        } catch (e: Exception) {
-                            System.err.println("Meal Planner: rebinding the server failed: ${e.javaClass.simpleName}")
-                        }
-                        try {
-                            desktop.sync?.rebind()
-                        } catch (e: Exception) {
-                            System.err.println("Meal Planner: rebinding the sync port failed: ${e.javaClass.simpleName}")
+                    // Stage 4a: a client says so and offers no sync port; Join and Leave announce it afresh (roleChanged).
+                    own = {
+                        if (desktop.client?.isClient() == true) {
+                            desktop.identity.record(PeerTxt.pcName(), version, role = PeerTxt.ROLE_CLIENT)
+                        } else {
+                            desktop.identity.record(PeerTxt.pcName(), version).copy(syncPort = syncPort)
                         }
                     },
+                    port = port,
+                    // P6-R8: the server listens again as the token and the yield allow; so does the sync port (stage 2b),
+                    // which also closes while another main PC of this household is seen (stage 4a).
+                    onYieldChanged = { rebindAll(desktop) },
                 )
             }
         },
@@ -321,9 +323,27 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                 certificate = SyncCertificate(appDataDir, DpapiProtector()),
                 household = { desktop.identity.household.id() },
                 pcName = { PeerTxt.pcName() },
-                lanAllowed = { desktop.peers?.yieldTo() == null },
+                // Stage 4a: never on a client (R4), nor while another main PC of this household is seen (R12).
+                lanAllowed = desktop::syncOnLan,
                 addresses = { PeerInterfaces.pick(PeerInterfaces.system()).map { it.hostAddress } },
                 port = syncPort,
+            )
+        },
+        // LAN sync's client side (stage 4a): Join a household in Settings makes this PC a client of the main PC. Its
+        // pairing is sealed with DPAPI in the app data folder; a Join or a Leave rebinds both servers and re-announces.
+        clientFactory = { desktop ->
+            DesktopClient(
+                database = { desktop.container.database },
+                recipes = { desktop.container.recipes },
+                imagesDir = desktop.imagesDir,
+                store = DpapiPairingStore(File(appDataDir, DpapiPairingStore.FILE_NAME), DpapiProtector()),
+                finder = JmdnsPcFinder(ownId = { desktop.identity.instanceId() }),
+                deviceName = DeviceNames.clean(PeerTxt.pcName(), DesktopClient.FALLBACK_NAME),
+                onRoleChanged = {
+                    rebindAll(desktop)
+                    desktop.peers?.roleChanged()
+                    desktop.joinOffer?.roleChanged()
+                },
             )
         },
     )
@@ -370,7 +390,10 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
         val exitHook = closeOnExit(app)
         Runtime.getRuntime().addShutdownHook(exitHook)
         // Settings' view of the server: its status, and Create a token (P4-R6).
-        val controls = app.server?.let { DesktopServerControls(it, token) }
+        // Stage 4a, R4: a client PC makes no token; its main PC answers Alexa.
+        val controls = app.server?.let { s ->
+            DesktopServerControls(s, token, refusal = { app.client?.master?.value?.let(SyncMessages::clientAlexa) })
+        }
         // Settings' Folders panel and the Controlled folder access notice (P7-R10).
         // P7-R11: the installed app can ask Windows (UAC) to allow it through Controlled folder access.
         // The prompt belongs to the app's window (set once it is composed), so it opens over it.
@@ -524,12 +547,32 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                                 devices = app.sync,
                                 // LAN sync (stage 2b): held sync removals in Needs attention and on the Recipes banner.
                                 syncAttention = app.sync,
+                                // LAN sync stage 4a: Settings' Join a household, the Sync button once joined, and a
+                                // first run's offer to join the main PC found on the network.
+                                join = app.client?.controls,
+                                sync = app.client?.controls,
+                                joinOffer = app.joinOffer,
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+// The server and the sync port listen again as the token, the yield and this PC's role allow. Each in its own try, so
+// one that fails never keeps the other from listening as it should.
+private fun rebindAll(desktop: DesktopApp) {
+    try {
+        desktop.server?.rebind()
+    } catch (e: Exception) {
+        System.err.println("Meal Planner: rebinding the server failed: ${e.javaClass.simpleName}")
+    }
+    try {
+        desktop.sync?.rebind()
+    } catch (e: Exception) {
+        System.err.println("Meal Planner: rebinding the sync port failed: ${e.javaClass.simpleName}")
     }
 }
 

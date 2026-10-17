@@ -41,7 +41,17 @@ const val KEEP_BOTH = "Keep both"
 const val KEEP_PCS = "Keep the PC's"
 const val LATER = "Later"
 
+/** Stage 4a: the same dialogs on a PC joining the main PC. */
+const val DUPLICATES_HELP_PC =
+    "These recipes have the same name on this PC and on the main PC. Keep both, or keep the main PC's: this PC's copy " +
+        "is removed and its planned meals move to the main PC's."
+const val KEEP_MAIN_PCS = "Keep the main PC's"
+
 fun firstSyncTitle(pcName: String): String = "First sync with $pcName"
+
+fun mergeHelpPc(pcName: String): String = "Keep this PC's recipes, plan and lists and combine them with $pcName's"
+
+fun replaceHelpPc(pcName: String): String = "Make this PC a copy of $pcName. You'll save a backup first."
 
 /**
  * The Sync button's dialogs and its outcome, once for the whole app (AppShell):
@@ -68,6 +78,7 @@ internal fun SyncDialogs(vm: SyncViewModel, snackbar: SnackbarHostState) {
     if (state.askFirst) {
         FirstSyncDialog(
             pcName = state.status.pcName ?: YOUR_PC,
+            forPc = vm.forPc,
             onMerge = vm::merge,
             onReplace = {
                 vm.replaceChosen()
@@ -77,13 +88,13 @@ internal fun SyncDialogs(vm: SyncViewModel, snackbar: SnackbarHostState) {
         )
     }
     if (state.showDuplicates) {
-        DuplicatesDialog(state.duplicates, onKeepBoth = vm::keepBoth, onKeepPcs = vm::keepPcs, onLater = vm::later)
+        DuplicatesDialog(state.duplicates, onKeepBoth = vm::keepBoth, onKeepPcs = vm::keepPcs, onLater = vm::later, forPc = vm.forPc)
     }
 }
 
-/** "First sync with NAME": Merge (the default, first) or Replace, each with what it does. */
+/** "First sync with NAME": Merge (the default, first) or Replace, each with what it does; on a PC ([forPc]) in its words. */
 @Composable
-fun FirstSyncDialog(pcName: String, onMerge: () -> Unit, onReplace: () -> Unit, onCancel: () -> Unit) {
+fun FirstSyncDialog(pcName: String, onMerge: () -> Unit, onReplace: () -> Unit, onCancel: () -> Unit, forPc: Boolean = false) {
     AlertDialog(
         onDismissRequest = onCancel,
         containerColor = MealColors.Paper,
@@ -91,9 +102,9 @@ fun FirstSyncDialog(pcName: String, onMerge: () -> Unit, onReplace: () -> Unit, 
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onMerge, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(MERGE) }
-                Text(MERGE_HELP, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+                Text(if (forPc) mergeHelpPc(pcName) else MERGE_HELP, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(onClick = onReplace, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(REPLACE) }
-                Text(REPLACE_HELP, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+                Text(if (forPc) replaceHelpPc(pcName) else REPLACE_HELP, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
             }
         },
         confirmButton = {},
@@ -113,6 +124,7 @@ fun DuplicatesDialog(
     onKeepBoth: (PossibleDuplicate) -> Unit,
     onKeepPcs: (PossibleDuplicate) -> Unit,
     onLater: () -> Unit,
+    forPc: Boolean = false,
 ) {
     AlertDialog(
         onDismissRequest = onLater,
@@ -120,7 +132,7 @@ fun DuplicatesDialog(
         title = { Text(POSSIBLE_DUPLICATES) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(DUPLICATES_HELP)
+                Text(if (forPc) DUPLICATES_HELP_PC else DUPLICATES_HELP)
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     items(duplicates, key = { "${it.thisDevicesId}-${it.pcsId}" }) { duplicate ->
                         Column(Modifier.padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -131,7 +143,7 @@ fun DuplicatesDialog(
                                     onClick = { onKeepPcs(duplicate) },
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MealColors.Danger),
                                     modifier = Modifier.heightIn(min = 48.dp),
-                                ) { Text(KEEP_PCS) }
+                                ) { Text(if (forPc) KEEP_MAIN_PCS else KEEP_PCS) }
                             }
                         }
                         HorizontalDivider(color = MealColors.LineSoft)

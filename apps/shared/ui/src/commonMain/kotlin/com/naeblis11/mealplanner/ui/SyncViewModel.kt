@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.naeblis11.mealplanner.sync.FirstSync
 import com.naeblis11.mealplanner.sync.PossibleDuplicate
 import com.naeblis11.mealplanner.sync.SyncControls
+import com.naeblis11.mealplanner.sync.SyncNoun
 import com.naeblis11.mealplanner.sync.SyncStatus
 import java.io.OutputStream
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,9 @@ class SyncViewModel(private val controls: SyncControls) : ViewModel() {
     private data class Local(val askFirst: Boolean = false, val asking: Boolean = false, val later: Boolean = false)
 
     private val local = MutableStateFlow(Local())
+
+    /** Stage 4a: true on a PC, whose dialogs say "this PC" and "the main PC". */
+    val forPc: Boolean = controls.noun == SyncNoun.PC
 
     val state: StateFlow<SyncBarState> =
         combine(controls.status, controls.syncing, controls.duplicates, controls.outcome, local) { status, syncing, duplicates, outcome, mine ->

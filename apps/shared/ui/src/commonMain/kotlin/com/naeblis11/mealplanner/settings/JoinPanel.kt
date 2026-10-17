@@ -36,6 +36,12 @@ const val JOIN_PANEL = "Join a PC"
 const val JOIN_INTRO =
     "Sync this phone's recipes, meal plan, pantry and shopping list with the Meal Planner PC at home. On the PC, open " +
         "Settings > Phones and PCs and press Pair a device."
+/** Stage 4a: the panel on a PC. */
+const val JOIN_PANEL_PC = "Join a household"
+const val JOIN_INTRO_PC =
+    "Sync this PC's recipes, meal plan, pantry and shopping list with the household's main PC. On that PC, open " +
+        "Settings > Phones and PCs and press Pair a device, then type its code here."
+const val TYPE_ON_TRUSTED_NETWORK = "Typing a code works only on a home network you trust."
 const val SCAN_CODE = "Scan code"
 const val TYPE_CODE = "Type code"
 const val WIFI_FIRST = "Connect to your home Wi-Fi first"
@@ -60,6 +66,14 @@ fun pairedWith(pcName: String): String = "Paired with $pcName"
 
 fun leaveQuestion(pcName: String): String = "Leave $pcName? This phone keeps its data but stops syncing."
 
+/** Stage 4a: a client PC's line under Join a household. */
+fun syncsWith(pcName: String): String = "Syncs with $pcName"
+
+fun pcKeepsItsRecipes(pcName: String): String = "This PC keeps its recipes and syncs them with $pcName."
+
+fun leaveHouseholdQuestion(pcName: String): String =
+    "Leave $pcName's household? This PC keeps its data and becomes a household of its own."
+
 /**
  * Settings' "Join a PC" (LAN sync stage 2c, D3):
  * - Paired: "Paired with NAME" and Leave, which asks first.
@@ -67,15 +81,18 @@ fun leaveQuestion(pcName: String): String = "Leave $pcName? This phone keeps its
  * - Otherwise: Scan code (recommended) and Type code.
  * Scan code, Type code and Leave are off while a sync (or a Leave) runs. Work under way and a failure show below, or
  * in the Type code dialog while it is open.
+ * On a PC ([JoinState.forPc], stage 4a, R7) it is Join a household: Type code only (a PC has no scanner), no Wi-Fi line
+ * (a PC's network is its own business), and the PC's wording.
  */
 @Composable
 fun JoinSetting(state: JoinState, actions: JoinActions) {
     val pcName = state.status.pcName
-    Text(JOIN_INTRO)
+    Text(if (state.forPc) JOIN_INTRO_PC else JOIN_INTRO)
     when {
         !state.status.known -> Unit
         pcName != null -> {
-            Text(pairedWith(pcName), style = MaterialTheme.typography.titleMedium)
+            Text(if (state.forPc) syncsWith(pcName) else pairedWith(pcName), style = MaterialTheme.typography.titleMedium)
+            if (state.forPc) Text(pcKeepsItsRecipes(pcName), color = MealColors.Muted)
             // Red: Leave removes the pairing (DESIGN.md's danger voice).
             OutlinedButton(
                 onClick = actions.askLeave,
@@ -83,6 +100,9 @@ fun JoinSetting(state: JoinState, actions: JoinActions) {
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MealColors.Danger),
                 modifier = Modifier.heightIn(min = 48.dp),
             ) { Text(LEAVE) }
+        }
+        state.forPc -> {
+            OutlinedButton(onClick = actions.openTyping, enabled = state.canStart, modifier = Modifier.heightIn(min = 48.dp)) { Text(TYPE_CODE) }
         }
         !state.onWifi -> {
             AttentionBanner(WIFI_FIRST)
@@ -105,7 +125,7 @@ fun JoinSetting(state: JoinState, actions: JoinActions) {
         AlertDialog(
             onDismissRequest = actions.cancelLeave,
             containerColor = MealColors.Paper,
-            text = { Text(leaveQuestion(pcName)) },
+            text = { Text(if (state.forPc) leaveHouseholdQuestion(pcName) else leaveQuestion(pcName)) },
             confirmButton = {
                 TextButton(
                     onClick = actions.confirmLeave,
@@ -142,7 +162,7 @@ private fun TypeCodeDialog(state: JoinState, actions: JoinActions) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Text(TYPE_SAFER, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+                Text(if (state.forPc) TYPE_ON_TRUSTED_NETWORK else TYPE_SAFER, color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
                 state.busy?.let { BusyLine(it) }
                 state.error?.let { AttentionBanner(it) }
                 if (state.choices.isNotEmpty()) {

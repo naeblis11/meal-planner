@@ -24,13 +24,17 @@ class PeerIdentity(
     /** This install's id, made and kept on the first call; one transaction, so two first calls at once agree. */
     suspend fun instanceId(): String = AppMetaIds.keep(db, INSTANCE_KEY, "An instance id", random)
 
-    /** This PC's record (P6-R3) under [name] (PeerTxt.pcName) and app version [app]; the household id itself never leaves. */
-    suspend fun record(name: String, app: String): PeerRecord = PeerRecord(
+    /**
+     * This PC's record (P6-R3) under [name] (PeerTxt.pcName) and app version [app], in [role] (stage 4a); the household id
+     * itself never leaves.
+     */
+    suspend fun record(name: String, app: String, role: String = PeerTxt.ROLE_MASTER): PeerRecord = PeerRecord(
         name = PeerTxt.cleanName(name) ?: PeerTxt.FALLBACK_NAME,
         householdHash = PeerTxt.householdHash(household.id()),
         since = household.created(),
         instanceId = instanceId(),
         app = PeerTxt.cleanApp(app),
+        role = role,
     )
 
     companion object {

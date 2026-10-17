@@ -41,6 +41,7 @@ import com.naeblis11.mealplanner.app.ThemeMode
 import com.naeblis11.mealplanner.calendar.CalendarInfo
 import com.naeblis11.mealplanner.calendar.CalendarMessages
 import com.naeblis11.mealplanner.calendar.GoogleCalendar
+import com.naeblis11.mealplanner.sync.SyncMessages
 import com.naeblis11.mealplanner.ui.AttentionBanner
 import com.naeblis11.mealplanner.ui.theme.MealColors
 
@@ -128,15 +129,18 @@ fun SettingsScreen(
             if (startup != null) {
                 Panel("Start with Windows") { StartupSetting(startup, onStartupChange) }
             }
+            // Stage 4a, R4: a client PC's main PC answers Alexa and pairs the phones.
+            val mainPc = join?.takeIf { it.forPc }?.status?.pcName
             if (server != null) {
-                Panel(SERVER_PANEL) { ServerSetting(server, peerNotice?.alexa, onCreateToken, onCopyToken, onTokenDone) }
+                Panel(SERVER_PANEL) { ServerSetting(server, mainPc?.let(SyncMessages::clientAlexa) ?: peerNotice?.alexa, onCreateToken, onCopyToken, onTokenDone) }
             }
             if (devices != null) {
-                // While an older household's PC answers (P6-R8), pairing is off and says why.
-                Panel(DEVICES_PANEL) { DevicesSetting(devices, deviceActions, yielding = peerNotice?.takeIf { it.alexa != null }?.text) }
+                // While an older household's PC answers (P6-R8), or this PC is a client (stage 4a), pairing is off and says why.
+                val pairingOff = mainPc?.let(SyncMessages::clientDevices) ?: peerNotice?.takeIf { it.alexa != null }?.text
+                Panel(DEVICES_PANEL) { DevicesSetting(devices, deviceActions, yielding = pairingOff) }
             }
             if (join != null) {
-                Panel(JOIN_PANEL) { JoinSetting(join, joinActions) }
+                Panel(if (join.forPc) JOIN_PANEL_PC else JOIN_PANEL) { JoinSetting(join, joinActions) }
             }
             Panel("Google Calendar") {
                 if (google != null) {

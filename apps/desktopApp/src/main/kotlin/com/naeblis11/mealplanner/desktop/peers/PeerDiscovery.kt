@@ -12,6 +12,13 @@ interface PeerDiscovery {
     fun announce(record: PeerRecord, port: Int): Boolean
 
     /**
+     * Stage 4a: announces [record] in place of the record announced, on every interface that announced it (Join or Leave
+     * changed this PC's role or household). False when nothing was announced (off, or closed) or no interface took the
+     * new record; [announce] may then be called again.
+     */
+    fun reannounce(record: PeerRecord, port: Int): Boolean
+
+    /**
      * Looks for up to [millis] and returns the records seen, this PC's own among them, decoded and bounded (PeerTxt);
      * empty when off or closed. A [close] ends it early; an interrupt ends it with InterruptedException.
      */

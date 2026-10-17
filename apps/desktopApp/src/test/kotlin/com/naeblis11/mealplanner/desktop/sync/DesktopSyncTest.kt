@@ -34,7 +34,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -91,8 +90,7 @@ class DesktopSyncTest {
     @After
     fun tearDown() {
         sync.stop()
-        scope.cancel()
-        db.close()
+        closeAfterScope(scope, db)
         dir.deleteRecursively()
     }
 

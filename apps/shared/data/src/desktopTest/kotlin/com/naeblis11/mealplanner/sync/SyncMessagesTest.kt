@@ -69,4 +69,31 @@ class SyncMessagesTest {
         assertEquals(SyncMessages.NOT_PAIRED, SyncMessages.syncFailed(NotPairedException(), null))
         assertEquals(SyncMessages.SYNC_FAILED, SyncMessages.syncFailed(IllegalStateException("x"), "KITCHEN"))
     }
+
+    @Test
+    fun aClientPcSaysPcWhereThePhoneSaysPhone() {
+        val pc = SyncNoun.PC
+        assertEquals("This PC was removed from KITCHEN. Your data is still here.", SyncMessages.syncFailed(UnpairedException(), "KITCHEN", pc))
+        assertEquals("This PC was removed from the main PC. Your data is still here.", SyncMessages.removedFrom(null, pc))
+        assertEquals(SyncMessages.PC_NOT_PAIRED, SyncMessages.syncFailed(NotPairedException(), null, pc))
+        assertEquals(SyncMessages.PC_WRONG_CODE, SyncMessages.pairingFailed(WrongCodeException(), scanned = false, noun = pc))
+        assertEquals(SyncMessages.PC_PAIRING_CLOSED, SyncMessages.pairingFailed(NotPairingException(), scanned = false, noun = pc))
+        assertEquals(SyncMessages.PC_WRONG_PC_TYPED, SyncMessages.pairingFailed(WrongPcException(), scanned = false, noun = pc))
+        assertEquals(SyncMessages.PC_NO_PC_FOUND, SyncMessages.noPcFound(pc))
+        assertEquals(SyncMessages.PC_REMOVE_COPY_FAILED, SyncMessages.removeCopyFailed(pc))
+        // Sentences that name no device are the same on both.
+        assertEquals(SyncHttp.UNREACHABLE, SyncMessages.syncFailed(SyncHttpException(SyncHttp.UNREACHABLE), "KITCHEN", pc))
+        assertEquals(SyncMessages.NOT_MAIN_PC, SyncMessages.pairingFailed(NotMasterException(), scanned = false, noun = pc))
+    }
+
+    @Test
+    fun thePhonesSentencesAreUnchanged() {
+        val phone = SyncNoun.PHONE
+        assertEquals(SyncMessages.removedFrom("KITCHEN"), SyncMessages.syncFailed(UnpairedException(), "KITCHEN", phone))
+        assertEquals(SyncMessages.NOT_PAIRED, SyncMessages.syncFailed(NotPairedException(), null))
+        assertEquals(SyncMessages.WRONG_PC_TYPED, SyncMessages.pairingFailed(WrongPcException(), scanned = false))
+        assertEquals(SyncMessages.NO_PC_FOUND, SyncMessages.noPcFound(phone))
+        assertEquals(SyncMessages.REMOVE_COPY_FAILED, SyncMessages.removeCopyFailed(phone))
+        assertEquals("This phone isn't paired with a PC. Join one in Settings.", SyncMessages.NOT_PAIRED)
+    }
 }

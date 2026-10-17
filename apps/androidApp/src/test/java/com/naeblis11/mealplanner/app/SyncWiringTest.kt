@@ -69,7 +69,7 @@ class SyncWiringTest {
 
     // The PC: this test's hub, in-process.
     private val connector = object : SyncConnector {
-        override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String): Paired =
+        override suspend fun pair(host: String, port: Int, pin: String?, code: String, deviceId: String, name: String, kind: String): Paired =
             error("This test doesn't pair.")
 
         override fun transport(host: String, port: Int, pin: String, deviceKey: String): SyncTransport = object : SyncTransport {

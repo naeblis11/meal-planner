@@ -313,6 +313,20 @@ class RecipeRepository(
     // A TEXT column holds whatever YAML gave, as text (SQLite would store 2 as "2").
     private fun text(value: Any?): String? = value?.let { Py.str(it) }
 
+    /**
+     * Replace on a client PC (LAN sync stage 4a, spec: "On a PC, its recipe files go to the Recycle Bin"): every indexed
+     * recipe's file goes to the trash, then [clear] empties the tables, both under the write lock, so a folder sync can't
+     * look in between (it would see nearly every file gone and hold them all as a mass removal). Without files (the
+     * phone) only [clear] runs. A file that can't be trashed throws before [clear]: Replace then fails with this PC's
+     * tables as they were, and the files already trashed are back on the next Replace or in the Recycle Bin.
+     */
+    suspend fun clearForReplace(clear: suspend () -> Unit): Unit = writeLock.withLock {
+        withContext(dispatcher) {
+            files?.let { store -> dao.allRecipes().forEach { row -> row.fileName?.let(store::trash) } }
+            clear()
+        }
+    }
+
     /** Runs [block] holding the write lock on the repository's dispatcher: the desktop folder sync, so it never interleaves with a save. */
     internal suspend fun <T> exclusive(block: suspend () -> T): T = writeLock.withLock { withContext(dispatcher) { block() } }
 

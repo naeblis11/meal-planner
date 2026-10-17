@@ -540,6 +540,41 @@ from another PC or Windows user, or a file was damaged. Settings then says "This
 was remade; pair your devices again." Every paired device now refuses to sync with this PC, as it
 should. Pair each one again from Settings > Join a PC.
 
+### A second PC
+
+A second Meal Planner PC can join this one, so both have the same recipes, plan, pantry and shopping list.
+The PC you join is the household's **main PC**; it keeps answering Alexa and pairing phones.
+
+1. On the main PC, press **Pair a device** in Settings > Phones and PCs.
+2. On the second PC, open Settings > **Join a household**, press **Type code** and type the 6-digit code.
+   A first run of a new install also offers "Found NAME's Meal Planner on this network." with **Join**,
+   or **Keep this PC separate**, which puts the offer away for good.
+3. The first sync asks **Merge** (keep this PC's recipes and combine them with the main PC's) or
+   **Replace** (make this PC a copy of the main PC, after saving a backup; its recipe files go to the
+   Recycle Bin).
+
+After that the second PC syncs when you press **Sync** and once each time it starts. Its recipes are still
+YAML files in its own `Documents\Meal Planner\recipes`. While it is joined:
+- it doesn't answer Alexa (Settings says which PC does) and makes no token;
+- it doesn't pair phones (pair them with the main PC);
+- the Chrome extension works on it as before;
+- Google Calendar is set up on each PC on its own; both send the same events, never duplicates.
+
+**Leave** (Settings > Join a household) stops syncing. The PC keeps its data and becomes a household of
+its own, as does a PC you **Remove** from the main PC's list.
+
+If two PCs of one household both act as the main PC (one restored from the other's backup, say), both say
+"NAME is also set up as this household's main PC. Make one of them join the other in Settings." and stop
+syncing with phones until one joins the other.
+
+Checking it on real PCs (owner only, after the build):
+1. On a second PC, install the build: Settings > Join a household finds the main PC, the typed code pairs,
+   and the first sync asks Merge or Replace.
+2. An edit on either PC reaches the other after Sync (or the second PC's restart).
+3. The second PC's Alexa section names the main PC; Home Assistant still reaches the main PC only.
+4. Leave on the second PC: it keeps its recipes, and neither PC shows the two-main-PCs notice.
+5. Two main PCs of one household (the main PC's database restored on another PC): both show the notice.
+
 ### Scan rather than type
 
 Scanning the QR code is the safer way to pair. In principle, a typed code can be guessed by another

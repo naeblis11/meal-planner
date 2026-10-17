@@ -432,6 +432,36 @@ class SyncExchangeTest {
     }
 
     @Test
+    fun replaceOnAClientPcTrashesItsRecipeFilesSoTheFolderNeverSendsThemBack() = runBlocking {
+        // Stage 4a: a client PC's library is files; clearing only its tables would let the folder sync index them again.
+        val s = SyncHarness(withFiles = true)
+        try {
+            s.pc.recipes.save(s.doc("Soup", "u-soup"))
+            s.pc.recipes.save(s.doc("Stew", "u-stew"))
+            s.phone.recipes.save(s.doc("Mine", "u-mine"))
+            val mine = s.phone.db.recipeDao().allRecipes().single().fileName!!
+            val folder = com.naeblis11.mealplanner.folder.RecipeFolder(s.phone.folder, s.phone.db, s.phone.recipes, opener = {})
+            folder.sync()
+
+            s.client.sync(FirstSync.REPLACE)
+            assertEquals(listOf(mine), s.phone.trashed)
+            suspend fun names() = s.phone.db.recipeDao().allRecipes().map { it.name }.toSet()
+            assertEquals(setOf("Soup", "Stew"), names())
+            // On disk: exactly the hub's recipes, as the index has them.
+            val indexed = s.phone.db.recipeDao().allRecipes().map { it.fileName }.toSet()
+            assertEquals(indexed, s.phone.folder.listFiles()!!.map { it.name }.toSet())
+
+            // A folder sync afterwards finds nothing to add, and the next exchange sends nothing back.
+            folder.sync()
+            assertEquals(setOf("Soup", "Stew"), names())
+            assertEquals(0, s.client.sync().sent)
+            assertEquals(setOf("Soup", "Stew"), s.pc.db.recipeDao().allRecipes().map { it.name }.toSet())
+        } finally {
+            s.close()
+        }
+    }
+
+    @Test
     fun aFullExchangeOfAnUnchangedLibraryRewritesNoRecipeFile() = runBlocking {
         val s = SyncHarness(phoneClock = { 5_000_000_000_000L }, hubClock = { 5_000_000_000_000L }, withFiles = true)
         try {

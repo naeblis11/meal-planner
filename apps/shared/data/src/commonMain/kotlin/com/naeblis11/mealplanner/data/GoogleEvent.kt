@@ -36,4 +36,8 @@ interface GoogleEventDao {
 
     @Query("SELECT * FROM google_event ORDER BY calendar_id, date, slot")
     suspend fun all(): List<GoogleEventEntity>
+
+    /** Forgets every record: a PC that joins another household (stage 4a), whose event ids used its old household id. */
+    @Query("DELETE FROM google_event")
+    suspend fun clear()
 }

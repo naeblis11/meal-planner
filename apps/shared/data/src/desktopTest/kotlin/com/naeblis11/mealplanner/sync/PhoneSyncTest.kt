@@ -251,6 +251,60 @@ class PhoneSyncTest {
         assertTrue(SyncMarks.KEYS.all { meta.get(it) == "7" })
     }
 
+    // Stage 4a: a client PC is the same client, listed as a PC, with hooks for its role.
+    private val joined = mutableListOf<String>()
+    private var left = 0
+    private val pc = PhoneSync(
+        harness.phone.db, harness.phone.recipes, harness.phone.images, store, finder, "OFFICE", connector,
+        kind = PairingWire.KIND_PC, onJoined = { joined += it }, onLeft = { left++ },
+    )
+
+    @Test
+    fun theDefaultIsAPhoneAndAPcSaysItIsOne() = runBlocking<Unit> {
+        pairAt()
+        assertEquals(listOf(PairingWire.KIND_PHONE), connector.kinds.toList())
+        connector.answerAt(MOVED)
+        pc.pairTyped(HubConnector.CODE, FoundPc("KITCHEN", MOVED, HubConnector.PORT))
+        assertEquals(listOf(PairingWire.KIND_PHONE, PairingWire.KIND_PC), connector.kinds.toList())
+    }
+
+    @Test
+    fun aPcThatJoinsIsToldTheHouseholdItTookAfterItIsKept() = runBlocking<Unit> {
+        connector.answerAt(HOME)
+        pc.pairTyped(HubConnector.CODE, FoundPc("KITCHEN", HOME, HubConnector.PORT))
+        assertEquals(listOf(HubConnector.HOUSEHOLD), joined)
+        assertEquals(HubConnector.HOUSEHOLD, meta.get(Household.KEY))
+        assertNotNull(store.load())
+        assertEquals(0, left)
+    }
+
+    @Test
+    fun aPcThatLeavesOrIsRemovedIsToldAfterTheForgetting() = runBlocking<Unit> {
+        connector.answerAt(HOME)
+        pc.pairTyped(HubConnector.CODE, FoundPc("KITCHEN", HOME, HubConnector.PORT))
+        pc.sync(FirstSync.MERGE)
+        pc.leave()
+        assertEquals(1, left)
+        assertNull(store.load())
+
+        pc.pairTyped(HubConnector.CODE, FoundPc("KITCHEN", HOME, HubConnector.PORT))
+        pc.sync(FirstSync.MERGE)
+        connector.removed = true
+        assertThrows(UnpairedException::class.java) { runBlocking { pc.sync() } }
+        assertEquals(2, left)
+        assertNull(store.load())
+    }
+
+    @Test
+    fun aFailedSyncThatIsNotARemovalForgetsNothing() = runBlocking<Unit> {
+        connector.answerAt(HOME)
+        pc.pairTyped(HubConnector.CODE, FoundPc("KITCHEN", HOME, HubConnector.PORT))
+        connector.hosts.clear()
+        assertThrows(SyncHttpException::class.java) { runBlocking { pc.sync(FirstSync.MERGE) } }
+        assertEquals(0, left)
+        assertNotNull(store.load())
+    }
+
     private companion object {
         const val HOME = "192.0.2.20"
         const val MOVED = "192.0.2.31"

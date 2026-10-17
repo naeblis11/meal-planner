@@ -18,9 +18,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Other Meal Planner PCs on the network (P6-R6, P6-R7). [start] announces this PC ([own], for the server's [port]) and
- * looks once; [browseNow] looks again when Settings opens, and [lookNow] before each send to Google (P6-FR1). [status]
- * changes only after a look; a change of the PC this
- * one yields to calls [onYieldChanged] (Main rebinds the server). A look takes [browseMillis].
+ * looks once; [browseNow] looks again when Settings opens, and [lookNow] before each send to Google (P6-FR1); [roleChanged]
+ * announces this PC afresh after a Join or a Leave (stage 4a). [status] changes only after a look; a change of the PC this
+ * one yields to, or of the other main PC of this household (stage 4a), calls [onYieldChanged] (Main rebinds the server
+ * and the sync port). A look takes [browseMillis].
  * P6-T4a: while there is no network to announce on (the installed app starts with Windows, often before Wi-Fi is up),
  * the announce is tried again every [retryMillis] and whenever Settings opens; once it works, nothing polls again.
  * P6-R11: [log] gets counts, the yield decision and exception class names only, never a peer's name or other data.
@@ -61,6 +62,9 @@ class PeerWatch(
     @Volatile
     private var lookJob: Job? = null
 
+    @Volatile
+    private var roleJob: Job? = null
+
     // One announce or look at a time: taken on the asking thread, so one asked for while another runs is dropped at
     // once (the running one is just as fresh), and let go when it ends, however it ends. A flow, so lookNow can wait
     // for the one under way.
@@ -69,6 +73,9 @@ class PeerWatch(
 
     /** The older household's PC this one yields to (P6-R7), or null; the server's bind and the Google send ask it. */
     fun yieldTo(): String? = _status.value.yieldTo
+
+    /** Stage 4a: another main PC of this household, or null; while there is one, this PC serves no phone or PC. */
+    fun twoMasters(): String? = _status.value.twoMasters
 
     /**
      * Announces this PC, then looks once, all in [scope] (P6-R6); returns at once. While the announce says off, it is
@@ -87,19 +94,73 @@ class PeerWatch(
                 return@launch
             }
             record = made
-            while (!closed.get() && mine == null) {
-                // Taken by a browseNow trying at the same moment: that one is just as good, and this loop checks after.
-                if (browsing.compareAndSet(false, true)) {
-                    try {
-                        announceThenLook(made)
-                    } finally {
-                        browsing.value = false
-                    }
-                }
-                if (closed.get() || mine != null) break
-                delay(retryMillis)
-            }
+            announceUntilOn()
         }.also { startJob = it }
+    }
+
+    // Announces (and looks) until it works, trying again every retryMillis; the record is read each time, so a role
+    // changed meanwhile is the one announced.
+    private suspend fun announceUntilOn() {
+        while (!closed.get() && mine == null) {
+            // Taken by a browseNow trying at the same moment: that one is just as good, and this loop checks after.
+            if (browsing.compareAndSet(false, true)) {
+                try {
+                    record?.let { announceThenLook(it) }
+                } finally {
+                    browsing.value = false
+                }
+            }
+            if (closed.get() || mine != null) break
+            delay(retryMillis)
+        }
+    }
+
+    /**
+     * Stage 4a: Join or Leave changed this PC's role or household. own() is asked again, after any look under way. Once
+     * announced, the new record replaces the old on the network and a look follows, so the decision is made on the new
+     * role; while still off, the next try announces the new one. If the new record can't be announced, this PC is off
+     * and tried again every retryMillis, as at start. Returns the job; null when not started or closed.
+     */
+    fun roleChanged(): Job? {
+        val where = scope ?: return null
+        if (closed.get()) return null
+        return where.launch {
+            while (!browsing.compareAndSet(false, true)) browsing.first { !it }
+            var again = false
+            try {
+                val made = try {
+                    own()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    log("Meal Planner: this PC couldn't be announced again: ${e.javaClass.simpleName}")
+                    return@launch
+                }
+                record = made
+                if (closed.get() || mine == null) return@launch
+                val on = try {
+                    runInterruptible(Dispatchers.IO) { discovery.reannounce(made, port) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    log("Meal Planner: announcing this PC again failed: ${e.javaClass.simpleName}")
+                    false
+                }
+                if (closed.get()) return@launch
+                if (on) {
+                    mine = made
+                    look(made)
+                } else {
+                    mine = null
+                    offReason = null
+                    _status.value = PeerStatus(off = true)
+                    again = true
+                }
+            } finally {
+                browsing.value = false
+            }
+            if (again) announceUntilOn()
+        }.also { roleJob = it }
     }
 
     /**
@@ -179,10 +240,10 @@ class PeerWatch(
             log("Meal Planner: looking for other Meal Planner PCs failed: ${e.javaClass.simpleName}")
             return
         }
-        val before = _status.value.yieldTo
+        val before = _status.value
         _status.value = next
         _notice.value = next.notice?.let { PeerNotice(it, alexa = next.yieldTo?.let(PeerMessages::yieldAlexa)) }
-        if (next.yieldTo != before) {
+        if (next.yieldTo != before.yieldTo || next.twoMasters != before.twoMasters) {
             log(lookedMessage(next.peers.size, next.yieldTo != null))
             try {
                 onYieldChanged()
@@ -203,6 +264,7 @@ class PeerWatch(
         } finally {
             startJob?.cancel()
             lookJob?.cancel()
+            roleJob?.cancel()
         }
     }
 

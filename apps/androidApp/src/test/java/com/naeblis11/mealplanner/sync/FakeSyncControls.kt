@@ -9,6 +9,7 @@ class FakeSyncControls(
     pcName: String? = "KITCHEN",
     lastSyncAt: Long? = null,
     @Volatile var firstChoice: Boolean = true,
+    override val noun: SyncNoun = SyncNoun.PHONE,
 ) : SyncControls, JoinControls {
     override val status = MutableStateFlow(SyncStatus(known = true, pcName = pcName, lastSyncAt = lastSyncAt))
     override val syncing = MutableStateFlow(false)

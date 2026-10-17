@@ -217,11 +217,12 @@ private fun RecipeListPane(
     val problems by (folder?.problems ?: NO_PROBLEMS).collectAsStateWithLifecycle()
     // Stage 2b: recipes held from a sync's removal count on the same banner.
     val syncHeld by (LocalSyncAttention.current?.held ?: NO_SYNC_HELD).collectAsStateWithLifecycle()
-    // Stage 2c: the phone's first-run hint, until it is paired or put away (kept in the screen settings).
+    // Stage 2c: the phone's first-run hint, until it is paired or put away (kept in the screen settings). Never on a PC
+    // (stage 4a), which is a main PC of its own until it joins one: its first run has the join offer instead (R8).
     val syncVm = LocalSyncControls.current
     val syncBar by (syncVm?.state ?: NO_SYNC_BAR).collectAsStateWithLifecycle()
     var hintDismissed by remember { mutableStateOf(container.settings.getLong(JOIN_HINT_DISMISSED_KEY) != null) }
-    val showJoinHint = syncVm != null && syncBar.status.known && !syncBar.status.paired && !hintDismissed
+    val showJoinHint = syncVm != null && !syncVm.forPc && syncBar.status.known && !syncBar.status.paired && !hintDismissed
     val openSettings = dropUnlessResumed { nav.navigate(Routes.SETTINGS) }
     RecipeListScreen(
         groups = groups,

@@ -50,6 +50,8 @@ import com.naeblis11.mealplanner.settings.APP_REPLACED_MESSAGE
 import com.naeblis11.mealplanner.settings.AllowAppControls
 import com.naeblis11.mealplanner.settings.BackupViewModel
 import com.naeblis11.mealplanner.settings.GoogleControls
+import com.naeblis11.mealplanner.settings.JoinOfferBanner
+import com.naeblis11.mealplanner.settings.JoinOfferControls
 import com.naeblis11.mealplanner.settings.PairingControls
 import com.naeblis11.mealplanner.settings.PeerControls
 import com.naeblis11.mealplanner.settings.RESTART_BY_HAND
@@ -103,11 +105,12 @@ fun MealPlannerApp(
     syncAttention: SyncAttention? = null,
     join: JoinControls? = null,
     sync: SyncControls? = null,
+    joinOffer: JoinOfferControls? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = isWide(maxWidth, maxHeight)
         CompositionLocalProvider(LocalWideLayout provides wide) {
-            AppShell(container, startup, wide, leaveGuard, imports, server, google, quitting, peers, storage, restart, updates, devices, syncAttention, join, sync)
+            AppShell(container, startup, wide, leaveGuard, imports, server, google, quitting, peers, storage, restart, updates, devices, syncAttention, join, sync, joinOffer)
         }
     }
 }
@@ -131,6 +134,7 @@ private fun AppShell(
     syncAttention: SyncAttention?,
     join: JoinControls?,
     sync: SyncControls?,
+    joinOffer: JoinOfferControls?,
 ) {
     val nav = rememberNavController()
     val importVm: ImportViewModel = viewModel { ImportViewModel(container.recipes, container.imagesDir, container::newImportStagingDir) }
@@ -199,6 +203,10 @@ private fun AppShell(
                 if (server != null) ServerNotice(server)
                 // P6-R8: another Meal Planner PC on the network, in one line above every screen. Android has none.
                 if (peers != null) PeerBanner(peers)
+                // Stage 4a, R8: a PC's first run found the household's main PC; Join opens Settings.
+                if (joinOffer != null) {
+                    JoinOfferBanner(joinOffer, onJoin = { openSection(Routes.SETTINGS) }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
                 // Plan 8: an update the launch check found, above every screen until opened or put away.
                 if (updates != null) UpdateNotice(updates, onOpen = { openSection(Routes.SETTINGS) })
                 // P7-R10: Windows refused a write to Documents; how to allow it, above every screen.
