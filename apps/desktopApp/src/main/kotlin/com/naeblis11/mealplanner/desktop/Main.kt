@@ -43,6 +43,9 @@ import com.naeblis11.mealplanner.desktop.server.voiceRoutes
 import com.naeblis11.mealplanner.desktop.sync.DesktopClient
 import com.naeblis11.mealplanner.desktop.sync.DesktopSync
 import com.naeblis11.mealplanner.desktop.sync.DpapiPairingStore
+import com.naeblis11.mealplanner.desktop.sync.HandoverHere
+import com.naeblis11.mealplanner.desktop.sync.HandoverPending
+import com.naeblis11.mealplanner.desktop.sync.HandoverTaker
 import com.naeblis11.mealplanner.desktop.sync.JdkHttpsEngine
 import com.naeblis11.mealplanner.desktop.sync.JmdnsPcFinder
 import com.naeblis11.mealplanner.desktop.sync.SyncCertificate
@@ -54,6 +57,8 @@ import com.naeblis11.mealplanner.importing.ImportInbox
 import com.naeblis11.mealplanner.settings.ServerState
 import com.naeblis11.mealplanner.settings.portInUseNotice
 import com.naeblis11.mealplanner.sync.DeviceNames
+import com.naeblis11.mealplanner.sync.HandoverBundle
+import com.naeblis11.mealplanner.sync.PairingQr
 import com.naeblis11.mealplanner.sync.SyncMessages
 import com.naeblis11.mealplanner.ui.AwtFileChooser
 import com.naeblis11.mealplanner.ui.LeaveGuard
@@ -327,6 +332,13 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                 lanAllowed = desktop::syncOnLan,
                 addresses = { PeerInterfaces.pick(PeerInterfaces.system()).map { it.hostAddress } },
                 port = syncPort,
+                // Stage 4b: the token goes with the main PC's role; once the taker is done this PC becomes its client
+                // and forgets the token (DesktopSync forgets the devices and the certificate).
+                alexaToken = { token.value },
+                onHandedOver = { handed ->
+                    desktop.client?.joinByHandover(handed)
+                    token.clear()
+                },
             )
         },
         // LAN sync's client side (stage 4a): Join a household in Settings makes this PC a client of the main PC. Its
@@ -344,6 +356,21 @@ private fun runApp(args: Array<String>, libraryDir: File, appDataDir: File, cach
                     desktop.peers?.roleChanged()
                     desktop.joinOffer?.roleChanged()
                 },
+                // Stage 4b: offered the main PC's role, this PC takes it: the certificate and devices into its sync side,
+                // the token into its secrets file. A hand-over cut short is kept sealed until it is finished.
+                taker = object : HandoverTaker {
+                    override suspend fun here(): HandoverHere {
+                        val sync = checkNotNull(desktop.sync) { "No sync side." }
+                        val addresses = PeerInterfaces.pick(PeerInterfaces.system()).map { it.hostAddress }.take(PairingQr.MAX_ADDRESSES)
+                        return HandoverHere(DeviceNames.clean(PeerTxt.pcName(), DesktopClient.FALLBACK_NAME), addresses, syncPort, sync.hub.hubId())
+                    }
+
+                    override suspend fun adopt(bundle: HandoverBundle, masterKeyHash: String) {
+                        checkNotNull(desktop.sync) { "No sync side." }.adopt(bundle, masterKeyHash)
+                        bundle.alexaToken?.let(token::adopt)
+                    }
+                },
+                pending = HandoverPending(File(appDataDir, HandoverPending.FILE_NAME), DpapiProtector()),
             )
         },
     )

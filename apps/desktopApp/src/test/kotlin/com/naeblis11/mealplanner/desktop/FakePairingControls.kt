@@ -1,6 +1,7 @@
 package com.naeblis11.mealplanner.desktop
 
 import com.naeblis11.mealplanner.settings.DeviceRow
+import com.naeblis11.mealplanner.settings.HandoverView
 import com.naeblis11.mealplanner.settings.PairingControls
 import com.naeblis11.mealplanner.settings.PairingView
 import com.naeblis11.mealplanner.settings.SyncServerState
@@ -20,6 +21,8 @@ class FakePairingControls : PairingControls {
     val opens = AtomicInteger()
     val closes = AtomicInteger()
     val removed = CopyOnWriteArrayList<String>()
+    override val handover = MutableStateFlow<HandoverView?>(null)
+    val offeredTo = CopyOnWriteArrayList<String>()
 
     /** What open() shows. */
     @Volatile
@@ -51,5 +54,15 @@ class FakePairingControls : PairingControls {
         failRemove?.let { throw it }
         removed += deviceId
         devices.value = devices.value.filter { it.deviceId != deviceId }
+    }
+
+    override fun offerHandover(deviceId: String) {
+        offeredTo += deviceId
+        val row = devices.value.first { it.deviceId == deviceId }
+        handover.value = HandoverView(deviceId, row.name, Long.MAX_VALUE, handing = false)
+    }
+
+    override fun cancelHandover() {
+        handover.value = null
     }
 }

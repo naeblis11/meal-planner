@@ -110,6 +110,33 @@ class PhoneSyncTest {
     }
 
     @Test
+    fun aPcFoundElsewhereByTheCertificateGivesItsNameToo() = runBlocking<Unit> {
+        // Stage 4b, R6: the main PC was handed over to another PC, which answers with the same certificate.
+        pairAt()
+        connector.hosts.clear()
+        connector.answerAt(MOVED)
+        finder.found = listOf(FoundPc("STUDY", MOVED, 5001))
+        phone.sync(FirstSync.MERGE)
+        assertEquals("STUDY", store.load()!!.pcName)
+        assertEquals(listOf(MOVED, HOME), store.load()!!.addresses)
+    }
+
+    @Test
+    fun aSyncResultPassesThroughAfterSyncWithThePairingItUsed() = runBlocking<Unit> {
+        val seen = mutableListOf<String>()
+        val pc = PhoneSync(
+            harness.phone.db, harness.phone.recipes, harness.phone.images, store, finder, "Pixel", connector,
+            afterSync = { pairing, result ->
+                seen += pairing.pcName
+                result.copy(note = "noted")
+            },
+        )
+        pairAt()
+        assertEquals("noted", pc.sync(FirstSync.MERGE).note)
+        assertEquals(1, seen.size)
+    }
+
+    @Test
     fun aNewAddressThatCannotBeStoredStillFinishesTheSync() = runBlocking<Unit> {
         // F5/M3: keeping the new address is best effort; a store that fails doesn't undo an exchange already applied.
         val failing = object : PairingStore by store {

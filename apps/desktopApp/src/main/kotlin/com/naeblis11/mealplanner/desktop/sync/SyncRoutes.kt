@@ -1,5 +1,9 @@
 package com.naeblis11.mealplanner.desktop.sync
 
+import com.naeblis11.mealplanner.data.PairedDeviceEntity
+import com.naeblis11.mealplanner.sync.HandoverBundle
+import com.naeblis11.mealplanner.sync.HandoverRequest
+import com.naeblis11.mealplanner.sync.HandoverWire
 import com.naeblis11.mealplanner.sync.PairReply
 import com.naeblis11.mealplanner.sync.PairingWire
 import com.naeblis11.mealplanner.sync.SyncErrors
@@ -18,6 +22,10 @@ import kotlinx.coroutines.CancellationException
  * - While this PC yields to an older household's ([lanAllowed] false), every route says `not_master`. The port is
  *   closed while it yields, so a device meets this only when the yield starts while its connection is open; otherwise
  *   it finds the PC unreachable.
+ * - Stage 4b: an exchange tells the PC the role is offered to ([HandoverRoutes.offeredTo]). `POST /sync/handover/take`
+ *   (that PC's key, a PC only) answers the bundle and starts the hand-over; while it runs ([HandoverRoutes.handing]) every
+ *   other request is `not_master`; `POST /sync/handover/done` (the taker's key) finishes it, 204. Either answers 409
+ *   `no_handover` when nothing is offered to, or handing over to, that PC.
  * - `POST /sync/leave`: a paired device's key; it is removed as Remove removes it ([onLeft]) and answered 204, with no body read (stage 2c).
  * - Anything else is `not_found`.
  * - A failure is logged as its method, route and class only, never its message, a key, a code or a body, and answered
@@ -37,11 +45,15 @@ class SyncRoutes(
     /** A paired device left by itself (`POST /sync/leave`); by default it is simply removed. */
     private val onLeft: suspend (deviceId: String) -> Unit = { devices.remove(it) },
     private val log: (String) -> Unit = { System.err.println(it) },
+    /** Stage 4b: the hand-over of the main PC's role; null (most tests) means none is ever offered. */
+    private val handover: HandoverRoutes? = null,
 ) : SyncHandler {
     private sealed class Route(val label: String) {
         object PairDevice : Route(SyncPaths.PAIR)
         object Exchange : Route(SyncPaths.EXCHANGE)
         object Leave : Route(SyncPaths.LEAVE)
+        object Take : Route(SyncPaths.HANDOVER_TAKE)
+        object Done : Route(SyncPaths.HANDOVER_DONE)
         class GetPhoto(val uuid: String) : Route(SyncPaths.PHOTO + "{uuid}")
         class PutPhoto(val uuid: String) : Route(SyncPaths.PHOTO + "{uuid}")
     }
@@ -49,13 +61,15 @@ class SyncRoutes(
     override suspend fun handle(request: SyncHttpRequest): SyncHttpResponse {
         val route = routeOf(request) ?: return SyncHttpResponse.error(404, SyncErrors.NOT_FOUND)
         return try {
-            if (!lanAllowed()) {
+            if (!lanAllowed() || (route != Route.Done && handover?.handing() == true)) {
                 SyncHttpResponse.error(409, SyncErrors.NOT_MASTER)
             } else {
                 when (route) {
                     Route.PairDevice -> pair(request)
                     Route.Exchange -> exchange(request)
                     Route.Leave -> leave(request)
+                    Route.Take -> take(request)
+                    Route.Done -> done(request)
                     is Route.GetPhoto -> getPhoto(request, route.uuid)
                     is Route.PutPhoto -> putPhoto(request, route.uuid)
                 }
@@ -74,6 +88,8 @@ class SyncRoutes(
         request.method == "POST" && request.path == SyncPaths.PAIR -> Route.PairDevice
         request.method == "POST" && request.path == SyncPaths.EXCHANGE -> Route.Exchange
         request.method == "POST" && request.path == SyncPaths.LEAVE -> Route.Leave
+        request.method == "POST" && request.path == SyncPaths.HANDOVER_TAKE -> Route.Take
+        request.method == "POST" && request.path == SyncPaths.HANDOVER_DONE -> Route.Done
         request.path.startsWith(SyncPaths.PHOTO) -> {
             // The whole segment must be a uuid (matches, not find): "..%2Fx", "a/b" and anything longer are no route.
             val uuid = request.path.substring(SyncPaths.PHOTO.length).takeIf { SyncPaths.UUID.matches(it) }
@@ -132,7 +148,28 @@ class SyncRoutes(
             log("Meal Planner: dating a device's sync failed: ${e.javaClass.simpleName}")
         }
         onExchanged()
-        return SyncHttpResponse.json(200, SyncWire.encode(reply))
+        val offered = handover?.offeredTo(device.deviceId) == true
+        return SyncHttpResponse.json(200, SyncWire.encode(if (offered) reply.copy(handover = true) else reply))
+    }
+
+    private suspend fun take(request: SyncHttpRequest): SyncHttpResponse {
+        val device = devices.authenticate(request.authorization) ?: return unpaired()
+        val side = handover ?: return noHandover()
+        if (device.kind != PairingWire.KIND_PC) return noHandover()
+        if (request.contentLength > HandoverWire.MAX_REQUEST_BYTES) return SyncHttpResponse.error(413, SyncErrors.TOO_LARGE)
+        val asked = try {
+            HandoverWire.decodeRequest(request.body(HandoverWire.MAX_REQUEST_BYTES).toString(Charsets.UTF_8))
+        } catch (e: IllegalArgumentException) {
+            return SyncHttpResponse.error(400, SyncErrors.BAD_REQUEST)
+        }
+        val bundle = side.take(device, asked) ?: return noHandover()
+        return SyncHttpResponse.json(200, HandoverWire.encode(bundle))
+    }
+
+    private suspend fun done(request: SyncHttpRequest): SyncHttpResponse {
+        val device = devices.authenticate(request.authorization) ?: return unpaired()
+        val side = handover ?: return noHandover()
+        return if (side.done(device)) SyncHttpResponse.NO_CONTENT else noHandover()
     }
 
     private suspend fun leave(request: SyncHttpRequest): SyncHttpResponse {
@@ -154,6 +191,8 @@ class SyncRoutes(
         return if (hub.receivePhoto(uuid, bytes)) SyncHttpResponse.NO_CONTENT else SyncHttpResponse.error(409, SyncErrors.REFUSED)
     }
 
+    private fun noHandover() = SyncHttpResponse.error(409, SyncErrors.NO_HANDOVER)
+
     private fun notPairing() = SyncHttpResponse.error(404, SyncErrors.NOT_PAIRING)
 
     private fun unpaired() = SyncHttpResponse.error(401, SyncErrors.UNPAIRED)
@@ -162,4 +201,19 @@ class SyncRoutes(
         const val PAIR_MAX_BYTES = 4 * 1024
         const val EXCHANGE_MAX_BYTES = 50 * 1024 * 1024
     }
+}
+
+/** Stage 4b: what the routes ask of the main PC's hand-over (DesktopSync). */
+interface HandoverRoutes {
+    /** The role is offered to [deviceId] just now. */
+    fun offeredTo(deviceId: String): Boolean
+
+    /** Handing over just now: every request but the taker's done is `not_master`. */
+    fun handing(): Boolean
+
+    /** [device] takes the role: the bundle, and the hand-over begins; null when it isn't offered to [device]. */
+    suspend fun take(device: PairedDeviceEntity, request: HandoverRequest): HandoverBundle?
+
+    /** [device] is done: true when it was the one handing over (this PC then becomes its client, off this thread). */
+    suspend fun done(device: PairedDeviceEntity): Boolean
 }

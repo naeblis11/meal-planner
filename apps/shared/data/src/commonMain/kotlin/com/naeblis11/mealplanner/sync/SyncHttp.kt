@@ -34,6 +34,9 @@ class NotPairingException : SyncHttpException("The PC isn't pairing just now. On
 
 class NotMasterException : SyncHttpException("That PC leaves sync to another Meal Planner PC on your network.")
 
+/** Stage 4b: the main PC offers no hand-over to this PC (it was cancelled, ran out, or the main PC gave up waiting). */
+class HandoverRefusedException : SyncHttpException("The main PC isn't handing over to this PC any more. Nothing changed.")
+
 /** A pairing that worked: the fingerprint to pin from now on, and the PC's reply (the device key among it). */
 data class Paired(val fingerprint: String, val reply: PairReply) {
     // No fingerprint in a log line; PairReply hides its own key and proof.
@@ -160,6 +163,31 @@ class SyncHttp(
         if (status != HttpURLConnection.HTTP_NO_CONTENT) throw refusal(status, body)
     }
 
+    /**
+     * Stage 4b, R2: takes the main PC's role, with this PC's key. The bundle on 200; HandoverRefusedException when the
+     * main PC offers none to this PC. The main PC then waits for [handoverDone].
+     */
+    suspend fun takeHandover(deviceKey: String, request: HandoverRequest): HandoverBundle = withContext(Dispatchers.IO) {
+        requireNotNull(pin) { "A hand-over needs the paired PC's fingerprint." }
+        require(KEY.matches(deviceKey)) { "Bad device key." }
+        val payload = HandoverWire.encode(request).toByteArray(Charsets.UTF_8)
+        val (status, body) = call("POST", SyncPaths.HANDOVER_TAKE, payload, JSON, deviceKey, HandoverWire.MAX_BUNDLE_BYTES)
+        if (status != HttpURLConnection.HTTP_OK) throw refusal(status, body)
+        try {
+            HandoverWire.decodeBundle(body.toString(Charsets.UTF_8))
+        } catch (e: IllegalArgumentException) {
+            throw SyncHttpException(UNREADABLE)
+        }
+    }
+
+    /** Stage 4b, R2: this PC has the bundle; the old main PC becomes its client. Done on 204. */
+    suspend fun handoverDone(deviceKey: String): Unit = withContext(Dispatchers.IO) {
+        requireNotNull(pin) { "A hand-over needs the paired PC's fingerprint." }
+        require(KEY.matches(deviceKey)) { "Bad device key." }
+        val (status, body) = call("POST", SyncPaths.HANDOVER_DONE, ByteArray(0), null, deviceKey, MAX_SMALL_REPLY_BYTES)
+        if (status != HttpURLConnection.HTTP_NO_CONTENT) throw refusal(status, body)
+    }
+
     // One request on its own connection: the status and the capped reply. A 401 `unpaired` is UnpairedException.
     private fun call(method: String, path: String, body: ByteArray?, type: String?, key: String, maxReply: Int, readTimeout: Int = readTimeoutMillis): Pair<Int, ByteArray> {
         val trust = PinTrust(pin)
@@ -222,6 +250,7 @@ class SyncHttp(
         SyncErrors.WRONG_CODE -> WrongCodeException()
         SyncErrors.NOT_PAIRING -> NotPairingException()
         SyncErrors.NOT_MASTER -> NotMasterException()
+        SyncErrors.NO_HANDOVER -> HandoverRefusedException()
         else -> SyncHttpException("Your PC answered $status.")
     }
 

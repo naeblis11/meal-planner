@@ -266,9 +266,10 @@ class DesktopApp(
 
     /**
      * Whether the sync port may listen (stage 2b): as the server, and not while another main PC of this household is
-     * seen (stage 4a, R12), since phones and PCs must have one main PC to sync with.
+     * seen (stage 4a, R12), since phones and PCs must have one main PC to sync with; except while Pair a device is open
+     * (stage 4b, R7), so the other main PC can join this one, which is the way out the notice gives.
      */
-    fun syncOnLan(): Boolean = serverOnLan() && peers?.twoMasters() == null
+    fun syncOnLan(): Boolean = serverOnLan() && (peers?.twoMasters() == null || sync?.window?.isOpen() == true)
 
     private val closed = AtomicBoolean(false)
 

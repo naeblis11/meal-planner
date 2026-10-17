@@ -19,6 +19,10 @@ object SyncPaths {
     /** A paired device leaving by itself (stage 2c): removed as the PC's own Remove removes it. */
     const val LEAVE = "/sync/leave"
 
+    /** Stage 4b: the offered client PC takes the main PC's role, then says it is done. */
+    const val HANDOVER_TAKE = "/sync/handover/take"
+    const val HANDOVER_DONE = "/sync/handover/done"
+
     /** Followed by a recipe uuid that matches [UUID]. */
     const val PHOTO = "/sync/photo/"
 
@@ -37,6 +41,9 @@ object SyncErrors {
     const val REFUSED = "refused"
     const val NOT_FOUND = "not_found"
     const val FAILED = "failed"
+
+    /** Stage 4b: no hand-over is offered to this device (none, expired, cancelled, or already given up). */
+    const val NO_HANDOVER = "no_handover"
 }
 
 /**

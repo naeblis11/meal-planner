@@ -18,7 +18,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Settings' "Phones and PCs" as shown. [now] ticks once a second while a pairing window is open, for its countdown.
- * [removeAsk] is the device whose Remove is being confirmed.
+ * [removeAsk] is the device whose Remove is being confirmed. Stage 4b: [handover] is the main PC's role offered (or being
+ * handed over) to a paired PC, and [handoverAsk] the PC whose Make it the main PC is being confirmed.
  */
 data class DevicesState(
     val devices: List<DeviceRow> = emptyList(),
@@ -29,6 +30,8 @@ data class DevicesState(
     val removeAsk: DeviceRow? = null,
     val error: String? = null,
     val now: Long = 0L,
+    val handover: HandoverView? = null,
+    val handoverAsk: DeviceRow? = null,
 )
 
 /** What the section can ask for; all nothing by default (screen tests). */
@@ -38,6 +41,10 @@ class DeviceActions(
     val askRemove: (DeviceRow) -> Unit = {},
     val confirmRemove: () -> Unit = {},
     val cancelRemove: () -> Unit = {},
+    val askHandover: (DeviceRow) -> Unit = {},
+    val confirmHandover: () -> Unit = {},
+    val cancelHandoverAsk: () -> Unit = {},
+    val cancelHandover: () -> Unit = {},
 )
 
 /**
@@ -50,7 +57,13 @@ class PairingViewModel(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val clock: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
-    private data class Local(val opening: Boolean = false, val removeAsk: DeviceRow? = null, val error: String? = null, val now: Long = 0L)
+    private data class Local(
+        val opening: Boolean = false,
+        val removeAsk: DeviceRow? = null,
+        val error: String? = null,
+        val now: Long = 0L,
+        val handoverAsk: DeviceRow? = null,
+    )
 
     private val local = MutableStateFlow(Local(now = clock()))
 
@@ -58,14 +71,19 @@ class PairingViewModel(
     @Volatile
     private var away = false
 
-    val state: StateFlow<DevicesState> = combine(controls.devices, controls.offer, controls.status, controls.certificateNotice, local) { devices, offer, status, notice, mine ->
+    private val mineAndHandover = combine(local, controls.handover) { mine, handover -> mine to handover }
+
+    val state: StateFlow<DevicesState> = combine(controls.devices, controls.offer, controls.status, controls.certificateNotice, mineAndHandover) { devices, offer, status, notice, (mine, handover) ->
         // A newly seen window is timed from now, not from the ticker's last tick, so its first frame is right.
         val now = if (offer != null) maxOf(mine.now, clock()) else mine.now
-        DevicesState(devices, offer, status, notice, mine.opening, mine.removeAsk, mine.error, now)
+        DevicesState(devices, offer, status, notice, mine.opening, mine.removeAsk, mine.error, now, handover, mine.handoverAsk)
     }.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
-        DevicesState(controls.devices.value, controls.offer.value, controls.status.value, controls.certificateNotice.value, now = clock()),
+        DevicesState(
+            controls.devices.value, controls.offer.value, controls.status.value, controls.certificateNotice.value, now = clock(),
+            handover = controls.handover.value,
+        ),
     )
 
     init {
@@ -118,6 +136,20 @@ class PairingViewModel(
             }
         }
     }
+
+    /** Stage 4b: Make it the main PC asks first. */
+    fun askHandover(row: DeviceRow) = local.update { it.copy(handoverAsk = row, error = null) }
+
+    fun cancelHandoverAsk() = local.update { it.copy(handoverAsk = null) }
+
+    /** Make it the main PC, confirmed: offered until that PC's next Sync takes it, or ten minutes go by. */
+    fun confirmHandover() {
+        val row = local.value.handoverAsk ?: return
+        local.update { it.copy(handoverAsk = null) }
+        controls.offerHandover(row.deviceId)
+    }
+
+    fun cancelHandover() = controls.cancelHandover()
 
     /** Settings is on screen: an old failure is not news. */
     fun shown() {

@@ -62,6 +62,48 @@ class SyncCertificate(
     val certificate: X509Certificate
         @Synchronized get() = load().certificate
 
+    /**
+     * Stage 4b, R3: the certificate's PKCS#12 bytes and its password, for a hand-over to another PC (made first if there
+     * is none yet). Never logged.
+     */
+    @Synchronized
+    fun export(): Pair<ByteArray, String> {
+        load()
+        val password = String(protector.unprotect(read(passwordFile)), Charsets.UTF_8)
+        return read(storeFile) to password
+    }
+
+    /**
+     * Stage 4b, R4: takes over [store] (PKCS#12) with [password] from the old main PC: checked to open with its key
+     * first (IllegalArgumentException, and nothing changed, when it doesn't), then the password sealed with this PC's
+     * DPAPI and both files written atomically over any certificate this PC had. Devices pinned to the old main PC trust
+     * this PC from now on.
+     */
+    @Synchronized
+    fun install(store: ByteArray, password: String) {
+        val chars = password.toCharArray()
+        val opened = try {
+            loaded(KeyStore.getInstance(STORE_TYPE).apply { load(store.inputStream(), chars) }, chars)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("The handed-over certificate doesn't open: ${e.javaClass.simpleName}")
+        }
+        writeAtomically(passwordFile, protector.protect(password.toByteArray(Charsets.UTF_8)))
+        writeAtomically(storeFile, store)
+        loaded = opened
+    }
+
+    /**
+     * Stage 4b, R5: the old main PC forgets the certificate it handed over, so it never answers a device with it again;
+     * a new one is made on its next need (devices then pair with that one).
+     */
+    @Synchronized
+    fun discard() {
+        loaded = null
+        for (file in listOf(storeFile, passwordFile)) {
+            if (file.exists() && !file.delete() && file.exists()) throw java.io.IOException("The sync certificate couldn't be removed.")
+        }
+    }
+
     // Under the lock. Throws (and changes nothing) when a file can't be read just now.
     private fun load(): Loaded {
         loaded?.let { return it }

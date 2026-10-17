@@ -567,6 +567,19 @@ If two PCs of one household both act as the main PC (one restored from the other
 "NAME is also set up as this household's main PC. Make one of them join the other in Settings." and stop
 syncing with phones until one joins the other.
 
+#### Making another PC the main PC
+
+On the main PC, Settings > Phones and PCs lists each joined PC with **Make it the main PC**. After you
+confirm, press **Sync** on that PC within ten minutes. It takes over: the paired phones and PCs, the sync
+certificate (so phones keep their pairing and find it by themselves) and the Alexa token. The old main PC
+then syncs with it as a joined PC, with its data. Both PCs need Meal Planner 1.4.0 or later.
+
+Alexa: if Home Assistant called the old main PC, change its three `rest_command` URLs to the new PC's name
+(see "Chrome extension and Alexa"). Google Calendar is set up on each PC on its own and is unaffected.
+
+If the other PC doesn't finish (it was switched off mid-way, say), the main PC keeps its role after 30
+seconds and nothing changes; a hand-over cut short on the other PC is finished when it starts again.
+
 Checking it on real PCs (owner only, after the build):
 1. On a second PC, install the build: Settings > Join a household finds the main PC, the typed code pairs,
    and the first sync asks Merge or Replace.
@@ -574,6 +587,9 @@ Checking it on real PCs (owner only, after the build):
 3. The second PC's Alexa section names the main PC; Home Assistant still reaches the main PC only.
 4. Leave on the second PC: it keeps its recipes, and neither PC shows the two-main-PCs notice.
 5. Two main PCs of one household (the main PC's database restored on another PC): both show the notice.
+6. Hand-over: on the main PC, Make it the main PC on the second PC, then Sync there: it says it is the main
+   PC now; the phone syncs and shows the new PC's name; the old main PC syncs with the new one; Alexa works
+   once Home Assistant's URLs point at the new PC.
 
 ### Scan rather than type
 

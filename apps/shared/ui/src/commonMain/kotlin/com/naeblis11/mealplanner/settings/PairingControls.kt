@@ -24,6 +24,14 @@ data class PairingView(val code: String, val expiresAt: Long, val addresses: Lis
 }
 
 /** Settings' "Phones and PCs" (LAN sync stage 2b): the desktop's DesktopSync, behind an interface; null on Android. */
+/**
+ * Stage 4b: the main PC's role offered to a paired PC ([deviceId], named [name]) until [expiresAt]; [handing] once that
+ * PC has taken it and the main PC waits for it to finish.
+ */
+data class HandoverView(val deviceId: String, val name: String, val expiresAt: Long, val handing: Boolean)
+
+private val NO_HANDOVER = kotlinx.coroutines.flow.MutableStateFlow<HandoverView?>(null)
+
 interface PairingControls {
     val devices: StateFlow<List<DeviceRow>>
 
@@ -51,4 +59,13 @@ interface PairingControls {
      * it unreachable; and `not_master` (409) reaches a device only when the yield starts while its connection is open.
      */
     suspend fun remove(deviceId: String)
+
+    /** Stage 4b: the hand-over offered or under way, or null. */
+    val handover: StateFlow<HandoverView?> get() = NO_HANDOVER
+
+    /** Stage 4b, R1: offers the main PC's role to the paired PC [deviceId] for 10 minutes; it finishes on its next Sync. */
+    fun offerHandover(deviceId: String) {}
+
+    /** Stage 4b: cancels the offer (one already taken runs its course). */
+    fun cancelHandover() {}
 }

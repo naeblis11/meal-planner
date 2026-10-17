@@ -95,6 +95,13 @@ object SyncMessages {
 
     private fun changes(n: Int): String = if (n == 1) "1 change" else "$n changes"
 
+    /** Stage 4b, R4: the Sync button's outcome on the PC that took over as the main PC. */
+    fun nowMainPc(oldMain: String): String =
+        "This PC is now the household's main PC. If Home Assistant calls $oldMain for Alexa, point its three URLs at this PC."
+
+    /** Stage 4b: the sync worked but the hand-over didn't; nothing changed. */
+    const val HANDOVER_FAILED = "Synced, but taking over as the main PC didn't work. Nothing changed; press Sync to try again."
+
     /** Stage 4a, R4: Settings' Alexa section on a client PC. */
     fun clientAlexa(masterName: String): String = "Alexa is handled by $masterName."
 

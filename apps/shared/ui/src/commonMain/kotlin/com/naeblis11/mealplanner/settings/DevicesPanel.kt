@@ -46,6 +46,19 @@ const val REMOVE_FAILED = "Couldn't remove it. Try again in a moment."
 const val SYNC_FAILED = "Sync couldn't start on this PC, so devices can't sync. The log in the app data folder's .cache says why."
 const val QR_DESCRIPTION = "Pairing code to scan"
 
+/** Stage 4b: handing the main PC's role to a paired PC. */
+const val MAKE_MAIN_PC = "Make it the main PC"
+const val CANCEL_HANDOVER = "Cancel"
+const val KEEP_THIS_MAIN = "Keep this PC"
+
+fun handoverQuestion(name: String): String =
+    "Make $name the household's main PC? It takes over the phones and PCs, the sync certificate and Alexa, and this PC " +
+        "then syncs with it. $name needs Meal Planner 1.4.0 or later."
+
+fun handoverWaiting(name: String): String = "On $name, press Sync to finish. Until then, nothing changes."
+
+fun handingOver(name: String): String = "Handing over to $name..."
+
 /** "123 456": the code in two groups, easier to read out and type. */
 fun groupedCode(code: String): String = if (code.length == 6) "${code.take(3)} ${code.drop(3)}" else code
 
@@ -92,7 +105,32 @@ fun DevicesSetting(state: DevicesState, actions: DeviceActions, yielding: String
     if (state.devices.isEmpty()) {
         Text(NO_DEVICES_YET, color = MealColors.Muted)
     } else {
-        for (row in state.devices) DeviceLine(row, onRemove = { actions.askRemove(row) })
+        // Stage 4b: a PC can be made the main PC, one at a time, and not while this PC leaves pairing to another.
+        val canHandOver = yielding == null && state.handover == null
+        for (row in state.devices) {
+            DeviceLine(
+                row,
+                onRemove = { actions.askRemove(row) },
+                onMakeMain = if (row.kind == "pc") ({ actions.askHandover(row) }) else null,
+                makeMainEnabled = canHandOver,
+            )
+        }
+    }
+    state.handover?.let { handover ->
+        if (handover.handing) {
+            Text(handingOver(handover.name))
+        } else {
+            Text(handoverWaiting(handover.name))
+            TextButton(onClick = actions.cancelHandover, modifier = Modifier.heightIn(min = 48.dp)) { Text(CANCEL_HANDOVER) }
+        }
+    }
+    state.handoverAsk?.let { row ->
+        AlertDialog(
+            onDismissRequest = actions.cancelHandoverAsk,
+            text = { Text(handoverQuestion(row.name)) },
+            confirmButton = { TextButton(onClick = actions.confirmHandover) { Text(MAKE_MAIN_PC) } },
+            dismissButton = { TextButton(onClick = actions.cancelHandoverAsk) { Text(KEEP_THIS_MAIN) } },
+        )
     }
     state.removeAsk?.let { row ->
         AlertDialog(
@@ -122,11 +160,14 @@ private fun PairingPanel(offer: PairingView, now: Long, onCancel: () -> Unit) {
 }
 
 @Composable
-private fun DeviceLine(row: DeviceRow, onRemove: () -> Unit) {
+private fun DeviceLine(row: DeviceRow, onRemove: () -> Unit, onMakeMain: (() -> Unit)? = null, makeMainEnabled: Boolean = true) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
         Column(Modifier.weight(1f)) {
             Text(row.name, style = MaterialTheme.typography.titleMedium)
             Text(deviceDetail(row), color = MealColors.Muted, style = MaterialTheme.typography.bodyMedium)
+        }
+        if (onMakeMain != null) {
+            TextButton(onClick = onMakeMain, enabled = makeMainEnabled, modifier = Modifier.heightIn(min = 48.dp)) { Text(MAKE_MAIN_PC) }
         }
         TextButton(onClick = onRemove, modifier = Modifier.heightIn(min = 48.dp)) { Text(REMOVE, color = MealColors.Danger) }
     }

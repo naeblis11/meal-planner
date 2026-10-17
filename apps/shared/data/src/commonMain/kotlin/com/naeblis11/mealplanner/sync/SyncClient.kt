@@ -31,6 +31,10 @@ data class SyncResult(
     val skipped: List<String>,
     val photos: Int,
     val duplicates: List<PossibleDuplicate>,
+    /** Stage 4b: the main PC offered this device its role in this exchange. */
+    val handover: Boolean = false,
+    /** What the Sync button says instead of the usual counts (stage 4b: "This PC is now the household's main PC..."). */
+    val note: String? = null,
 )
 
 /** "Replace this device's data with the PC's": the synced tables emptied with their change records, in one go. */
@@ -139,7 +143,7 @@ class SyncClient(
             transport.sendPhoto(want.uuid, bytes)
             photos++
         }
-        return SyncResult(out.size, reply.records.size, reply.skipped + result.skipped, photos, duplicates(before))
+        return SyncResult(out.size, reply.records.size, reply.skipped + result.skipped, photos, duplicates(before), reply.handover)
     }
 
     // The reply's stamps are the hub's clock; this device's own changes are stamped by its clock. Shifted by the

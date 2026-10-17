@@ -2,14 +2,22 @@ package com.naeblis11.mealplanner.desktop.sync
 
 import com.naeblis11.mealplanner.data.AppDatabase
 import com.naeblis11.mealplanner.data.AppMetaEntity
+import com.naeblis11.mealplanner.data.PairedDeviceEntity
 import com.naeblis11.mealplanner.data.RecipeRepository
+import com.naeblis11.mealplanner.data.SyncSchema
+import com.naeblis11.mealplanner.data.inTransaction
 import com.naeblis11.mealplanner.settings.DeviceRow
+import com.naeblis11.mealplanner.settings.HandoverView
 import com.naeblis11.mealplanner.settings.PairingControls
 import com.naeblis11.mealplanner.settings.PairingView
 import com.naeblis11.mealplanner.settings.QrModules
 import com.naeblis11.mealplanner.settings.SyncAttention
 import com.naeblis11.mealplanner.settings.SyncServerStatus
+import com.naeblis11.mealplanner.sync.HandedDevice
+import com.naeblis11.mealplanner.sync.HandoverBundle
+import com.naeblis11.mealplanner.sync.HandoverRequest
 import com.naeblis11.mealplanner.sync.HeldRemoval
+import com.naeblis11.mealplanner.sync.PairingWire
 import com.naeblis11.mealplanner.sync.PairingQr
 import com.naeblis11.mealplanner.sync.SyncApplier
 import com.naeblis11.mealplanner.sync.SyncErrors
@@ -54,6 +62,10 @@ import kotlinx.coroutines.withContext
  * Requests under way are counted, so [awaitIdle] lets DesktopApp.close() wait for them before it closes the database;
  * one that reaches the handler after [stop] is answered `failed` without touching it. A remade certificate's notice is
  * kept in app_meta ([CERTIFICATE_REMADE_KEY]) until the next pairing, so a restart still says it.
+ *
+ * Stage 4b: Settings can offer the role to a paired PC ([offerHandover]); that PC takes it on its next Sync
+ * ([HandoverRoutes]). The bundle carries the other devices, the certificate and [alexaToken]; once the PC is done this
+ * one calls [onHandedOver] (Main makes it the PC's client), then forgets its devices and its certificate.
  */
 class DesktopSync(
     database: () -> AppDatabase,
@@ -71,7 +83,11 @@ class DesktopSync(
     private val clock: () -> Long = System::currentTimeMillis,
     random: Random = SecureRandom(),
     private val log: (String) -> Unit = { System.err.println(it) },
-) : PairingControls, SyncAttention {
+    /** Stage 4b: the Alexa token handed over with the role, or null when none is set up. Never logged. */
+    private val alexaToken: () -> String? = { null },
+    /** Stage 4b: the PC that took the role is done; this PC becomes its client. */
+    private val onHandedOver: suspend (HandedOver) -> Unit = {},
+) : PairingControls, SyncAttention, HandoverRoutes {
     private val db: AppDatabase by lazy(database)
     private val repository: RecipeRepository by lazy(recipes)
 
@@ -92,6 +108,12 @@ class DesktopSync(
     // Publishing the window as Settings sees it ([offer]) and closing it on expiry happen under this, so a window reopened
     // meanwhile is never cleared or closed by an older one's end.
     private val offerLock = Any()
+
+    /** Stage 4b: the hand-over offered or under way. */
+    val handoverState = HandoverState(clock)
+
+    @Volatile
+    private var handoverWait: Job? = null
 
     // Requests in the routes now; after [stop], none may start.
     private val inFlight = MutableStateFlow(0)
@@ -126,6 +148,7 @@ class DesktopSync(
             },
             onLeft = ::deviceLeft,
             log = log,
+            handover = this,
         )
     }
 
@@ -319,9 +342,89 @@ class DesktopSync(
         scope?.launch { server.rebind() }
     }
 
+    override val handover: StateFlow<HandoverView?> get() = handoverState.view
+
+    // Only a PC in the list can be offered the role.
+    override fun offerHandover(deviceId: String) {
+        val row = _devices.value.firstOrNull { it.deviceId == deviceId && it.kind == PairingWire.KIND_PC } ?: return
+        if (handoverState.offer(deviceId, row.name)) log("Meal Planner: the main PC role is offered to a paired PC.")
+    }
+
+    override fun cancelHandover() = handoverState.cancel()
+
+    override fun offeredTo(deviceId: String): Boolean = handoverState.offeredTo(deviceId)
+
+    override fun handing(): Boolean = handoverState.handing()
+
+    // On the request's thread: the bundle is read first (everything that can fail), then the hand-over begins. Its wait
+    // ends in the scope: without done in time this PC serves as before.
+    override suspend fun take(device: PairedDeviceEntity, request: HandoverRequest): HandoverBundle? = withContext(Dispatchers.IO) {
+        if (!handoverState.offeredTo(device.deviceId)) return@withContext null
+        val (store, password) = certificate.export()
+        val others = db.pairedDeviceDao().all().filter { it.deviceId != device.deviceId }.map {
+            HandedDevice(it.deviceId, it.name, it.kind, it.keyHash, it.pairedAt, it.lastSyncAt)
+        }
+        val name = pcName().takeIf(PairingWire::isName) ?: FALLBACK_PC_NAME
+        val bundle = HandoverBundle(others, store, password, alexaToken(), SyncSchema.deviceId(db), name)
+        if (!handoverState.take(device.deviceId, request)) return@withContext null
+        handoverWait?.cancel()
+        handoverWait = scope?.launch {
+            delay(HandoverState.WAIT_MILLIS + WAIT_SLACK_MILLIS)
+            if (handoverState.expireHanding()) log("Meal Planner: the other PC did not finish taking over; this PC stays the main PC.")
+        }
+        log("Meal Planner: handing the main PC role over; waiting for the other PC.")
+        bundle
+    }
+
+    // On the request's thread: answered at once; the switch happens in the scope a moment later, so the reply isn't cut by
+    // the port closing under it.
+    override suspend fun done(device: PairedDeviceEntity): Boolean {
+        val where = scope ?: return false
+        val request = handoverState.done(device.deviceId) ?: return false
+        handoverWait?.cancel()
+        val fingerprint = certificate.fingerprint
+        where.launch {
+            delay(REPLY_GRACE_MILLIS)
+            guarded("Becoming the new main PC's client") {
+                onHandedOver(HandedOver(request, fingerprint))
+                release()
+            }
+        }
+        return true
+    }
+
+    /**
+     * Stage 4b, R4, on the PC taking over: the old main PC's certificate, and its devices with the old main PC itself (a
+     * PC, under [masterKeyHash], the key this PC made for it). The port follows once this PC is no longer a client.
+     */
+    suspend fun adopt(bundle: HandoverBundle, masterKeyHash: String) {
+        withContext(Dispatchers.IO) {
+            certificate.install(bundle.certificate, bundle.certificatePassword)
+            val dao = db.pairedDeviceDao()
+            db.inTransaction {
+                for (d in bundle.devices) dao.put(PairedDeviceEntity(d.deviceId, d.name, d.kind, d.keyHash, d.pairedAt, d.lastSyncAt))
+                dao.put(PairedDeviceEntity(bundle.masterDeviceId, bundle.masterName, PairingWire.KIND_PC, masterKeyHash, clock(), null))
+            }
+            settleDevices()
+        }
+    }
+
+    // Stage 4b, R5: the devices and the certificate went with the role. Nothing here may answer a device again with them.
+    private suspend fun release() {
+        withContext(Dispatchers.IO) {
+            db.pairedDeviceDao().all().forEach { paired.remove(it.deviceId) }
+            db.appMetaDao().remove(LAST_REMOVED_KEY)
+            lastRemovedAt = null
+            certificate.discard()
+            settleDevices()
+            log("Meal Planner: the main PC role was handed over; this PC syncs with the new main PC.")
+        }
+    }
+
     // The removal's time first, so the port is never closed between the removal and it: the device's next sync must
     // reach the port to be told it was removed.
     override suspend fun remove(deviceId: String) {
+        handoverState.cancel(deviceId)
         withContext(Dispatchers.IO) {
             val now = clock()
             db.appMetaDao().put(AppMetaEntity(LAST_REMOVED_KEY, now.toString()))
@@ -335,6 +438,7 @@ class DesktopSync(
     // time first, so the port stays open for 30 days to tell any other sync it had under way. The port is then settled
     // in the scope, never under this reply (the removal time keeps it wanted, so the reply isn't cut).
     private suspend fun deviceLeft(deviceId: String) {
+        handoverState.cancel(deviceId)
         val now = clock()
         db.appMetaDao().put(AppMetaEntity(LAST_REMOVED_KEY, now.toString()))
         lastRemovedAt = now
@@ -408,5 +512,17 @@ class DesktopSync(
 
         /** app_meta: present while a remade certificate's notice waits for the next pairing. */
         const val CERTIFICATE_REMADE_KEY = "sync_certificate_remade"
+
+        /** How long past the hand-over's wait its end is checked. */
+        const val WAIT_SLACK_MILLIS = 100L
+
+        /** How long after done's reply the switch to a client starts, so the reply is sent first. */
+        const val REPLY_GRACE_MILLIS = 500L
+
+        /** The name handed over when this PC's own isn't usable. */
+        const val FALLBACK_PC_NAME = "Meal Planner PC"
     }
 }
+
+/** Stage 4b: what the old main PC needs to become the new one's client: [request] from the taker, and the certificate's [fingerprint]. */
+data class HandedOver(val request: HandoverRequest, val fingerprint: String)

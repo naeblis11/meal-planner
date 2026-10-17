@@ -65,6 +65,11 @@ class PeerWatch(
     @Volatile
     private var roleJob: Job? = null
 
+    // Stage 4b, R7: while two main PCs of this household are seen, a look every retryMillis, so the notice (and the
+    // closed sync port) clears by itself soon after one joins the other or a hand-over's stale record goes.
+    @Volatile
+    private var healJob: Job? = null
+
     // One announce or look at a time: taken on the asking thread, so one asked for while another runs is dropped at
     // once (the running one is just as fresh), and let go when it ends, however it ends. A flow, so lookNow can wait
     // for the one under way.
@@ -243,12 +248,25 @@ class PeerWatch(
         val before = _status.value
         _status.value = next
         _notice.value = next.notice?.let { PeerNotice(it, alexa = next.yieldTo?.let(PeerMessages::yieldAlexa)) }
+        if (next.twoMasters != null) lookUntilOneMaster()
         if (next.yieldTo != before.yieldTo || next.twoMasters != before.twoMasters) {
             log(lookedMessage(next.peers.size, next.yieldTo != null))
             try {
                 onYieldChanged()
             } catch (e: Exception) {
                 log("Meal Planner: listening again after the other-PC check failed: ${e.javaClass.simpleName}")
+            }
+        }
+    }
+
+    // At most one such loop; it ends once one main PC is left, or with close().
+    private fun lookUntilOneMaster() {
+        val where = scope ?: return
+        if (healJob?.isActive == true) return
+        healJob = where.launch {
+            while (!closed.get() && _status.value.twoMasters != null) {
+                delay(retryMillis)
+                launchLook()?.join()
             }
         }
     }
@@ -265,6 +283,7 @@ class PeerWatch(
             startJob?.cancel()
             lookJob?.cancel()
             roleJob?.cancel()
+            healJob?.cancel()
         }
     }
 

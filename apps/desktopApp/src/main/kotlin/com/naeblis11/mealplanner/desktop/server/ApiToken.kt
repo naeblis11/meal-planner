@@ -49,6 +49,21 @@ class ApiToken(
         return token
     }
 
+    /** Stage 4b, R4: the token handed over with the main PC's role, saved in the secrets file, then in use. Throws IOException when it can't be saved. */
+    @Synchronized
+    fun adopt(token: String) {
+        require(token.length >= MIN_LENGTH) { "Too short a token." }
+        secrets.put(KEY, token)
+        value = token
+    }
+
+    /** Stage 4b, R5: the old main PC forgets the token it handed over (written empty, which reads as none). */
+    @Synchronized
+    fun clear() {
+        secrets.put(KEY, "")
+        value = null
+    }
+
     override fun toString(): String = "ApiToken(configured=$configured)"
 
     companion object {

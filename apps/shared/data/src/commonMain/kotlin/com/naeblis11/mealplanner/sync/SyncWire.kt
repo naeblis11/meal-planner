@@ -63,6 +63,11 @@ data class ExchangeReply(
     val skipped: List<String>,
     val wantPhotos: List<PhotoWant>,
     val hubId: String,
+    /**
+     * Stage 4b, R1: the main PC offers this device its role. Sent only when true, and read as false when absent, so
+     * readers and hubs before 4b are unaffected.
+     */
+    val handover: Boolean = false,
 )
 
 /** The exchange as JSON. Decoding trusts nothing: any malformed part throws IllegalArgumentException. */
@@ -87,6 +92,7 @@ object SyncWire {
         put("skipped", buildJsonArray { reply.skipped.forEach { add(JsonPrimitive(it)) } })
         put("wantPhotos", buildJsonArray { reply.wantPhotos.forEach { w -> add(buildJsonObject { put("uuid", w.uuid); put("hash", w.hash) }) } })
         put("hubId", reply.hubId)
+        if (reply.handover) put("handover", true)
     }.toString()
 
     fun encodeRecord(record: SyncRecord): String = record(record).toString()
@@ -103,6 +109,7 @@ object SyncWire {
         return ExchangeReply(
             long(o, "hubTime"), long(o, "cursor"), flag(o, "full"), records(o), strings(o, "skipped"), photoWants(o),
             text(o, "hubId").takeIf { it.isNotEmpty() && it.length <= MAX_DEVICE } ?: bad("bad hubId"),
+            if (o["handover"] == null || o["handover"] is JsonNull) false else flag(o, "handover"),
         )
     }
 

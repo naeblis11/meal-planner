@@ -27,6 +27,14 @@ interface SyncConnector {
 
     /** Tells the PC this phone is leaving. */
     suspend fun leave(host: String, port: Int, pin: String, deviceKey: String)
+
+    /** Stage 4b: takes the main PC's role (a client PC only). */
+    suspend fun takeHandover(host: String, port: Int, pin: String, deviceKey: String, request: HandoverRequest): HandoverBundle =
+        throw UnsupportedOperationException("No hand-over here.")
+
+    /** Stage 4b: tells the old main PC the role is taken. */
+    suspend fun handoverDone(host: String, port: Int, pin: String, deviceKey: String): Unit =
+        throw UnsupportedOperationException("No hand-over here.")
 }
 
 /** The real connector: 2b's pinned SyncHttp. */
@@ -39,6 +47,12 @@ object HttpSyncConnector : SyncConnector {
 
     override suspend fun leave(host: String, port: Int, pin: String, deviceKey: String) =
         SyncHttp(host, port, pin).leave(deviceKey)
+
+    override suspend fun takeHandover(host: String, port: Int, pin: String, deviceKey: String, request: HandoverRequest): HandoverBundle =
+        SyncHttp(host, port, pin).takeHandover(deviceKey, request)
+
+    override suspend fun handoverDone(host: String, port: Int, pin: String, deviceKey: String) =
+        SyncHttp(host, port, pin).handoverDone(deviceKey)
 }
 
 /**
@@ -88,6 +102,11 @@ class PhoneSync(
     private val kind: String = PairingWire.KIND_PHONE,
     private val onJoined: suspend (householdId: String) -> Unit = {},
     private val onLeft: suspend () -> Unit = {},
+    /**
+     * Stage 4b: runs after each sync that worked, inside the same lock, with the pairing it used; what it returns is the
+     * sync's result (a client PC takes over as the main PC here when offered, and says so in the result's note).
+     */
+    private val afterSync: suspend (PhonePairing, SyncResult) -> SyncResult = { _, result -> result },
 ) {
     private val lock = Mutex()
     private val meta = db.appMetaDao()
@@ -147,12 +166,13 @@ class PhoneSync(
     /** One sync; the first with this PC needs [first] (SyncClient). */
     suspend fun sync(first: FirstSync? = null): SyncResult = lock.withLock {
         val pairing = store.load() ?: throw NotPairedException()
-        try {
+        val result = try {
             SyncClient(db, recipes, imagesDir, FindingTransport(pairing), clock).sync(first)
         } catch (e: UnpairedException) {
             forget()
             throw e
         }
+        afterSync(store.load() ?: pairing, result)
     }
 
     /** Tells the PC (best effort), then forgets the pairing and the marks; the data stays. */
@@ -211,7 +231,10 @@ class PhoneSync(
                 // Best effort: the exchange is already applied, so a store that fails mustn't turn it into a failed sync.
                 // The next sync just looks for the PC again.
                 try {
-                    store.save(pairing.copy(addresses = addresses, port = pc.port))
+                    // The PC's name too (stage 4b): the main PC may have been handed over to another PC, which has the
+                    // same certificate under its own name.
+                    val name = pc.name.takeIf(PairingWire::isName) ?: pairing.pcName
+                    store.save(pairing.copy(addresses = addresses, port = pc.port, pcName = name))
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

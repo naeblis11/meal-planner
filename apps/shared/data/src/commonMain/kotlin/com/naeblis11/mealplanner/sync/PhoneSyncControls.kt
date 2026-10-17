@@ -121,7 +121,7 @@ class PhoneSyncControls(
             _outcome.value = try {
                 val result = engine.sync(first)
                 if (result.duplicates.isNotEmpty()) _duplicates.value = result.duplicates
-                SyncMessages.synced(result)
+                result.note ?: SyncMessages.synced(result)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

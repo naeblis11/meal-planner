@@ -183,7 +183,15 @@ fun NavGraphBuilder.settingsDestination(
             onOpenAppData = { storage?.openAppData() },
             folderExtras = { if (storage != null) AllowAppControls(storage) },
             devices = devicesState,
-            deviceActions = devicesVm?.let { vm -> DeviceActions(vm::pair, vm::cancelPairing, vm::askRemove, vm::confirmRemove, vm::cancelRemove) } ?: DeviceActions(),
+            deviceActions = devicesVm?.let { vm ->
+                DeviceActions(
+                    vm::pair, vm::cancelPairing, vm::askRemove, vm::confirmRemove, vm::cancelRemove,
+                    askHandover = vm::askHandover,
+                    confirmHandover = vm::confirmHandover,
+                    cancelHandoverAsk = vm::cancelHandoverAsk,
+                    cancelHandover = vm::cancelHandover,
+                )
+            } ?: DeviceActions(),
             join = joinState,
             joinActions = joinVm?.let { vm ->
                 JoinActions(

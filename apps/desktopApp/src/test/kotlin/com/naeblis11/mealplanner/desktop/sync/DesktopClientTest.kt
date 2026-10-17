@@ -66,8 +66,13 @@ class DesktopClientTest {
         dir.deleteRecursively()
     }
 
-    private fun app(engine: FakeEngine = FakeEngine(), peers: ((DesktopApp) -> PeerWatch)? = null): DesktopApp = DesktopApp(
+    private fun app(
+        engine: FakeEngine = FakeEngine(),
+        peers: ((DesktopApp) -> PeerWatch)? = null,
+        sync: ((DesktopApp) -> DesktopSync)? = null,
+    ): DesktopApp = DesktopApp(
         dir,
+        syncFactory = sync,
         moveToTrash = { f -> trashed += f.name; f.delete() },
         settingsFactory = { MapSettings() },
         serverFactory = { desktop ->
@@ -238,6 +243,22 @@ class DesktopClientTest {
                     own = { desktop.identity.record("THIS-PC", "test") },
                     port = 5055,
                     onYieldChanged = { yields.incrementAndGet() },
+                    // Stage 4b, R7: looked at again every 50 ms while two main PCs are seen.
+                    retryMillis = 50,
+                    log = {},
+                )
+            },
+            sync = { desktop ->
+                DesktopSync(
+                    database = { desktop.container.database },
+                    recipes = { desktop.container.recipes },
+                    imagesDir = desktop.imagesDir,
+                    certificate = SyncCertificate(dir, FakeProtector(), log = {}),
+                    household = { desktop.identity.household.id() },
+                    pcName = { "THIS-PC" },
+                    lanAllowed = desktop::syncOnLan,
+                    addresses = { emptyList() },
+                    engine = FakeSyncEngine(),
                     log = {},
                 )
             },
@@ -252,13 +273,15 @@ class DesktopClientTest {
         }
         assertFalse(app.syncOnLan())
         assertTrue("the server is unaffected", app.serverOnLan())
-        // The other one joins this PC: it is a client now, and the sync port may listen again.
+        // Stage 4b, R7: Pair a device opens the port meanwhile, so the other one can join this one.
+        app.sync!!.window.open()
+        assertTrue(app.syncOnLan())
+        app.sync!!.window.close()
+        assertFalse(app.syncOnLan())
+        // The other one joins this PC: it is a client now, seen by the next look on its own, and the port may listen again.
         network.clearAdded()
         network.add(twin.copy(role = PeerTxt.ROLE_CLIENT))
-        eventually {
-            app.peers!!.browseNow()
-            app.peers!!.twoMasters() == null
-        }
+        eventually { app.peers!!.twoMasters() == null }
         assertTrue(app.syncOnLan())
         assertEquals(2, yields.get())
     }
